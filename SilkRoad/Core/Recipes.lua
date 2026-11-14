@@ -129,21 +129,39 @@ function Recipes:CountKnown()
 	return Util.CountKeys(SR.DB.char.knownRecipes)
 end
 
-local function ResolveSkillLine(professionID, professionName)
-	for _, profession in ipairs(StaticData().professions) do
-		if profession.id == professionID or profession.name == professionName then
-			return profession.id
+-- Matches the window's profession to one in the game data, by ID first,
+-- then by name. Falls back to the first ID when nothing matches.
+local function ResolveSkillLine(ids, names)
+	local professions = StaticData().professions
+	for _, id in ipairs(ids) do
+		for _, profession in ipairs(professions) do
+			if profession.id == id then
+				return profession.id
+			end
 		end
 	end
-	return professionID
+	for _, name in ipairs(names) do
+		for _, profession in ipairs(professions) do
+			if profession.name == name then
+				return profession.id
+			end
+		end
+	end
+	return ids[1]
 end
 
 function Recipes:ReadProfessionWindow()
-	local professionID, learned, professionName = SR.Game.ReadOpenProfession()
-	if not professionID then
+	local window, reason = SR.Game.ReadOpenProfession()
+	if not window then
+		SR:Debug("Profession window not read:", reason)
 		return
 	end
-	local skillLine = ResolveSkillLine(professionID, professionName)
+	local skillLine = ResolveSkillLine(window.ids, window.names)
+	if not skillLine then
+		SR:Debug("Profession window not read: unknown profession", table.concat(window.names, ", "))
+		return
+	end
+	local learned = window.learned
 	local known = SR.DB.char.knownRecipes
 	local added = 0
 	for recipeID, isLearned in pairs(learned) do
@@ -162,7 +180,7 @@ function Recipes:ReadProfessionWindow()
 		end
 	end
 	SR.DB.char.scannedProfessions[skillLine] = time()
-	SR:Debug("Read profession window", skillLine, "new recipes:", added)
+	SR:Debug("Read profession window:", skillLine, "recipes:", Util.CountKeys(learned), "new:", added)
 	SR:Fire("RECIPES_UPDATED", skillLine)
 end
 

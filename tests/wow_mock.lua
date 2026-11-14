@@ -978,9 +978,18 @@ define("C_TradeSkillUI", {
 	IsTradeSkillLinked = function() return false end,
 	IsTradeSkillGuild = function() return false end,
 	IsNPCCrafting = function() return false end,
-	GetBaseProfessionInfo = function()
+	-- Like Forever: the child profession identifies the window (its parent is
+	-- the profession); the base info carries no profession ID.
+	GetChildProfessionInfo = function()
 		local open = M.tradeSkill
-		return open and { professionID = open.professionID, professionName = open.name } or {}
+		if not open then
+			return { professionID = 0 }
+		end
+		return { professionID = open.childID or 2830, professionName = "Classic " .. open.name,
+			parentProfessionID = open.professionID, parentProfessionName = open.name }
+	end,
+	GetBaseProfessionInfo = function()
+		return { professionID = 0 }
 	end,
 	GetAllRecipeIDs = function()
 		local ids = {}

@@ -6,7 +6,7 @@
 
 	SR.Game.events                         event names, by purpose
 	SR.Game.GetPlayerProfessions()         { { skillLine, name, icon, rank, maxRank }, ... }
-	SR.Game.ReadOpenProfession()           skillLine, { [recipeID] = learned }, or nil
+	SR.Game.ReadOpenProfession()           { ids, names, learned = { [recipeID] = bool } }, or nil, reason
 	SR.Game.ReadRecipeSchematic(recipeID)  { name, icon, product, quantityMin, quantityMax, reagents }
 	SR.Game.ReadMerchant()                 { { itemID, price (per item) }, ... }
 	SR.Game.GetAreaName(areaID)            zone / dungeon name
@@ -40,25 +40,56 @@ function Game.GetPlayerProfessions()
 	return list
 end
 
+-- Which profession the window shows, the way Blizzard's own profession UI
+-- works it out (Professions.GetProfessionInfo): the child profession's info,
+-- falling back to the base info when there's no child; the profession itself
+-- is the child's parent. Returns a list of candidate IDs and names.
+local function OpenProfessionIdentity()
+	local info = C_TradeSkillUI.GetChildProfessionInfo()
+	if not info or not info.professionID or info.professionID == 0 then
+		info = C_TradeSkillUI.GetBaseProfessionInfo()
+	end
+	if not info then
+		return nil
+	end
+	local ids, names = {}, {}
+	for _, id in ipairs({ info.parentProfessionID, info.professionID }) do
+		if id and id > 0 then
+			ids[#ids + 1] = id
+		end
+	end
+	for _, name in ipairs({ info.parentProfessionName, info.professionName }) do
+		if name and name ~= "" then
+			names[#names + 1] = name
+		end
+	end
+	return ids, names
+end
+
 -- The profession window's recipes, when it shows one of the player's own
--- professions (not a linked or guild one, not an NPC crafting window).
+-- professions (not a linked or guild one). Returns
+--   { ids = { candidate skill line IDs }, names = { candidate names }, learned = { [recipeID] = bool } }
+-- or nil plus the reason, for debug output.
 function Game.ReadOpenProfession()
-	if not C_TradeSkillUI.IsTradeSkillReady() or C_TradeSkillUI.IsTradeSkillLinked()
-		or C_TradeSkillUI.IsTradeSkillGuild() or C_TradeSkillUI.IsNPCCrafting() then
-		return nil
+	if C_TradeSkillUI.IsTradeSkillLinked() or C_TradeSkillUI.IsTradeSkillGuild() then
+		return nil, "another player's profession is shown"
 	end
-	local info = C_TradeSkillUI.GetBaseProfessionInfo()
-	if not info or not info.professionID then
-		return nil
+	local ids, names = OpenProfessionIdentity()
+	if not ids or (#ids == 0 and #names == 0) then
+		return nil, "the profession window reports no profession"
 	end
-	local learned = {}
-	for _, recipeID in ipairs(C_TradeSkillUI.GetAllRecipeIDs()) do
+	local learned, count = {}, 0
+	for _, recipeID in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
 		local recipe = C_TradeSkillUI.GetRecipeInfo(recipeID)
 		if recipe then
 			learned[recipeID] = recipe.learned and true or false
+			count = count + 1
 		end
 	end
-	return info.professionID, learned, info.professionName
+	if count == 0 then
+		return nil, "the profession window has no recipes yet"
+	end
+	return { ids = ids, names = names, learned = learned }
 end
 
 function Game.ReadRecipeSchematic(recipeID)

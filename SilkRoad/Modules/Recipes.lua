@@ -146,7 +146,7 @@ function Page:OnCreate(frame)
 	end)
 	self.Search:SetPoint("LEFT", self.ProfessionDropdown, "RIGHT", 16, 0)
 
-	self.KnownOnly = Widgets.CreateCheckbox(frame, L["Known only"], L["Only show recipes this character has learned."],
+	self.KnownOnly = Widgets.CreateCheckbox(frame, L["Known only"], L.KNOWN_ONLY_TOOLTIP,
 		function()
 			return settings.knownOnly
 		end,
@@ -155,6 +155,8 @@ function Page:OnCreate(frame)
 			self.Table:Refresh()
 		end)
 	self.KnownOnly:SetPoint("LEFT", self.Search, "RIGHT", 12, 0)
+	-- Keep the tooltip working while disabled, so it can say why.
+	self.KnownOnly:SetMotionScriptsWhileDisabled(true)
 
 	self.Count = Widgets.CreateLabel(frame, "", "GameFontDisableSmall", "RIGHT")
 	self.Count:SetPoint("RIGHT", frame, "TOPRIGHT", -4, -12)
@@ -196,7 +198,7 @@ function Page:OnCreate(frame)
 end
 
 function Page:MatchesFilter(row)
-	if SR.DB.settings.recipes.knownOnly and row.known == false then
+	if SR.DB.settings.recipes.knownOnly and self.KnownOnly:IsEnabled() and row.known == false then
 		return false
 	end
 	if self.search ~= "" and not row.searchText:find(self.search, 1, true) then
@@ -242,7 +244,10 @@ function Page:UpdateStatus(profession, knownCount, total)
 		self.Status:SetText(L["%s %d/%d: you know %d of %d recipes."]:format(
 			profession.name, profession.rank or 0, profession.maxRank or 0, knownCount, total))
 	end
-	self.KnownOnly:SetEnabled(profession.learned and SR.Recipes:HasRead(profession.id))
+	local canFilter = profession.learned and SR.Recipes:HasRead(profession.id)
+	self.KnownOnly:SetEnabled(canFilter)
+	local shade = canFilter and 1 or 0.5
+	self.KnownOnly.Text:SetTextColor(shade, shade, shade)
 end
 
 function Page:Refresh()

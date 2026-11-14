@@ -172,7 +172,17 @@ check(M.lastModifiedLink and M.lastModifiedLink:find("item:"), "shift-click link
 M.modifiedClick = false
 recipesPage.Search:SetText("")
 
+step("recipes: 'Known only' before the profession window is read")
+check(not recipesPage.KnownOnly:IsEnabled(), "'Known only' disabled until the window has been read")
+check(recipesPage.KnownOnly.__scripts.OnEnter ~= nil, "its tooltip explains why")
+SR.DB.settings.recipes.knownOnly = true
+recipesPage.Table:Refresh()
+check(not recipesPage.Count:GetText():match("^0 of"), "a saved 'Known only' doesn't empty the list while unavailable")
+SR.DB.settings.recipes.knownOnly = false
+recipesPage.Table:Refresh()
+
 step("recipes: reading the profession window")
+-- Forever's window: the child profession (ID 2830) names Tailoring (197) as its parent.
 M.tradeSkill = { professionID = 197, name = "Tailoring", recipes = { [2963] = true, [8776] = false, [999001] = true } }
 M.schematics[999001] = {
 	name = "Silkroad Test Robe", icon = 132149, outputItemID = 4306, quantityMin = 1, quantityMax = 1,
@@ -190,9 +200,26 @@ check(SR.DB.global.recipes[999001] and #SR.DB.global.recipes[999001].reagents ==
 check(RowFor(999001) and RowFor(999001).cost == 150, "and priced like the rest (3 x 50c)")
 check(recipesPage.Status:GetText():find("you know 2 of", 1, true), "status counts known recipes")
 check(RowFor(8776).known == false, "unknown recipes marked")
+check(recipesPage.KnownOnly:IsEnabled(), "'Known only' enabled once the window has been read")
 M.Click(recipesPage.KnownOnly)
 check(recipesPage.Count:GetText():match("^2 of %d+ recipes$"), "'Known only' shows just the learned ones")
 M.Click(recipesPage.KnownOnly)
+check(not recipesPage.Count:GetText():match("^2 of"), "unchecking shows everything again")
+
+-- A window that only gives a name still maps to the right profession.
+M.tradeSkill = { professionID = nil, childID = 3000, name = "Enchanting", recipes = { [7421] = true } }
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+check(SR.DB.char.scannedProfessions[333] == time() and SR.DB.char.knownRecipes[7421], "profession matched by name")
+
+-- Nothing to read: explained in debug output, nothing recorded.
+SR:SetSetting("debug", true)
+M.tradeSkill = { professionID = 164, name = "Blacksmithing", recipes = {} }
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+check(SR.DB.char.scannedProfessions[164] == nil and OutputContains("Profession window not read: the profession window has no recipes yet"),
+	"an empty window isn't recorded, and debug output says why")
+SR:SetSetting("debug", false)
 M.tradeSkill = nil
 
 step("recipes: sources from QuestieDB")
