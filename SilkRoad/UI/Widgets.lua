@@ -227,3 +227,80 @@ function Widgets.CreateEmptyState(parent)
 	frame:SetContent(nil, L["Nothing here yet"], "")
 	return frame
 end
+
+-- A row of flat tabs. tabs = { { id = "...", label = "..." }, ... };
+-- onSelect(id) runs when one is clicked. bar:Select(id) selects without a click.
+function Widgets.CreateTabBar(parent, tabs, onSelect)
+	local bar = CreateFrame("Frame", nil, parent)
+	bar:SetHeight(26)
+
+	local rule = bar:CreateTexture(nil, "ARTWORK")
+	rule:SetColorTexture(1, 1, 1, 0.12)
+	rule:SetHeight(1)
+	rule:SetPoint("BOTTOMLEFT")
+	rule:SetPoint("BOTTOMRIGHT")
+
+	bar.buttons = {}
+	local previous
+	for _, tab in ipairs(tabs) do
+		local button = CreateFrame("Button", nil, bar)
+		button.id = tab.id
+		button.Text = Widgets.CreateLabel(button, tab.label, "GameFontNormal", "CENTER")
+		button.Text:SetPoint("CENTER", 0, 1)
+		button:SetSize(button.Text:GetStringWidth() + 28, 26)
+
+		local highlight = button:CreateTexture(nil, "HIGHLIGHT")
+		highlight:SetAllPoints()
+		highlight:SetColorTexture(1, 1, 1, 0.06)
+
+		button.Underline = button:CreateTexture(nil, "OVERLAY")
+		button.Underline:SetColorTexture(1, 0.82, 0, 0.9)
+		button.Underline:SetHeight(2)
+		button.Underline:SetPoint("BOTTOMLEFT")
+		button.Underline:SetPoint("BOTTOMRIGHT")
+		button.Underline:Hide()
+
+		if previous then
+			button:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT", 4, 0)
+		else
+			button:SetPoint("BOTTOMLEFT")
+		end
+		button:SetScript("OnClick", function()
+			Widgets.PlaySoundKit("IG_MAINMENU_OPTION")
+			bar:Select(tab.id)
+			onSelect(tab.id)
+		end)
+		bar.buttons[#bar.buttons + 1] = button
+		previous = button
+	end
+
+	function bar:Select(id)
+		for _, button in ipairs(self.buttons) do
+			local selected = button.id == id
+			button.Underline:SetShown(selected)
+			button.Text:SetFontObject(selected and "GameFontHighlight" or "GameFontNormal")
+		end
+	end
+	return bar
+end
+
+-- "Are you sure?" dialog. onAccept runs when the player confirms.
+local CONFIRM_DIALOG = "SILKROAD_CONFIRM"
+
+function Widgets.Confirm(text, onAccept)
+	if not StaticPopupDialogs[CONFIRM_DIALOG] then
+		StaticPopupDialogs[CONFIRM_DIALOG] = {
+			text = "%s",
+			button1 = YES,
+			button2 = NO,
+			OnAccept = function(_, data)
+				data()
+			end,
+			showAlert = true,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+		}
+	end
+	StaticPopup_Show(CONFIRM_DIALOG, text, nil, onAccept)
+end

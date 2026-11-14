@@ -5,7 +5,7 @@ compares what a recipe's materials cost (from vendors and the auction house)
 with what the result sells for, so profitable crafts, auction house flips and
 "craft and sell to a vendor" gold become easy to spot.
 
-> **Status: 0.3.0.** Every recipe of every profession (from the game's own data),
+> **Status: 0.4.0.** Every recipe of every profession (from the game's own data),
 > where each is obtained, material costs from vendors and the auction house,
 > SilkRoad's own auction scanner, and merchant price recording. Works best with
 > Questie installed (for recipe locations and vendor-sold reagents); Auctionator's
@@ -32,6 +32,8 @@ editing code, type `/reload` in game.
   `version`, plus page names to jump straight to a page (`/silkroad recipes`).
 - The window can be moved, resized from the bottom-right corner, scaled in
   Settings, and closed with Escape.
+- Set a key to open and close SilkRoad in **Settings > General** (or under
+  Options > Keybindings > AddOns > SilkRoad).
 
 ### Recipes
 
@@ -76,7 +78,7 @@ editing code, type `/reload` in game.
 | **Recipes** | Every recipe of any profession, learned or not: skill level (coloured for your character), where it's obtained (click for vendors, drops and quests with waypoints), material cost, AH price, vendor price and profit. Hover a row for the cost per reagent. |
 | **Vendor Flips** | Items a merchant sells for less than they fetch on the auction house. |
 | **Price Database** | Look up any item (ID, name, or shift-click a link) to see every known price side by side. Your last 20 lookups stay listed below for quick re-checks. |
-| **Settings** | Minimap button, window scale, auction house cut, preferred auction price source, automatic auction scans. |
+| **Settings** | Three tabs. **General**: minimap button, window scale and position, the open/close key. **Prices**: auction house cut, preferred auction price source, automatic auction scans. **Data**: wipe this character's data (known recipes, professions read, recent lookups), wipe market data (auction and merchant prices, every realm), reset all settings. Each asks for confirmation. |
 
 ## How it is built
 
@@ -93,6 +95,7 @@ SilkRoad/
     Sources.lua         where recipes come from and which reagents vendors sell (QuestieDB)
     Recipes.lua         all recipes, known recipes, cost and profit per craft
     Merchants.lua       records merchant prices
+    Bindings.lua        the open/close key binding (Bindings.xml registers it)
     AuctionScanner.lua  full auction house scan with the 15-minute limit
   Game/Forever.lua      SR.Game: Forever's own APIs (profession window, merchants, waypoints)
   Data/Forever/         generated game data (recipes, items) for Forever

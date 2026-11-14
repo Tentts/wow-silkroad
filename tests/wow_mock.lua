@@ -41,6 +41,7 @@ MOCK = {
 	},
 	allowedNewGlobals = {
 		LibStub = true,
+		BINDING_HEADER_SILKROAD = true, BINDING_NAME_SILKROAD_TOGGLE = true,
 		SilkRoad = true, SilkRoadDB = true, SilkRoadCharDB = true,
 		SLASH_SILKROAD1 = true, SLASH_SILKROAD2 = true,
 		SilkRoad_OnAddonCompartmentClick = true,
@@ -1054,3 +1055,58 @@ define("C_SpellBook", {
 		return M.knownSpells[spellID] == true
 	end,
 })
+
+---------------------------------------------------------------------------
+-- Key bindings and popups
+---------------------------------------------------------------------------
+
+function Widget:GetStringWidth()
+	return #(self.__text or "") * 7
+end
+
+M.bindings = {}      -- [key] = action
+M.bindingsSaved = 0
+M.modifiers = {}     -- alt / ctrl / shift held
+M.inCombat = false
+define("GetBindingKey", function(action)
+	local keys = {}
+	for key, bound in pairs(M.bindings) do
+		if bound == action then keys[#keys + 1] = key end
+	end
+	table.sort(keys)
+	return unpack(keys)
+end)
+define("GetBindingAction", function(key) return M.bindings[key] or "" end)
+define("SetBinding", function(key, action)
+	assert(type(key) == "string", "SetBinding: key expected")
+	M.bindings[key] = action
+	return true
+end)
+define("SaveBindings", function(set)
+	assert(set == 1 or set == 2, "SaveBindings: binding set expected")
+	M.bindingsSaved = M.bindingsSaved + 1
+end)
+define("GetCurrentBindingSet", function() return 2 end)
+define("GetBindingText", function(key)
+	return (key:gsub("CTRL%-", "Ctrl-"):gsub("SHIFT%-", "Shift-"):gsub("ALT%-", "Alt-"))
+end)
+define("InCombatLockdown", function() return M.inCombat end)
+define("IsAltKeyDown", function() return M.modifiers.alt or false end)
+define("IsControlKeyDown", function() return M.modifiers.ctrl or false end)
+define("IsShiftKeyDown", function() return M.modifiers.shift or false end)
+define("NOT_BOUND", "Not Bound")
+define("YES", "Yes")
+define("NO", "No")
+
+-- Popups: M.lastPopup holds the shown dialog; M.AcceptPopup() clicks Yes.
+define("StaticPopupDialogs", {})
+define("StaticPopup_Show", function(which, text1, text2, data)
+	local dialog = assert(StaticPopupDialogs[which], "StaticPopup_Show: unknown dialog " .. tostring(which))
+	M.lastPopup = { dialog = dialog, text = dialog.text:format(text1, text2), data = data }
+	return {}
+end)
+function M.AcceptPopup()
+	local popup = assert(M.lastPopup, "no popup shown")
+	M.lastPopup = nil
+	popup.dialog.OnAccept({}, popup.data)
+end

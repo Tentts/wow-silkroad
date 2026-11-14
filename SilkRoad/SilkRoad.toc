@@ -2,7 +2,7 @@
 ## Title: |cffe6c35cSilkRoad|r
 ## Notes: Crafting and trading helper: recipe costs, auction house and vendor prices.
 ## Author: Tentts
-## Version: 0.3.0
+## Version: 0.4.0
 ## Category: Professions
 ## IconTexture: Interface\Icons\INV_Fabric_Silk_02
 ## SavedVariables: SilkRoadDB
@@ -33,6 +33,7 @@ Core\Prices.lua
 Core\Sources.lua
 Core\Recipes.lua
 Core\Merchants.lua
+Core\Bindings.lua
 Core\AuctionScanner.lua
 
 # UI framework

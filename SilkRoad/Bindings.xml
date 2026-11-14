@@ -1,0 +1,8 @@
+<Bindings>
+	<!-- Listed under Options > Keybindings > AddOns. The game loads this file
+	     automatically; names come from BINDING_HEADER_SILKROAD and
+	     BINDING_NAME_SILKROAD_TOGGLE (Core/Bindings.lua). -->
+	<Binding name="SILKROAD_TOGGLE" header="SILKROAD" category="ADDONS">
+		SilkRoad.UI:Toggle()
+	</Binding>
+</Bindings>

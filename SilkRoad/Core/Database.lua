@@ -59,6 +59,7 @@ DB.ACCOUNT_DEFAULTS = {
 		auctionCutPercent = 5,
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
+		settingsTab = "general", -- last tab shown on the Settings page
 		recipes = {
 			profession = nil,  -- skillLineID last shown on the Recipes page
 			knownOnly = false,
@@ -165,4 +166,63 @@ function DB:ResetWindowLayout()
 	window.width = defaults.width
 	window.height = defaults.height
 	window.scale = defaults.scale
+end
+
+---------------------------------------------------------------------------
+-- Wiping data (Settings > Data)
+---------------------------------------------------------------------------
+
+local function Clear(tbl)
+	for key in pairs(tbl) do
+		tbl[key] = nil
+	end
+end
+
+-- What each wipe would remove, for the Settings page.
+function DB:GetDataSummary()
+	local auctionPrices, realms = 0, 0
+	for _, market in pairs(self.global.markets) do
+		local count = Util.CountKeys(market.auction)
+		if count > 0 then
+			realms = realms + 1
+			auctionPrices = auctionPrices + count
+		end
+	end
+	return {
+		knownRecipes = Util.CountKeys(self.char.knownRecipes),
+		professions = Util.CountKeys(self.char.scannedProfessions),
+		recentLookups = #self.global.recentLookups,
+		auctionPrices = auctionPrices,
+		realms = realms,
+		vendorPrices = Util.CountKeys(self.global.vendorPrices),
+	}
+end
+
+-- This character's data: known recipes, professions read, recent lookups.
+function DB:WipeCharacterData()
+	Clear(self.char.knownRecipes)
+	Clear(self.char.scannedProfessions)
+	Clear(self.global.recentLookups)
+	SR:Fire("RECIPES_UPDATED")
+end
+
+-- Market data: auction prices on every realm and recorded merchant prices.
+-- The scanner's last-request time stays: the server's 15-minute limit
+-- doesn't reset with SilkRoad's data.
+function DB:WipeMarketData()
+	Clear(self.global.markets)
+	Clear(self.global.vendorPrices)
+	SR:Fire("PRICES_UPDATED")
+end
+
+-- Every setting back to its default. Done in place, so code holding the
+-- settings table keeps working; listeners are told about each setting.
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "debug" }
+
+function DB:ResetSettings()
+	Clear(self.settings)
+	Util.CopyDefaults(self.settings, self.ACCOUNT_DEFAULTS.settings)
+	for _, path in ipairs(SETTING_PATHS) do
+		SR:Fire("SETTING_CHANGED", path, SR:GetSetting(path))
+	end
 end

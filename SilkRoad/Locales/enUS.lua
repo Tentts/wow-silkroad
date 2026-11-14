@@ -54,3 +54,12 @@ L.SCAN_NO_RESPONSE = "The auction house didn't send scan results. The server all
 L.AH_SCAN_NOTE = "The server allows one full scan every 15 minutes. Full scans started by other addons, such as Auctionator, are recorded too."
 L.AH_ABOUT = "Auction prices from these scans feed SilkRoad's recipe costs, vendor flips and price lookups."
 L.AUTO_SCAN_TOOLTIP = "When the auction house opens, scan it if the last full scan was at least 15 minutes ago."
+
+L.KEY_BINDING_TOOLTIP = "Click, then press the key (with Shift, Ctrl or Alt if you like) that should open and close SilkRoad. Escape cancels; right-click clears it."
+L.KEY_BINDING_NOTE = "The same binding is listed under Options > Keybindings > AddOns > SilkRoad."
+L.WIPE_PERSONAL_DESC = "The recipes this character knows, the professions SilkRoad has read and your recent Price Database lookups. Known recipes are read again from your spellbook right away."
+L.WIPE_PERSONAL_CONFIRM = "Wipe this character's SilkRoad data (known recipes, professions read, recent lookups)?"
+L.WIPE_MARKET_DESC = "Auction prices from every scan, on every realm, and the merchant prices SilkRoad recorded. The server's 15-minute scan limit still applies afterwards."
+L.WIPE_MARKET_CONFIRM = "Wipe all auction and merchant prices SilkRoad has recorded? This can't be undone."
+L.RESET_SETTINGS_DESC = "Puts every SilkRoad setting back to its default, including the window size and position. Your data and key binding stay."
+L.RESET_SETTINGS_CONFIRM = "Reset every SilkRoad setting to its default?"

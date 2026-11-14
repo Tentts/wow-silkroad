@@ -37,6 +37,7 @@ VERIFIED_BY_SOURCE = {
     "UISpecialFrames",
     "SlashCmdList",
     "SOUNDKIT",
+    "StaticPopupDialogs",  # Blizzard_StaticPopup/StaticPopup.lua
     "time",
     "UiMapPoint.CreateFromCoordinates",  # Blizzard_ObjectAPI/Mainline/UiMapPoint.lua
     "Minimap",  # nested <Minimap name="Minimap"> in Blizzard_Minimap/Mainline/Minimap.xml
@@ -169,6 +170,12 @@ def main():
 
         scenario = (TESTS_DIR / "scenario.lua").read_text(encoding="utf-8")
         checks = run_chunk(scenario, "@tests/scenario.lua")
+
+        # Key bindings: run the code each <Binding> in Bindings.xml executes.
+        bindings = (ADDON_DIR / "Bindings.xml").read_text(encoding="utf-8")
+        for name, body in re.findall(r'<Binding name="([^"]+)"[^>]*>(.*?)</Binding>', bindings, re.S):
+            run_chunk(body, f"@Bindings.xml:{name}")
+            checks += 1
     except LuaError as error:
         print("FAILED:", error)
         print("Last output:")

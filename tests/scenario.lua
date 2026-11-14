@@ -48,7 +48,7 @@ check(SR:GetSetting("minimap.hide") == false, "nested default setting")
 M.FireEvent("PLAYER_LOGIN")
 check(SilkRoadMinimapButton ~= nil and SilkRoadMinimapButton:IsShown(), "minimap button created")
 check(M.settingsRegistered, "options panel registered with Blizzard settings")
-check(SR.version == "0.3.0", "version read from the TOC")
+check(SR.version == "0.4.0", "version read from the TOC")
 
 ---------------------------------------------------------------------------
 step("open window")
@@ -487,7 +487,7 @@ SlashCmdList.SILKROAD("help")
 check(OutputContains("/silkroad minimap"), "help lists commands")
 check(OutputContains("/silkroad scan"), "help lists the scan command")
 SlashCmdList.SILKROAD("version")
-check(OutputContains("0.3.0"), "version command")
+check(OutputContains("0.4.0"), "version command")
 SlashCmdList.SILKROAD("bogus")
 check(OutputContains("Unknown command:"), "unknown commands are reported")
 SlashCmdList.SILKROAD("debug")
@@ -655,6 +655,92 @@ check(ahPanel:IsVisible(), "SilkRoad tab open")
 AuctionHouseFrame:SetDisplayMode({ "AuctionsFrame" })
 check(not ahPanel:IsShown(), "switching to a Blizzard tab hides SilkRoad's panel")
 M.CloseAuctionHouse()
+
+---------------------------------------------------------------------------
+step("settings tabs")
+SR.UI:OpenPage("settings")
+local settingsPage
+for _, page in ipairs(SR.UI:GetPages()) do
+	if page.id == "settings" then settingsPage = page end
+end
+local tabButtons = settingsPage.TabBar.buttons
+check(#tabButtons == 3, "General, Prices and Data tabs")
+M.Click(tabButtons[2])
+check(settingsPage.tabs.prices:IsVisible() and not settingsPage.tabs.general:IsShown(), "switching tabs")
+check(SR.DB.settings.settingsTab == "prices", "last tab remembered")
+M.Click(tabButtons[1])
+
+step("key binding")
+check(BINDING_NAME_SILKROAD_TOGGLE == "Open / close SilkRoad" and BINDING_HEADER_SILKROAD == "SilkRoad", "binding names for Blizzard's key binding window")
+check(settingsPage.KeyButton:GetText() == "Not Bound", "no key at first")
+M.bindings["CTRL-S"] = "SOME_OTHER_ACTION"
+M.Click(settingsPage.KeyButton)
+check(settingsPage.KeyButton:GetText() == "Press a key...", "waiting for a key")
+M.modifiers.ctrl = true
+M.RunScript(settingsPage.KeyButton, "OnKeyDown", "LCTRL")
+check(settingsPage.capturingKey, "a modifier alone keeps waiting")
+M.RunScript(settingsPage.KeyButton, "OnKeyDown", "S")
+M.modifiers.ctrl = false
+check(M.bindings["CTRL-S"] == "SILKROAD_TOGGLE" and M.bindingsSaved == 1, "Ctrl-S bound and saved")
+check(settingsPage.KeyButton:GetText() == "Ctrl-S", "button shows the key")
+check(OutputContains("Ctrl-S now opens SilkRoad (it was bound to SOME_OTHER_ACTION)."), "warns about the replaced binding")
+M.Click(settingsPage.KeyButton)
+M.RunScript(settingsPage.KeyButton, "OnKeyDown", "F7")
+check(M.bindings["F7"] == "SILKROAD_TOGGLE" and M.bindings["CTRL-S"] == nil, "a new key replaces SilkRoad's old one")
+M.Click(settingsPage.KeyButton)
+M.RunScript(settingsPage.KeyButton, "OnKeyDown", "ESCAPE")
+check(not settingsPage.capturingKey and M.bindings["F7"] == "SILKROAD_TOGGLE", "Escape cancels")
+M.inCombat = true
+M.Click(settingsPage.KeyButton, "RightButton")
+check(M.bindings["F7"] == "SILKROAD_TOGGLE" and OutputContains("can't be changed in combat"), "no changes in combat")
+M.inCombat = false
+M.Click(settingsPage.KeyButton, "RightButton")
+check(M.bindings["F7"] == nil and settingsPage.KeyButton:GetText() == "Not Bound", "right-click clears the key")
+-- What Bindings.xml runs when the key is pressed:
+local shownBefore = SR.UI:IsShown()
+SilkRoad.UI:Toggle()
+check(SR.UI:IsShown() ~= shownBefore, "the binding toggles the window")
+SilkRoad.UI:Toggle()
+
+step("wiping data")
+SR.UI:OpenPage("settings")
+M.Click(tabButtons[3])
+check(settingsPage.PersonalSummary:GetText():find("known recipes", 1, true), "personal data summarised")
+check(settingsPage.MarketSummary:GetText():find("auction prices on 1 realm(s)", 1, true), "market data summarised")
+local knownBefore = SR.Recipes:CountKnown()
+check(knownBefore > 0, "there is personal data to wipe")
+M.Click(settingsPage.WipePersonalButton)
+check(M.lastPopup and M.lastPopup.text:find("Wipe this character", 1, true), "asks for confirmation first")
+check(SR.Recipes:CountKnown() == knownBefore, "nothing wiped before confirming")
+M.knownSpells = {}
+M.AcceptPopup()
+M.RunTimers()
+check(SR.Recipes:CountKnown() == 0 and next(SR.DB.char.scannedProfessions) == nil, "known recipes and professions wiped")
+check(settingsPage.PersonalSummary:GetText():find("^0 known recipes"), "summary updated")
+check(next(SR.DB:GetMarket().auction) ~= nil, "market data untouched by the personal wipe")
+
+local lastRequest = SR.DB.global.scanner.lastRequest
+M.Click(settingsPage.WipeMarketButton)
+M.AcceptPopup()
+M.RunTimers()
+local wiped = SR.DB:GetDataSummary()
+check(wiped.auctionPrices == 0 and wiped.realms == 0 and next(SR.DB.global.vendorPrices) == nil, "auction and merchant prices wiped")
+check(settingsPage.MarketSummary:GetText():find("^0 auction prices on 0 realm"), "summary updated")
+check(SR.DB.global.scanner.lastRequest == lastRequest, "the scan cooldown survives the wipe")
+check(SR.Prices:GetAuctionPrice(2589) == nil, "prices gone from the price layer")
+
+step("resetting settings")
+SR:SetSetting("auctionCutPercent", 9)
+SR:SetSetting("minimap.hide", true)
+SR:SetSetting("autoScan", false)
+M.Click(settingsPage.ResetSettingsButton)
+M.AcceptPopup()
+M.RunTimers()
+check(SR:GetSetting("auctionCutPercent") == 5 and SR:GetSetting("autoScan") == true, "settings back to defaults")
+check(SilkRoadMinimapButton:IsShown(), "listeners notified (minimap button back)")
+check(SR.DB.settings == SilkRoadDB.settings, "settings table kept in place")
+check(settingsPage.tabs.data:IsVisible(), "stays on the Data tab")
+SR.UI:Hide()
 
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")
