@@ -278,7 +278,7 @@ L["widen availability"] = "amplía la disponibilidad"
 
 -- Gathering guides
 L.GUIDE_DESC = "Cómo subir una profesión desde tu habilidad: las fabricaciones más baratas a precios actuales, o qué recolectar y dónde."
-L.GATHER_NO_NODE_DATA = "Instala GatherMate2 (con GatherMate2_Data) para ver qué zonas tienen más nodos."
+L.GATHER_NO_NODE_DATA = "Activa GatherMate2 y GatherMate2_Data para ver nodos por zona y puntos de ruta a los nodos."
 L["%d steps"] = "%d pasos"
 L["%s (%d nodes)"] = "%s (%d nodos)"
 L["Beasts level %d-%d"] = "Bestias de nivel %d-%d"

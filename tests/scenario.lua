@@ -437,6 +437,8 @@ check(Gathering:KindOf(186) == "mining" and Gathering:KindOf(393) == "skinning" 
 
 local mining = Gathering:Plan("mining", 1, 300)
 check(not mining.hasNodeData, "no node locations without GatherMate2")
+check(table.concat(mining.steps[1].zones, ",") == "Durotar,Silverpine Forest", "zones from SilkRoad's own list without GatherMate2, this faction only")
+check(mining.steps[1].zoneIDs[1] == 1411, "with their map IDs")
 check(M.loadAddOnCalls[1] == "GatherMate2_Data", "tries to load GatherMate2's data")
 local miningTargets = {}
 for _, gatherStep in ipairs(mining.steps) do miningTargets[#miningTargets + 1] = gatherStep.targets[1] end
@@ -464,7 +466,9 @@ Gathering:ResetCache()
 check(Gathering.MaxSkinnableLevel(50) == 15 and Gathering.MaxSkinnableLevel(100) == 20 and Gathering.MaxSkinnableLevel(200) == 40,
 	"skinnable level from skill")
 local skinning = Gathering:Plan("skinning", 1, 300)
-check(#skinning.steps == 12 and skinning.steps[1].targets[1] == "Beasts level 5-10", "skinning brackets of 25 skill")
+check(#skinning.steps == 6 and skinning.steps[1].targets[1] == "Beasts level 1-10", "skinning brackets from the data")
+check(table.concat(skinning.steps[1].zones, ",") == "Mulgore,Durotar,Zephras Isle", "skinning zones for this faction")
+check(skinning.steps[2].targets[1] == "Beasts level 11-20" and skinning.steps[2].from == 10 and skinning.steps[2].to == 100, "11-20 beasts up to skill 100")
 for _, zone in ipairs(skinning.steps[1].zones) do
 	check(zone ~= "Elwynn Forest" and zone ~= "Dun Morogh" and zone ~= "Teldrassil", "skinning zones of this faction")
 end

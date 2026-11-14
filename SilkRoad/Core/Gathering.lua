@@ -143,6 +143,21 @@ function Gathering:TopZones(kind, nodeID)
 		zones[i] = L["%s (%d nodes)"]:format(self:ZoneName(list[i].mapID), list[i].count)
 		zoneIDs[i] = list[i].mapID
 	end
+	if #zones > 0 then
+		return zones, zoneIDs
+	end
+
+	-- No GatherMate2 data: the zones the node is known to be found in.
+	for _, node in ipairs(Data().nodes[kind] or {}) do
+		if node[1] == nodeID then
+			for _, mapID in ipairs(node[4] or {}) do
+				if ZoneAllowed(mapID) and #zones < MAX_ZONES then
+					zones[#zones + 1] = self:ZoneName(mapID)
+					zoneIDs[#zoneIDs + 1] = mapID
+				end
+			end
+		end
+	end
 	return zones, zoneIDs
 end
 
@@ -262,6 +277,32 @@ local function ZonesForLevels(low, high)
 end
 
 function Gathering:PlanSkinning(from, to)
+	local brackets = Data().skinning
+	if brackets then
+		-- Brackets with known zones: { fromSkill, toSkill, minLevel, maxLevel, { mapID, ... } }
+		local steps = {}
+		for _, bracket in ipairs(brackets) do
+			local low, high = math.max(from, bracket[1]), math.min(to, bracket[2])
+			if low < high then
+				local zones, zoneIDs = {}, {}
+				for _, mapID in ipairs(bracket[5]) do
+					if ZoneAllowed(mapID) and #zones < MAX_ZONES + 1 then
+						zones[#zones + 1] = self:ZoneName(mapID)
+						zoneIDs[#zoneIDs + 1] = mapID
+					end
+				end
+				steps[#steps + 1] = {
+					from = low, to = high, kind = "skinning",
+					targets = { L["Beasts level %d-%d"]:format(bracket[3], bracket[4]) },
+					zones = zones, zoneIDs = zoneIDs,
+					note = L["skin creatures up to level %d"]:format(self.MaxSkinnableLevel(high)),
+				}
+			end
+		end
+		return steps
+	end
+
+	-- No brackets in the data: work them out from creature levels.
 	local steps = {}
 	local skill = from
 	while skill < to do

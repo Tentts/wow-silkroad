@@ -83,8 +83,8 @@ worked out from current prices instead of a fixed guide.
   Artisan (200), for ranks you haven't trained yet.
 - **Gathering professions** (Mining, Herbalism, Skinning, Fishing) get a simple route: what to
   gather at each skill and where. Mining and Herbalism list the best node for each bracket and
-  the zones with the most of them (from GatherMate2's node database); Skinning suggests creature
-  levels and zones; Fishing suggests zones where fish don't get away.
+  the zones it's found in, ranked by node count when GatherMate2's node database is enabled;
+  Skinning suggests creature levels and zones; Fishing suggests zones where fish don't get away.
   **Click a step** to open the world map on its zone (pick one if there are several); for ore
   and herbs a waypoint marks where those nodes are densest.
 
@@ -123,7 +123,7 @@ worked out from current prices instead of a fixed guide.
 |---|---|
 | **Game** | World of Warcraft: Forever (interface `16001`) |
 | **Recommended** | [Questie](https://www.curseforge.com/wow/addons/questie) with its QuestieDB data addon. It provides where recipes are sold or dropped, and which reagents vendors sell. |
-| **Optional** | [Auctionator](https://www.curseforge.com/wow/addons/auctionator): its prices are used as an extra source. [TomTom](https://www.curseforge.com/wow/addons/tomtom): waypoints with an arrow. [GatherMate2](https://www.curseforge.com/wow/addons/gathermate2) with GatherMate2_Data: zones with the most ore and herb nodes in the gathering guides. |
+| **Optional** | [Auctionator](https://www.curseforge.com/wow/addons/auctionator): its prices are used as an extra source. [TomTom](https://www.curseforge.com/wow/addons/tomtom): waypoints with an arrow. [GatherMate2](https://www.curseforge.com/wow/addons/gathermate2) with GatherMate2_Data (both enabled): node counts per zone and waypoints to nodes in the gathering guides. |
 
 SilkRoad works on its own; the optional addons only add information.
 
@@ -302,6 +302,8 @@ Research on the Forever client, its APIs and their quirks is collected in
 - Ore and herb node locations: [GatherMate2](https://www.curseforge.com/wow/addons/gathermate2)'s GatherMate2_Data, read at runtime.
 - Herbalism requirements, training ranks and Forever's zone notes cross-checked against
   [wow-professions.com](https://www.wow-professions.com/forever/herbalism-leveling-guide)'s Forever guide (facts only).
+- Ore, herb and skinning zones cross-checked against [wow.gg](https://wow.gg/professions/forever/mining)'s Forever
+  gathering guides (facts only).
 - Bundled libraries, unmodified, in `SilkRoad/Libs/`:
   - [LibStub](https://www.wowace.com/projects/libstub): public domain.
   - [LibAHTab](https://github.com/Auctionator/LibAHTab) by plusmouse: MIT (`Libs/LibAHTab/LICENSE`).

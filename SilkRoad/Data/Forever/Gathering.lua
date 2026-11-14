@@ -2,11 +2,15 @@
 -- the client's tables don't link gathering nodes to the skill they need,
 -- so these are the game's well-known values.
 --   nodes   GatherMate2 node ID, English name (fallback; GatherMate2 names
---           them in the client's language), skill needed to gather
+--           them in the client's language), skill needed to gather, and the
+--           zones it's found in (best first)
+--   skinning skill brackets with creature levels and zones
 --   zones   map ID -> lowest and highest creature level, faction ("A", "H"
 --           or nil for contested), English name (fallback for C_Map)
 --   fishing skill brackets with zones where fish rarely get away
--- Where nodes actually are comes from GatherMate2's data at runtime.
+-- Node and skinning zones are facts cross-checked with wow.gg's Forever
+-- gathering guides. When GatherMate2's node database is available, it ranks
+-- zones by node count and pinpoints nodes for waypoints instead.
 local _, SR = ...
 if SR.flavor ~= "forever" then return end
 
@@ -19,46 +23,46 @@ SR.GatheringData = {
 
 	nodes = {
 		mining = {
-			{ 201, "Copper Vein", 1 },
-			{ 202, "Tin Vein", 65 },
-			{ 204, "Silver Vein", 75 },
-			{ 203, "Iron Deposit", 125 },
-			{ 205, "Gold Vein", 155 },
-			{ 206, "Mithril Deposit", 175 },
-			{ 208, "Truesilver Deposit", 230 },
-			{ 217, "Dark Iron Deposit", 230 },
-			{ 214, "Small Thorium Vein", 245 },
-			{ 215, "Rich Thorium Vein", 275 },
+			{ 201, "Copper Vein", 1, { 1411, 1436, 1431, 1421 } },
+			{ 202, "Tin Vein", 65, { 1437, 1431, 1421, 1432 } },
+			{ 204, "Silver Vein", 75, { 1417, 1416, 1434, 1437 } },
+			{ 203, "Iron Deposit", 125, { 1417, 1416, 1434, 1431 } },
+			{ 205, "Gold Vein", 155, { 1417, 1416, 1434, 1431 } },
+			{ 206, "Mithril Deposit", 175, { 1418, 1425, 1416, 1427 } },
+			{ 208, "Truesilver Deposit", 230, { 1418, 1425, 1416, 1427 } },
+			{ 217, "Dark Iron Deposit", 230, { 1427 } },
+			{ 214, "Small Thorium Vein", 245, { 1452, 1435, 1419 } },
+			{ 215, "Rich Thorium Vein", 275, { 1452, 1447 } },
 		},
 		herbalism = {
-			{ 401, "Peacebloom", 1 },
-			{ 402, "Silverleaf", 1 },
-			{ 403, "Earthroot", 15 },
-			{ 404, "Mageroyal", 50 },
-			{ 405, "Briarthorn", 70 },
-			{ 407, "Stranglekelp", 85 },
-			{ 408, "Bruiseweed", 100 },
-			{ 409, "Wild Steelbloom", 115 },
-			{ 410, "Grave Moss", 120 },
-			{ 411, "Kingsblood", 125 },
-			{ 412, "Liferoot", 150 },
-			{ 413, "Fadeleaf", 160 },
-			{ 414, "Goldthorn", 170 },
-			{ 415, "Khadgar's Whisker", 185 },
-			{ 416, "Wintersbite", 195 },
-			{ 417, "Firebloom", 205 },
-			{ 418, "Purple Lotus", 210 },
-			{ 420, "Arthas' Tears", 220 },
-			{ 421, "Sungrass", 230 },
-			{ 422, "Blindweed", 235 },
-			{ 423, "Ghost Mushroom", 245 },
-			{ 424, "Gromsblood", 250 },
-			{ 425, "Golden Sansam", 260 },
-			{ 426, "Dreamfoil", 270 },
-			{ 427, "Mountain Silversage", 280 },
-			{ 428, "Plaguebloom", 285 },
-			{ 429, "Icecap", 290 },
-			{ 431, "Black Lotus", 300 },
+			{ 401, "Peacebloom", 1, { 1413, 1411, 1412, 1420 } },
+			{ 402, "Silverleaf", 1, { 1411, 1413, 1412, 1432 } },
+			{ 403, "Earthroot", 15, { 1413, 1411, 1420, 1426 } },
+			{ 404, "Mageroyal", 50, { 1413, 1440, 1439, 1436 } },
+			{ 405, "Briarthorn", 70, { 1413, 1431, 1440, 1436 } },
+			{ 407, "Stranglekelp", 85, { 1434, 1437, 1440, 1439 } },
+			{ 408, "Bruiseweed", 100, { 1442, 1413, 1424, 1437 } },
+			{ 409, "Wild Steelbloom", 115, { 1417, 1442, 1434, 1437 } },
+			{ 410, "Grave Moss", 120, { 1431, 1443, 1437, 1417 } },
+			{ 411, "Kingsblood", 125, { 1434, 1437, 1440, 1424 } },
+			{ 412, "Liferoot", 150, { 1434, 1437, 1417, 1416 } },
+			{ 413, "Fadeleaf", 160, { 1417, 1435, 1416, 1434 } },
+			{ 414, "Goldthorn", 170, { 1434, 1417, 1435, 1416 } },
+			{ 415, "Khadgar's Whisker", 185, { 1434, 1417, 1435, 1416 } },
+			{ 416, "Wintersbite", 195, { 1416 } },
+			{ 417, "Firebloom", 205, { 1446, 1427, 1418 } },
+			{ 418, "Purple Lotus", 210, { 1447, 1425, 1446, 1444 } },
+			{ 420, "Arthas' Tears", 220, { 1422, 1423, 1448 } },
+			{ 421, "Sungrass", 230, { 1447, 1425, 1444, 1423 } },
+			{ 422, "Blindweed", 235, { 1435, 1449 } },
+			{ 423, "Ghost Mushroom", 245, { 1425, 1443 } },
+			{ 424, "Gromsblood", 250, { 1448, 1443 } },
+			{ 425, "Golden Sansam", 260, { 1449, 1447, 1423, 1448 } },
+			{ 426, "Dreamfoil", 270, { 1447, 1423, 1449, 1448 } },
+			{ 427, "Mountain Silversage", 280, { 1452, 1449, 1447, 1428 } },
+			{ 428, "Plaguebloom", 285, { 1423, 1422 } },
+			{ 429, "Icecap", 290, { 1452 } },
+			{ 431, "Black Lotus", 300, { 1428, 1452, 1423, 1451 } },
 		},
 	},
 
@@ -111,6 +115,15 @@ SR.GatheringData = {
 		[1423] = { 53, 60, nil, "Eastern Plaguelands" },
 		[1452] = { 53, 60, nil, "Winterspring" },
 		[1451] = { 55, 60, nil, "Silithus" },
+	},
+
+	skinning = {
+		{ 1, 10, 1, 10, { 1412, 1411, 1426, 1429, 2521 } },
+		{ 10, 100, 11, 20, { 1413, 1421, 1439, 1432 } },
+		{ 100, 150, 21, 30, { 1437, 1440, 1424, 1441 } },
+		{ 150, 200, 31, 40, { 1445, 1443, 1434, 1418 } },
+		{ 200, 250, 41, 50, { 1446, 1444, 1425, 1448 } },
+		{ 250, 300, 51, 60, { 1452, 1447, 1451, 1423 } },
 	},
 
 	fishing = {

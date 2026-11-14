@@ -418,7 +418,7 @@ function Page:RefreshGathering(profession, kind)
 	if plan.hasNodeData then
 		self.Summary:SetText(L["%d steps"]:format(#plan.steps))
 	else
-		self.Summary:SetText(Util.ColorText(L.GATHER_NO_NODE_DATA, COLORS.gap))
+		self.Summary:SetText(L["%d steps"]:format(#plan.steps) .. "  " .. Util.ColorText(L.GATHER_NO_NODE_DATA, COLORS.done))
 	end
 	if not profession.learned then
 		self.Status:SetText(Util.ColorText(L["You don't have this profession; the plan starts at skill 1."], COLORS.gap))
