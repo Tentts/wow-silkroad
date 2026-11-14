@@ -1,0 +1,36 @@
+## Interface: 16001
+## Title: |cffe6c35cSilkRoad|r
+## Notes: Crafting and trading helper: recipe costs, auction house and vendor prices.
+## Author: Tentts
+## Version: 0.1.0
+## Category: Professions
+## IconTexture: Interface\Icons\INV_Fabric_Silk_02
+## SavedVariables: SilkRoadDB
+## SavedVariablesPerCharacter: SilkRoadCharDB
+## AddonCompartmentFunc: SilkRoad_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: SilkRoad_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: SilkRoad_OnAddonCompartmentLeave
+## OptionalDeps: Auctionator
+
+# Localization (must load first: every other file reads SR.L)
+Locales\enUS.lua
+
+# Core: namespace, events, saved variables, price layer
+Core\Init.lua
+Core\Util.lua
+Core\Database.lua
+Core\Prices.lua
+
+# UI framework
+UI\Widgets.lua
+UI\DataTable.lua
+UI\MainFrame.lua
+UI\Launcher.lua
+UI\OptionsPanel.lua
+
+# Pages (menus), shown in the sidebar in their registered order
+Modules\Overview.lua
+Modules\Recipes.lua
+Modules\VendorFlips.lua
+Modules\PriceDatabase.lua
+Modules\Settings.lua

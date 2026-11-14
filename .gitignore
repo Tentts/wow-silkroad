@@ -1,0 +1,15 @@
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# Test tooling (created by scripts/test.ps1)
+tests/.venv/
+tests/.api/
+__pycache__/
+
+# Packaging output
+/dist/
+/.release/
