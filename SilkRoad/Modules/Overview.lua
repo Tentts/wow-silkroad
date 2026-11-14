@@ -114,10 +114,10 @@ function Page:Refresh()
 	self:Layout(self.frame:GetWidth())
 
 	local stats = SR.Prices:GetStats()
-	local recipeCount = Util.CountKeys(SR.DB.global.recipes)
-	local knownCount = Util.CountKeys(SR.DB.char.knownRecipes)
+	local recipeCount = SR.Recipes:CountAll()
+	local knownCount = SR.Recipes:CountKnown()
 
-	self.cards.recipes:SetData(recipeCount, L["%d known by this character"]:format(knownCount))
+	self.cards.recipes:SetData(Util.FormatNumber(recipeCount), L["%d known by this character"]:format(knownCount))
 	self.cards.auction:SetData(stats.auctionItems, L["From SilkRoad scans on %s"]:format(stats.marketKey))
 	self.cards.vendor:SetData(stats.vendorItems, L["Recorded from merchants"])
 	self.cards.scan:SetData(Util.TimeAgo(stats.lastScan), stats.marketKey)

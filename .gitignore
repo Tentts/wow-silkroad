@@ -13,3 +13,6 @@ __pycache__/
 # Packaging output
 /dist/
 /.release/
+
+# Data generator downloads
+tools/.cache/

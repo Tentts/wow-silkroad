@@ -20,6 +20,30 @@ SR.icon = "Interface\\Icons\\INV_Fabric_Silk_02"
 SR.colorHex = "ffe6c35c"
 
 ---------------------------------------------------------------------------
+-- Game version ("flavor")
+--
+-- SilkRoad's core is version-agnostic. Everything that differs between game
+-- versions lives in two places, both selected by SR.flavor:
+--   Data/<Flavor>/   generated game data (recipes, items), see tools/generate_data.py
+--   Game/<Flavor>.lua the SR.Game adapter: the version's own APIs (profession
+--                     window, merchants, map waypoints)
+-- Supporting another version means adding both for it.
+---------------------------------------------------------------------------
+
+local FLAVORS = {
+	-- { lowest interface, highest interface, flavor }
+	{ 16000, 16999, "forever" },
+}
+
+SR.interface = select(4, GetBuildInfo())
+SR.flavor = "unsupported"
+for _, entry in ipairs(FLAVORS) do
+	if SR.interface >= entry[1] and SR.interface <= entry[2] then
+		SR.flavor = entry[3]
+	end
+end
+
+---------------------------------------------------------------------------
 -- Listener registries (shared by game events and internal callbacks)
 ---------------------------------------------------------------------------
 

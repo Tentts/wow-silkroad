@@ -109,7 +109,43 @@ the AH, hooks `SetDisplayMode` with `hooksecurefunc`, and selects its own tabs
 with `SetDisplayMode({})`. Because it's shared through LibStub, every addon using it
 gets one tidy tab row. SilkRoad bundles it in `SilkRoad/Libs/`.
 
-### Professions (next: recipe indexer)
+### Recipe data from the client tables (DB2)
+
+wago.tools publishes Forever's client tables as product `wowf`
+(`https://wago.tools/db2/<Table>/csv?build=1.60.1.70938`). `tools/generate_data.py`
+uses them; findings:
+
+- Professions are `SkillLine` rows with `CategoryID` 11 (primary) or 9 (secondary).
+  Skip Poisons (40, a rogue skill), "Test Profession [DNT]" and "Comprehension".
+- `SkillLineAbility` links recipe spells to professions. `MinSkillLineRank` is always
+  1; `TrivialSkillLineRankLow` is the yellow threshold and `TrivialSkillLineRankHigh`
+  the grey one. `AcquireMethod` 1 = learned together with the profession.
+- The skill needed to **learn** a recipe is only in the data for recipe items
+  (`ItemSparse.RequiredSkillRank` of the pattern/plan). Trainer requirements are
+  server-side; the yellow threshold is the closest value (often equal, not always).
+- Recipe items teach their spell through an `ItemEffect` with `TriggerType` 6, linked
+  to the item via `ItemXItemEffect` (`ItemEffect` has no item column in this build).
+- `SpellEffect` effect 24 = create item (`EffectItemType`, quantity in
+  `EffectBasePointsF`); effect 53 = enchant item. Reagents: `SpellReagents`.
+- The tables still contain Season of Discovery recipes (spell IDs 100000-999999),
+  many making items that no longer exist. Forever re-created what it kept with IDs
+  above 1,000,000, so drop that range and recipes whose product isn't in `ItemSparse`.
+- `ItemSparse.BuyPrice` is the merchant price for `VendorStackCount` items; every item
+  has one, so it only means something for items vendors actually sell.
+- Where items are sold or dropped is not in the client tables.
+
+### QuestieDB (optional runtime source)
+
+The QuestieDB addon (Questie's data, with a Forever build) has a public API:
+`LibQuestieDB.RequireContract(4)`, then `LibQuestieDB.Item.Get(itemID, key)`,
+`.Npc.Get`, `.Object.Get`, `.Quest.Get`. Item keys used: `vendors`, `npcDrops`,
+`objectDrops`, `questRewards`; NPC keys: `name`, `subName`, `spawns`
+(`{ [areaID] = { { x, y }, ... } }`, percent), `zoneID`, `friendlyToFaction`
+(`"A"`, `"H"`, `"AH"`). Area → map ID for waypoints is Questie's internal
+`QuestieLoader:ImportModule("ZoneDB"):GetUiMapIdByAreaId(areaID)`. Zone names:
+`C_Map.GetAreaInfo(areaID)`.
+
+### Professions (the profession window, used by `Core/Recipes.lua`)
 
 Forever uses the **retail professions UI** (`ProfessionsFrame`, `C_TradeSkillUI`).
 `GetTradeSkillInfo`, `GetNumTradeSkills`, `GetCraftInfo` and `TradeSkillFrame` don't exist.

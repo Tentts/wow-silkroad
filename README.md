@@ -5,10 +5,11 @@ compares what a recipe's materials cost (from vendors and the auction house)
 with what the result sells for, so profitable crafts, auction house flips and
 "craft and sell to a vendor" gold become easy to spot.
 
-> **Status: 0.2.0.** The window, the pages, the price layer and SilkRoad's own
-> auction house scanner are in place, and Auctionator's prices are used too when
-> it's installed. The recipe indexer and vendor price recorder come next; see the
-> [roadmap](#roadmap).
+> **Status: 0.3.0.** Every recipe of every profession (from the game's own data),
+> where each is obtained, material costs from vendors and the auction house,
+> SilkRoad's own auction scanner, and merchant price recording. Works best with
+> Questie installed (for recipe locations and vendor-sold reagents); Auctionator's
+> prices are used too when it's installed.
 
 ## Install (development)
 
@@ -31,6 +32,22 @@ editing code, type `/reload` in game.
   `version`, plus page names to jump straight to a page (`/silkroad recipes`).
 - The window can be moved, resized from the bottom-right corner, scaled in
   Settings, and closed with Escape.
+
+### Recipes
+
+- Pick any profession, even one this character doesn't have (it says so in red).
+- **Level** is the skill needed to learn the recipe, coloured like the profession
+  window (red: can't learn yet, orange/yellow/green/grey: skill-up chance). For
+  trainer recipes the game data has no exact requirement, so the value is marked `~`.
+- **Obtained at**: trainer, learned with the profession, or the recipe item and who
+  sells or drops it. Click it for every source with zone and coordinates; click a
+  source to set a waypoint (TomTom when installed, otherwise the game's map pin).
+- **Cost** uses the cheapest source per reagent: a vendor price (recorded at a
+  merchant, seen by Auctionator, or from the game data for items vendors are known
+  to sell) or the lowest auction price. **Profit** is the better of the auction
+  price after the cut and the vendor price, minus the cost.
+- Open each of your profession windows once: SilkRoad then marks which recipes you
+  know (and offers a **Known only** filter), and picks up any recipe its data lacks.
 
 ### Auction house scanning
 
@@ -55,7 +72,7 @@ editing code, type `/reload` in game.
 | Page | What it shows |
 |---|---|
 | **Overview** | Counts of indexed recipes and recorded prices, your professions, which price sources are active. |
-| **Recipes** | Each recipe's material cost, auction value after the cut, vendor value and profit, sortable and filterable by profession and name. |
+| **Recipes** | Every recipe of any profession, learned or not: skill level (coloured for your character), where it's obtained (click for vendors, drops and quests with waypoints), material cost, AH price, vendor price and profit. Hover a row for the cost per reagent. |
 | **Vendor Flips** | Items a merchant sells for less than they fetch on the auction house. |
 | **Price Database** | Look up any item (ID, name, or shift-click a link) to see every known price side by side. Your last 20 lookups stay listed below for quick re-checks. |
 | **Settings** | Minimap button, window scale, auction house cut, preferred auction price source, automatic auction scans. |
@@ -68,11 +85,16 @@ SilkRoad/
   Libs/                 LibStub, LibAHTab (third-party, see below)
   Locales/enUS.lua      strings (English text doubles as the key)
   Core/
-    Init.lua            namespace, events, internal callbacks, components, slash commands
-    Util.lua            money/percent/time formatting, item and profession helpers
+    Init.lua            namespace, game-version detection, events, components, slash commands
+    Util.lua            money/percent/time formatting, item helpers
     Database.lua        saved variables, defaults, migrations, settings by path
     Prices.lua          the price layer and pluggable auction price providers
+    Sources.lua         where recipes come from and which reagents vendors sell (QuestieDB)
+    Recipes.lua         all recipes, known recipes, cost and profit per craft
+    Merchants.lua       records merchant prices
     AuctionScanner.lua  full auction house scan with the 15-minute limit
+  Game/Forever.lua      SR.Game: Forever's own APIs (profession window, merchants, waypoints)
+  Data/Forever/         generated game data (recipes, items) for Forever
   UI/
     Widgets.lua         small factories over Blizzard templates
     DataTable.lua       sortable, filterable, virtualised table (ScrollBox)
@@ -81,11 +103,19 @@ SilkRoad/
     OptionsPanel.lua    entry in Blizzard's Options > AddOns
     AuctionHouseTab.lua the SilkRoad tab in the auction house window
   Modules/              one file per page
+tools/generate_data.py  generates Data/<Version>/ from Blizzard's client tables
 tests/                  smoke test that runs the addon outside the game
 scripts/                link-addon.ps1, test.ps1
 docs/                   FOREVER_API_NOTES.md (research on the Forever client and its API)
 ```
 
+- **Version-agnostic core.** Everything that differs between game versions lives in
+  `Data/<Version>/` (generated game data) and `Game/<Version>.lua` (the `SR.Game`
+  adapter for that version's APIs); both load only on their own client
+  (`SR.flavor`, set from the interface number in `Core/Init.lua`). The services and
+  pages only use `SR.Game` and the data. Supporting another version means adding a
+  flavor entry, a `Game/` adapter and a data folder. The auction scanner still calls
+  Forever's modern auction API directly and would move behind `SR.Game` then.
 - **Components.** `SR:NewComponent(name)` creates a subsystem with optional
   `OnInitialize` (saved variables ready) and `OnEnable` (player in world) hooks.
 - **Pages.** A page is one `SR.UI:RegisterPage{ id, title, icon, order }` call plus
@@ -99,10 +129,26 @@ docs/                   FOREVER_API_NOTES.md (research on the Forever client and
   merchant prices and recipe definitions; `SilkRoadCharDB` holds what the
   character knows. The layout is documented at the top of `Core/Database.lua`.
 - **Messages.** Components talk through `SR:Fire` / `SR:RegisterCallback`:
-  `SETTING_CHANGED`, `PRICES_UPDATED`, `ITEM_INFO_RECEIVED`, `SCAN_STATUS`.
+  `SETTING_CHANGED`, `PRICES_UPDATED`, `ITEM_INFO_RECEIVED`, `SCAN_STATUS`,
+  `RECIPES_UPDATED`.
 - **Auction house tab.** Each auction house helper is a card on the SilkRoad tab
   (`UI/AuctionHouseTab.lua`). The tab is meant to stay small: scan status and
   shortcuts into SilkRoad, not a replacement for the auction house UI.
+
+## Game data
+
+`SilkRoad/Data/Forever/Recipes.lua` is generated, not hand-written:
+
+```powershell
+python tools/generate_data.py
+```
+
+It downloads the client tables for the pinned Forever build from
+[wago.tools](https://wago.tools) (cached in `tools/.cache/`) and writes every
+profession recipe (reagents, product, quantity, skill thresholds, recipe item) and
+the items they use (name, quality, icon, vendor buy and sell prices). Regenerate after
+a game patch with `--build <new build>`. Where recipe items are sold or dropped isn't
+in the client tables; SilkRoad reads it at runtime from QuestieDB.
 
 ## Testing
 
@@ -121,10 +167,9 @@ like; that still needs a `/reload` in game. The first run creates `tests/.venv`
 
 ## Roadmap
 
-1. **Recipe indexer**: read recipes and reagents with `C_TradeSkillUI` when a
-   profession window opens.
-2. **Vendor price recorder**: store merchant prices on `MERCHANT_SHOW`.
-3. Price history and trends, shopping lists for missing materials, tooltip prices.
+1. Shopping lists for missing materials, crafting queue.
+2. Price history and trends, tooltip prices.
+3. Other game versions, through the version layer described above.
 
 API research for each of these is in [docs/FOREVER_API_NOTES.md](docs/FOREVER_API_NOTES.md).
 

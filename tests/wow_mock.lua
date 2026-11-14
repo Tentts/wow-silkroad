@@ -35,6 +35,9 @@ MOCK = {
 		Auctionator = true,     -- optional dependency, checked before use
 		LibStub = true,         -- LibStub checks for an existing copy before creating one
 		AuctionHouseFrame = true, -- exists once Blizzard_AuctionHouseUI has loaded
+		LibQuestieDB = true,  -- optional data source (QuestieDB addon)
+		QuestieLoader = true, -- optional (Questie addon), for map IDs
+		TomTom = true,        -- optional waypoint addon
 	},
 	allowedNewGlobals = {
 		LibStub = true,
@@ -954,3 +957,77 @@ define("C_Item", {
 		return M.items[itemID] ~= nil
 	end,
 })
+
+---------------------------------------------------------------------------
+-- Game version, professions window, merchants, maps
+---------------------------------------------------------------------------
+
+define("GetBuildInfo", function()
+	return "1.60.1", "70938", "Nov 1 2026", 16001
+end)
+
+define("UnitFactionGroup", function(unit)
+	return "Horde", "Horde"
+end)
+
+-- The open profession window: M.tradeSkill = { professionID, name, recipes = { [recipeID] = learned } }
+M.tradeSkill = nil
+M.schematics = {} -- [recipeID] = schematic table for recipes missing from the generated data
+define("C_TradeSkillUI", {
+	IsTradeSkillReady = function() return M.tradeSkill ~= nil end,
+	IsTradeSkillLinked = function() return false end,
+	IsTradeSkillGuild = function() return false end,
+	IsNPCCrafting = function() return false end,
+	GetBaseProfessionInfo = function()
+		local open = M.tradeSkill
+		return open and { professionID = open.professionID, professionName = open.name } or {}
+	end,
+	GetAllRecipeIDs = function()
+		local ids = {}
+		for recipeID in pairs(M.tradeSkill and M.tradeSkill.recipes or {}) do
+			ids[#ids + 1] = recipeID
+		end
+		return ids
+	end,
+	GetRecipeInfo = function(recipeID)
+		local learned = M.tradeSkill and M.tradeSkill.recipes[recipeID]
+		if learned == nil then return nil end
+		return { recipeID = recipeID, learned = learned }
+	end,
+	GetRecipeSchematic = function(recipeID, isRecraft)
+		assert(isRecraft == false, "GetRecipeSchematic: isRecraft expected")
+		return M.schematics[recipeID]
+	end,
+})
+
+-- The open merchant: M.merchant = { { itemID, price, stackCount, hasExtendedCost }, ... }
+M.merchant = {}
+define("GetMerchantNumItems", function() return #M.merchant end)
+define("GetMerchantItemID", function(index) return M.merchant[index] and M.merchant[index][1] end)
+define("C_MerchantFrame", {
+	GetItemInfo = function(index)
+		local entry = M.merchant[index]
+		return entry and { price = entry[2], stackCount = entry[3] or 1, hasExtendedCost = entry[4] or false } or nil
+	end,
+})
+
+M.areas = { [1637] = "Orgrimmar", [17] = "The Barrens", [209] = "Shadowfang Keep" }
+M.waypoints = {}
+define("C_Map", {
+	GetAreaInfo = function(areaID) return M.areas[areaID] end,
+	CanSetUserWaypointOnMap = function(uiMapID) return type(uiMapID) == "number" end,
+	SetUserWaypoint = function(point)
+		assert(type(point) == "table" and point.uiMapID, "SetUserWaypoint: UiMapPoint expected")
+		table.insert(M.waypoints, point)
+	end,
+})
+define("C_SuperTrack", { SetSuperTrackedUserWaypoint = function(enabled) M.superTracked = enabled end })
+define("UiMapPoint", {
+	CreateFromCoordinates = function(uiMapID, x, y)
+		assert(x >= 0 and x <= 1 and y >= 0 and y <= 1, "UiMapPoint: coordinates must be 0..1")
+		return { uiMapID = uiMapID, x = x, y = y }
+	end,
+})
+define("ButtonFrameTemplate_HidePortrait", function(frame)
+	assert(frame.Inset, "ButtonFrameTemplate_HidePortrait: ButtonFrameTemplate frame expected")
+end)

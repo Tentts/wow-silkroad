@@ -16,7 +16,7 @@ SR.L = L
 L.TAGLINE = "Crafting & trading helper"
 
 L.OVERVIEW_DESC = "Your crafting and trading dashboard."
-L.RECIPES_DESC = "Material cost versus sale value for every indexed recipe."
+L.RECIPES_DESC = "Every recipe of every profession: where to get it, what it costs to craft and what it sells for."
 L.FLIPS_DESC = "Items that sell on the auction house for more than a vendor charges."
 L.PRICES_DESC = "Look up everything SilkRoad knows about an item's price."
 L.SETTINGS_DESC = "Configure SilkRoad."
@@ -24,19 +24,22 @@ L.SETTINGS_DESC = "Configure SilkRoad."
 L.OVERVIEW_GETTING_STARTED = table.concat({
 	"|cffffd100/silkroad|r (or |cffffd100/silk|r) opens and closes this window. Type |cffffd100/silkroad help|r for all commands.",
 	"",
-	"|cffffd100Recipes|r compares what a recipe's materials cost with what the result sells for, on the auction house and at a vendor.",
+	"|cffffd100Recipes|r compares what a recipe's materials cost with what the result sells for, on the auction house and at a vendor, and shows where each recipe is obtained.",
 	"|cffffd100Vendor Flips|r lists vendor items that are worth more on the auction house.",
 	"|cffffd100Price Database|r shows every price SilkRoad knows for an item.",
 	"",
 	"When you open the auction house, SilkRoad scans it automatically (at most once every 15 minutes) and saves the lowest price of every item. The |cffffd100SilkRoad|r tab in the auction house shows the scan status and lets you scan manually. Auctionator's prices are used too when it is installed.",
 	"",
-	"The recipe indexer and vendor price recorder are the next steps on the roadmap.",
+	"|cffffd100Recipes|r lists every profession, learned or not. Open your profession windows once so SilkRoad can mark the recipes you know. Vendor prices for reagents come from the game data (with Questie installed) and from every merchant you open.",
 }, "\n")
 
-L.RECIPES_EMPTY_TITLE = "No recipes indexed yet"
-L.RECIPES_EMPTY_BODY = "Recipes will appear here once SilkRoad can read them from your profession window. The recipe indexer is the next feature on the roadmap."
+L.RECIPES_EMPTY_TITLE = "No recipes"
+L.RECIPES_EMPTY_BODY = "SilkRoad has no recipes for this profession in its game data."
+L.SOURCE_TRAINER_HINT = "Taught by profession trainers."
+L.SOURCE_AUTO_HINT = "Learned automatically together with the profession."
+L.NO_QUESTIE_HINT = "Install Questie (with QuestieDB) to see which vendors, creatures and quests give recipe items, and where they are."
 L.FLIPS_EMPTY_TITLE = "No vendor prices recorded yet"
-L.FLIPS_EMPTY_BODY = "SilkRoad will record what merchants charge when you visit them, then compare those prices with the auction house. The vendor price recorder is on the roadmap."
+L.FLIPS_EMPTY_BODY = "SilkRoad records what merchants charge whenever you open a merchant window, then compares those prices with the auction house."
 L.RECENT_EMPTY_TITLE = "No lookups yet"
 L.RECENT_EMPTY_BODY = "Items you look up are listed here so you can check them again with one click."
 L.NO_SCAN_DATA = "No SilkRoad scan data yet: open the auction house and SilkRoad scans it automatically (at most once every 15 minutes)."

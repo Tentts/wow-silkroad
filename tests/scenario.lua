@@ -48,7 +48,7 @@ check(SR:GetSetting("minimap.hide") == false, "nested default setting")
 M.FireEvent("PLAYER_LOGIN")
 check(SilkRoadMinimapButton ~= nil and SilkRoadMinimapButton:IsShown(), "minimap button created")
 check(M.settingsRegistered, "options panel registered with Blizzard settings")
-check(SR.version == "0.2.0", "version read from the TOC")
+check(SR.version == "0.3.0", "version read from the TOC")
 
 ---------------------------------------------------------------------------
 step("open window")
@@ -69,7 +69,8 @@ local cards = nil
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "overview" then cards = page.cards end
 end
-check(cards.recipes.Value:GetText() == "0", "recipe count card")
+check(SR.Recipes:CountAll() > 2000, "generated recipe data loaded")
+check(cards.recipes.Value:GetText() == SR.Util.FormatNumber(SR.Recipes:CountAll()), "recipe count card")
 check(cards.scan.Value:GetText() == "Never", "last scan card")
 
 ---------------------------------------------------------------------------
@@ -87,83 +88,171 @@ end
 M.RunTimers()
 
 ---------------------------------------------------------------------------
-step("empty states")
+step("recipes: every profession")
 local recipesPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "recipes" then recipesPage = page end
 end
-SR.UI:OpenPage("recipes")
-check(recipesPage.Table.Empty:IsShown(), "recipes empty state shown with no data")
-check(recipesPage.Count:GetText() == "0 of 0 recipes", "recipe count label")
+local function RowFor(recipeID)
+	for _, row in ipairs(recipesPage.Table.rows) do
+		if row.recipe.id == recipeID then return row end
+	end
+end
+local function PickProfession(skillLine)
+	for index, item in ipairs(recipesPage.ProfessionDropdown.__menu.items) do
+		if item.data == nil and SR.Recipes:GetProfessions()[index].id == skillLine then
+			M.PickDropdown(recipesPage.ProfessionDropdown, index)
+			return
+		end
+	end
+	error("profession not in the dropdown: " .. skillLine)
+end
 
----------------------------------------------------------------------------
-step("price data flows into the pages")
+SR.UI:OpenPage("recipes")
+local menu = recipesPage.ProfessionDropdown.__menu
+check(#menu.items == #SR.StaticData.professions and #menu.items >= 9, "every profession is selectable")
+local labels = {}
+for _, item in ipairs(menu.items) do labels[#labels + 1] = item.text end
+local allLabels = table.concat(labels, "|")
+check(allLabels:find("Tailoring |cff808080(75/150)|r", 1, true), "learned professions show the character's skill")
+check(allLabels:find("Alchemy |cff808080(not learned)|r", 1, true), "unlearned professions are marked")
+check(recipesPage.skillLine == 333, "starts on the character's first profession (Enchanting)")
+
+PickProfession(171) -- Alchemy, not learned
+check(recipesPage.Status:GetText():find("You don't have this profession.", 1, true), "red notice for professions the character lacks")
+check(#recipesPage.Table.rows > 100, "an unlearned profession still lists its recipes")
+check(not recipesPage.KnownOnly:IsEnabled(), "'Known only' is off for unlearned professions")
+
+step("recipes: values")
 local market = SR.DB:GetMarket()
 market.auction[2589] = { price = 50, quantity = 200, seen = time() - 120 }  -- Linen Cloth
 market.auction[2996] = { price = 300, quantity = 40, seen = time() - 120 }  -- Bolt of Linen Cloth
 market.auction[4306] = { price = 400, quantity = 10, seen = time() - 7200 } -- Silk Cloth
 market.lastScan = time() - 120
-SR.DB.global.vendorPrices[2320] = { price = 10, seen = time() }   -- Coarse Thread, AH unknown
+SR.DB.global.vendorPrices[2320] = { price = 10, seen = time() }   -- Coarse Thread, recorded at a merchant
 SR.DB.global.vendorPrices[4306] = { price = 150, seen = time() }  -- Silk Cloth, cheap at a vendor
-SR.DB.global.recipes[2963] = {
-	recipeID = 2963, name = "Bolt of Linen Cloth", profession = "Tailoring", skillLineID = 197,
-	outputItemID = 2996, quantityMin = 1, quantityMax = 1,
-	reagents = { { itemID = 2589, quantity = 2 } },
-}
-SR.DB.global.recipes[8776] = {
-	recipeID = 8776, name = "Linen Belt", profession = "Tailoring", skillLineID = 197,
-	outputItemID = 7026, quantityMin = 1, quantityMax = 1,
-	reagents = { { itemID = 2589, quantity = 6 }, { itemID = 9999, quantity = 1 } },
-}
+PickProfession(197) -- Tailoring
 SR:Fire("PRICES_UPDATED")
 M.RunTimers()
+check(SR.DB.settings.recipes.profession == 197, "the chosen profession is remembered")
+check(recipesPage.Status:GetText():find("Open your Tailoring window once", 1, true), "asks to open the profession window")
 
-check(recipesPage.Count:GetText() == "2 of 2 recipes", "recipes listed")
-local rows = recipesPage.Table.rows
-local bolt
-for _, row in ipairs(rows) do
-	if row.recipeID == 2963 then bolt = row end
+local bolt = RowFor(2963) -- Bolt of Linen Cloth: 2 Linen Cloth, learned with the profession
+check(bolt.name == "Bolt of Linen Cloth" and bolt.itemID == 2996, "name and product from the game data")
+check(bolt.cost == 100, "cost = 2 x 50c Linen Cloth from the auction house")
+check(bolt.auctionPrice == 300, "AH price of the product")
+check(bolt.vendorPrice == SR.StaticData.items[2996][4], "vendor price from the game data, no item loading")
+check(bolt.profit == 285 - 100, "profit = auction price after the 5% cut - cost")
+check(bolt.source == "Learned with the profession", "auto-learned recipes say so")
+check(bolt.levelText == "|cff808080" .. "1|r", "skill level coloured grey: Tailoring 75 is past its grey threshold")
+
+local belt = RowFor(8776) -- Linen Belt: Bolt of Linen Cloth + Coarse Thread, from a trainer
+check(belt.cost == 300 + 10, "cost mixes auction (bolt) and recorded vendor (thread) prices")
+check(belt.profit == belt.vendorPrice - 310, "no auction price: profit uses the vendor price")
+check(belt.source == "Trainer", "trainer recipes")
+check(belt.levelText == "|cff40c040~50|r", "approximate trainer requirement, coloured green for skill 75")
+
+local itemRecipe
+for _, row in ipairs(recipesPage.Table.rows) do
+	if row.recipe.recipeItem and not itemRecipe then itemRecipe = row end
 end
-check(bolt.cost == 100, "material cost = 2 x 50c")
-check(bolt.auctionValue == 285, "auction value after the 5% cut")
-check(bolt.vendorValue == 25, "vendor value")
-check(bolt.profit == 185, "profit = best sale - cost")
-check(rows[1].recipeID == 2963, "sorted by profit, unknown profit last")
-local belt = rows[2]
-check(belt.cost == nil and belt.profit == nil, "missing reagent price leaves cost and profit empty")
+local recipeItemName = SR.StaticData.items[itemRecipe.recipe.recipeItem][1]
+check(itemRecipe.source == "Recipe: " .. recipeItemName, "without QuestieDB the recipe item is named")
 
-step("sorting and filtering")
-local profitHeader = recipesPage.Table.headerButtons[6]
-M.Click(profitHeader)
-check(recipesPage.Table.sortDesc == false, "clicking the active column flips direction")
-check(recipesPage.Table.rows[1].recipeID == 2963, "nil profit still sorts last ascending")
-M.Click(recipesPage.Table.headerButtons[1])
-check(recipesPage.Table.sortKey == "name", "clicking another column sorts by it")
-recipesPage.Search:SetText("bolt")
-check(recipesPage.Count:GetText() == "1 of 2 recipes", "search filters rows")
-recipesPage.Search:SetText("nothing like this")
-check(recipesPage.Table.Empty:IsShown(), "no-match state when the filter hides everything")
-recipesPage.Search:SetText("")
-local menu = recipesPage.ProfessionDropdown.__menu
-check(menu.items[1].text == "All professions", "profession filter starts with All")
-local professionNames = {}
-for _, item in ipairs(menu.items) do
-	professionNames[#professionNames + 1] = item.text
-end
-check(table.concat(professionNames, ",") == "All professions,Cooking,Enchanting,Tailoring", "profession list")
-M.PickDropdown(recipesPage.ProfessionDropdown, 2)
-check(recipesPage.Count:GetText() == "0 of 2 recipes", "profession filter applied")
-M.PickDropdown(recipesPage.ProfessionDropdown, 1)
-
-step("row interaction")
+step("recipes: sorting, search and tooltips")
+check(recipesPage.Table.ScrollBox.__active[1].row.profit ~= nil, "sorted by profit, most profitable first")
+recipesPage.Search:SetText("bolt of linen")
+check(recipesPage.Count:GetText():match("^1 of %d+ recipes$"), "search filters rows")
 local rowFrame = recipesPage.Table.ScrollBox.__active[1]
-check(rowFrame ~= nil and rowFrame.row ~= nil, "rows rendered")
 M.RunScript(rowFrame, "OnEnter")
 M.RunScript(rowFrame, "OnLeave")
 M.modifiedClick = true
 M.Click(rowFrame)
-check(M.lastModifiedLink and M.lastModifiedLink:find("item:"), "shift-click links the item")
+check(M.lastModifiedLink and M.lastModifiedLink:find("item:"), "shift-click links the crafted item")
 M.modifiedClick = false
+recipesPage.Search:SetText("")
+
+step("recipes: reading the profession window")
+M.tradeSkill = { professionID = 197, name = "Tailoring", recipes = { [2963] = true, [8776] = false, [999001] = true } }
+M.schematics[999001] = {
+	name = "Silkroad Test Robe", icon = 132149, outputItemID = 4306, quantityMin = 1, quantityMax = 1,
+	reagentSlotSchematics = {
+		{ required = true, quantityRequired = 3, reagents = { { itemID = 2589 } } },
+		{ required = false, quantityRequired = 1, reagents = { { itemID = 2320 } } }, -- optional: ignored
+	},
+}
+M.FireEvent("TRADE_SKILL_SHOW")
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+check(SR.DB.char.knownRecipes[2963] and not SR.DB.char.knownRecipes[8776], "learned recipes recorded for the character")
+check(SR.DB.char.scannedProfessions[197] == time(), "profession marked as read")
+check(SR.DB.global.recipes[999001] and #SR.DB.global.recipes[999001].reagents == 1, "recipes missing from the game data are added from the window")
+check(RowFor(999001) and RowFor(999001).cost == 150, "and priced like the rest (3 x 50c)")
+check(recipesPage.Status:GetText():find("you know 2 of", 1, true), "status counts known recipes")
+check(RowFor(8776).known == false, "unknown recipes marked")
+M.Click(recipesPage.KnownOnly)
+check(recipesPage.Count:GetText():match("^2 of %d+ recipes$"), "'Known only' shows just the learned ones")
+M.Click(recipesPage.KnownOnly)
+M.tradeSkill = nil
+
+step("recipes: sources from QuestieDB")
+local recipeItem = itemRecipe.recipe.recipeItem
+local npcs = {
+	[3364] = { name = "Borya", subName = "Tailoring Supplies", spawns = { [1637] = { { 63.0, 51.0 } } }, friendlyToFaction = "H" },
+	[1347] = { name = "Alexandra Bolero", subName = "Tailoring Supplies", spawns = { [1519] = { { 43.0, 74.0 } } }, friendlyToFaction = "A" },
+	[3836] = { name = "Mountaineer Pebblebitty", spawns = { [17] = { { 50.0, 50.0 } } }, friendlyToFaction = "AH" },
+}
+rawset(_G, "LibQuestieDB", {
+	RequireContract = function(version) return version == 4 end,
+	Item = { Get = function(id, key)
+		if id == recipeItem and key == "vendors" then return { 1347, 3364 } end
+		if id == recipeItem and key == "npcDrops" then return { 3836 } end
+		if id == 2321 and key == "vendors" then return { 3364 } end -- Fine Thread
+	end },
+	Npc = { Get = function(id, key) return npcs[id] and npcs[id][key] end },
+	Quest = { Get = function() return nil end },
+	Object = { Get = function() return nil end },
+})
+rawset(_G, "QuestieLoader", { ImportModule = function(_, name)
+	assert(name == "ZoneDB", "unexpected Questie module")
+	return { GetUiMapIdByAreaId = function(_, areaID) return areaID == 1637 and 85 or nil end }
+end })
+SR.Sources:ResetCache()
+SR.UI:RefreshCurrentPage()
+itemRecipe = RowFor(itemRecipe.recipe.id)
+check(itemRecipe.source == "Vendor: Borya (+1)", "vendors listed, own faction first")
+check(SR.Prices:GetVendorBuyPrice(2321) == SR.StaticData.items[2321][5] / SR.StaticData.items[2321][6],
+	"vendor-sold reagents priced from the game data")
+check(select(2, SR.Prices:GetVendorBuyPrice(2321)) == "data", "and say where the price comes from")
+check(SR.Prices:GetVendorBuyPrice(2589) == nil, "items no vendor sells have no vendor price")
+
+step("recipes: obtained-at window and waypoints")
+for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
+	if frame.row == itemRecipe then rowFrame = frame end
+end
+M.RunScript(rowFrame.cells[3].Button, "OnEnter")
+M.Click(rowFrame.cells[3].Button)
+local popup = SilkRoadSourceFrame
+check(popup:IsShown() and popup.__title == itemRecipe.name, "clicking 'Obtained at' opens the sources window")
+local sourceRows = popup.Table.rows
+check(#sourceRows == 3 and sourceRows[1].source.name == "Borya", "every source listed, friendly vendors first")
+check(sourceRows[1].location == "Orgrimmar (63.0, 51.0)", "zone and coordinates")
+check(sourceRows[2].source.hostile, "other-faction vendor flagged")
+check(sourceRows[3].kindLabel == "Drop" and sourceRows[3].location == "The Barrens (50.0, 50.0)", "drops listed too")
+M.Click(popup.Table.ScrollBox.__active[1])
+local waypoint = M.waypoints[#M.waypoints]
+check(waypoint and waypoint.uiMapID == 85 and math.abs(waypoint.x - 0.63) < 1e-9, "clicking a source sets a waypoint")
+check(OutputContains("Waypoint set: Borya"), "waypoint confirmed in chat")
+rawset(_G, "TomTom", { AddWaypoint = function(self, mapID, x, y, options)
+	M.tomtom = { mapID = mapID, x = x, y = y, title = options.title }
+end })
+M.Click(popup.Table.ScrollBox.__active[1])
+check(M.tomtom and M.tomtom.mapID == 85 and M.tomtom.title == "Borya", "TomTom used when installed")
+rawset(_G, "TomTom", nil)
+popup:Hide()
+rawset(_G, "LibQuestieDB", nil)
+rawset(_G, "QuestieLoader", nil)
+SR.Sources:ResetCache()
 
 ---------------------------------------------------------------------------
 step("vendor flips")
@@ -205,13 +294,13 @@ check(pricesPage.itemID == 2996, "linked item looked up")
 pricesPage.Input:ClearFocus()
 
 step("items that are still loading")
-M.items[7026] = { name = "Linen Belt", quality = 1, icon = 132492, sellPrice = 50 }
-M.pendingItems[7026] = true
-pricesPage:Lookup(7026)
+M.items[60001] = { name = "Test Cloak", quality = 1, icon = 132492, sellPrice = 50 } -- not in the generated data
+M.pendingItems[60001] = true
+pricesPage:Lookup(60001)
 check(pricesPage.Panel.Name:GetText() == "Loading item data...", "loading placeholder")
 M.RunTimers() -- delivers GET_ITEM_INFO_RECEIVED, then the debounced refresh
 M.RunTimers()
-check(pricesPage.Panel.Name:GetText():find("Linen Belt", 1, true), "refreshes when the item arrives")
+check(pricesPage.Panel.Name:GetText():find("Test Cloak", 1, true), "refreshes when the item arrives")
 
 step("item data loaded by others doesn't refresh pages")
 local originalRefresh = pricesPage.Refresh
@@ -230,11 +319,11 @@ pricesPage.Refresh = originalRefresh
 step("recent lookups instead of the full scan data")
 check(pricesPage.Summary:GetText() == "SilkRoad scan data on Test Realm: 3 items, last scan 2 min ago.", "scan data summarised in one line")
 local recent = SR.DB.global.recentLookups
-check(table.concat(recent, ",") == "7026,2996,6948,2589", "lookups remembered, most recent first, failed ones skipped")
-check(#pricesPage.Table.rows == 4 and pricesPage.Table.rows[1].itemID == 7026, "recent lookups listed in order")
+check(table.concat(recent, ",") == "60001,2996,6948,2589", "lookups remembered, most recent first, failed ones skipped")
+check(#pricesPage.Table.rows == 4 and pricesPage.Table.rows[1].itemID == 60001, "recent lookups listed in order")
 check(pricesPage.Table.rows[3].price == nil and pricesPage.Table.rows[4].price == 50, "rows show the scanned price when there is one")
 pricesPage:Lookup(2589)
-check(table.concat(recent, ",") == "2589,7026,2996,6948", "looking an item up again moves it to the top")
+check(table.concat(recent, ",") == "2589,60001,2996,6948", "looking an item up again moves it to the top")
 M.Click(pricesPage.Table.ScrollBox.__active[3])
 check(pricesPage.itemID == 2996 and recent[1] == 2996, "clicking a recent row looks it up")
 for itemID = 50001, 50025 do
@@ -333,7 +422,7 @@ SlashCmdList.SILKROAD("help")
 check(OutputContains("/silkroad minimap"), "help lists commands")
 check(OutputContains("/silkroad scan"), "help lists the scan command")
 SlashCmdList.SILKROAD("version")
-check(OutputContains("0.2.0"), "version command")
+check(OutputContains("0.3.0"), "version command")
 SlashCmdList.SILKROAD("bogus")
 check(OutputContains("Unknown command:"), "unknown commands are reported")
 SlashCmdList.SILKROAD("debug")
@@ -501,6 +590,22 @@ check(ahPanel:IsVisible(), "SilkRoad tab open")
 AuctionHouseFrame:SetDisplayMode({ "AuctionsFrame" })
 check(not ahPanel:IsShown(), "switching to a Blizzard tab hides SilkRoad's panel")
 M.CloseAuctionHouse()
+
+---------------------------------------------------------------------------
+step("merchant prices are recorded")
+M.merchant = {
+	{ 2678, 40, 1 },        -- Mild Spices, 40c each
+	{ 6260, 500, 5 },       -- Blue Dye, sold in fives for 5s
+	{ 9999, 100, 1, true }, -- bought with tokens: skipped
+}
+M.FireEvent("MERCHANT_SHOW")
+M.FireEvent("MERCHANT_UPDATE")
+M.RunTimers()
+local vendorPrices = SR.DB.global.vendorPrices
+check(vendorPrices[2678].price == 40 and vendorPrices[2678].seen == time(), "merchant price recorded")
+check(vendorPrices[6260].price == 100, "stacks recorded per item")
+check(vendorPrices[9999] == nil, "token purchases skipped")
+check(SR.Prices:GetVendorBuyPrice(2678) == 40 and select(2, SR.Prices:GetVendorBuyPrice(2678)) == "recorded", "recorded prices win")
 
 M.RunTimers()
 return checks

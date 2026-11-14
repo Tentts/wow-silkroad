@@ -28,7 +28,7 @@ local FRAME_NAME = "SilkRoadMainFrame"
 local SIDEBAR_WIDTH = 176
 local NAV_BUTTON_HEIGHT = 34
 local NAV_BUTTON_GAP = 2
-local MIN_WIDTH, MIN_HEIGHT = 840, 560
+local MIN_WIDTH, MIN_HEIGHT = 940, 560
 local MAX_WIDTH, MAX_HEIGHT = 1800, 1200
 local CONTENT_PADDING = 10
 
@@ -73,6 +73,7 @@ function UI:OnInitialize()
 		self:UpdateStatus()
 		refresh()
 	end)
+	SR:RegisterCallback("RECIPES_UPDATED", refresh)
 	SR:RegisterCallback("ITEM_INFO_RECEIVED", function()
 		if self:IsShown() then
 			refresh()

@@ -38,6 +38,7 @@ VERIFIED_BY_SOURCE = {
     "SlashCmdList",
     "SOUNDKIT",
     "time",
+    "UiMapPoint.CreateFromCoordinates",  # Blizzard_ObjectAPI/Mainline/UiMapPoint.lua
     "Minimap",  # nested <Minimap name="Minimap"> in Blizzard_Minimap/Mainline/Minimap.xml
     # Client constants (not in the generated lists) read by the vendored LibAHTab.
     "WOW_PROJECT_ID",

@@ -2,7 +2,7 @@
 ## Title: |cffe6c35cSilkRoad|r
 ## Notes: Crafting and trading helper: recipe costs, auction house and vendor prices.
 ## Author: Tentts
-## Version: 0.2.0
+## Version: 0.3.0
 ## Category: Professions
 ## IconTexture: Interface\Icons\INV_Fabric_Silk_02
 ## SavedVariables: SilkRoadDB
@@ -10,7 +10,7 @@
 ## AddonCompartmentFunc: SilkRoad_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: SilkRoad_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: SilkRoad_OnAddonCompartmentLeave
-## OptionalDeps: Auctionator
+## OptionalDeps: Auctionator, QuestieDB, Questie, TomTom
 
 # Libraries (skipped automatically when another addon loaded the same or newer version)
 Libs\LibStub\LibStub.lua
@@ -19,11 +19,20 @@ Libs\LibAHTab\LibAHTab.lua
 # Localization (must load before SilkRoad's own files: they all read SR.L)
 Locales\enUS.lua
 
-# Core: namespace, events, saved variables, price layer, auction scanner
+# Core: namespace, game-version ("flavor") detection, events, slash commands
 Core\Init.lua
+
+# Game-version layer: each file returns early unless it matches SR.flavor
+Game\Forever.lua
+Data\Forever\Recipes.lua
+
+# Core services (version-agnostic)
 Core\Util.lua
 Core\Database.lua
 Core\Prices.lua
+Core\Sources.lua
+Core\Recipes.lua
+Core\Merchants.lua
 Core\AuctionScanner.lua
 
 # UI framework
@@ -33,6 +42,7 @@ UI\MainFrame.lua
 UI\Launcher.lua
 UI\OptionsPanel.lua
 UI\AuctionHouseTab.lua
+UI\SourcePopup.lua
 
 # Pages (menus), shown in the sidebar in their registered order
 Modules\Overview.lua

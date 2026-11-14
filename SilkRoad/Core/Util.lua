@@ -199,6 +199,11 @@ end
 -- Basic display data for an item. Fields are nil while the client is still
 -- loading the item; ITEM_INFO_RECEIVED fires once it is ready.
 function Util.GetItemDisplay(itemID)
+	-- The generated game data covers recipe items without asking the client.
+	local static = SR.StaticData and SR.StaticData.items[itemID]
+	if static then
+		return { itemID = itemID, name = static[1], quality = static[2], icon = static[3] }
+	end
 	local name, link, quality, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
 	if not name then
 		Util.RequestItem(itemID)
@@ -218,16 +223,5 @@ end
 
 -- The current character's professions: { name, icon, rank, maxRank, skillLine }.
 function Util.GetPlayerProfessions()
-	local list = {}
-	local indices = { n = select("#", GetProfessions()), GetProfessions() }
-	for i = 1, indices.n do
-		local index = indices[i]
-		if index then
-			local name, icon, rank, maxRank, _, _, skillLine = GetProfessionInfo(index)
-			if name then
-				list[#list + 1] = { name = name, icon = icon, rank = rank, maxRank = maxRank, skillLine = skillLine }
-			end
-		end
-	end
-	return list
+	return SR.Game.GetPlayerProfessions()
 end

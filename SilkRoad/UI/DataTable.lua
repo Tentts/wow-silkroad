@@ -13,6 +13,8 @@
 				sortable = true,       -- default true
 				sortDescFirst = false, -- first click sorts high-to-low (good for money)
 				format = function(value, row) return "text" end, -- optional override
+				onClick = function(row, cellButton) end, -- optional: makes the cell clickable
+				tooltip = function(row, tooltip) end,    -- optional: hover text for a clickable cell
 			},
 		},
 		sortKey = "name", sortDesc = false,
@@ -223,6 +225,28 @@ function DataTableMixin:BuildRow(rowFrame)
 			cell.Icon:SetSize(self.rowHeight - 4, self.rowHeight - 4)
 			cell.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 		end
+		if column.onClick then
+			-- A clickable cell: its own button over the cell, with a tooltip.
+			local button = CreateFrame("Button", nil, rowFrame)
+			local highlight = button:CreateTexture(nil, "HIGHLIGHT")
+			highlight:SetAllPoints()
+			highlight:SetColorTexture(0.4, 0.75, 1, 0.15)
+			button:RegisterForClicks("LeftButtonUp")
+			button:SetScript("OnClick", function()
+				if rowFrame.row then
+					column.onClick(rowFrame.row, button)
+				end
+			end)
+			button:SetScript("OnEnter", function()
+				if rowFrame.row and column.tooltip then
+					GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+					column.tooltip(rowFrame.row, GameTooltip)
+					GameTooltip:Show()
+				end
+			end)
+			button:SetScript("OnLeave", GameTooltip_Hide)
+			cell.Button = button
+		end
 		rowFrame.cells[index] = cell
 	end
 
@@ -251,6 +275,11 @@ function DataTableMixin:LayoutRow(rowFrame)
 		cell.Text:ClearAllPoints()
 		cell.Text:SetPoint("LEFT", rowFrame, "LEFT", left, 0)
 		cell.Text:SetWidth(math.max(1, slot.x + slot.width - CELL_PADDING - left))
+		if cell.Button then
+			cell.Button:ClearAllPoints()
+			cell.Button:SetPoint("TOPLEFT", rowFrame, "TOPLEFT", slot.x, 0)
+			cell.Button:SetSize(math.max(1, slot.width), self.rowHeight)
+		end
 	end
 end
 

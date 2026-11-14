@@ -101,11 +101,20 @@ function Prices:GetNetAuctionPrice(itemID)
 	return math.floor(price * (1 - self:GetAuctionCut())), source
 end
 
+local function StaticItem(itemID)
+	return SR.StaticData and SR.StaticData.items[itemID]
+end
+
 -- What a vendor pays you for the item. 0 means vendors won't buy it, nil
--- means the client hasn't loaded the item yet (it is requested here).
+-- means unknown: not in the generated data and not loaded by the client yet
+-- (it is requested here).
 function Prices:GetVendorSellPrice(itemID)
 	if not itemID then
 		return nil
+	end
+	local static = StaticItem(itemID)
+	if static then
+		return static[4]
 	end
 	local sellPrice = select(11, C_Item.GetItemInfo(itemID))
 	if sellPrice == nil then
@@ -114,10 +123,31 @@ function Prices:GetVendorSellPrice(itemID)
 	return sellPrice
 end
 
--- What a merchant charges for the item, if SilkRoad has recorded it.
+-- What a merchant charges for one item, and where that price comes from:
+--   "recorded"    SilkRoad saw it at a merchant (exact, incl. reputation discounts)
+--   "auctionator" Auctionator saw it at a merchant
+--   "data"        the client's item data, for items vendors are known to sell
+--                 (QuestieDB's vendor lists or a merchant SilkRoad has visited)
 function Prices:GetVendorBuyPrice(itemID)
-	local entry = itemID and SR.DB.global.vendorPrices[itemID]
-	return entry and entry.price or nil
+	if not itemID then
+		return nil
+	end
+	local entry = SR.DB.global.vendorPrices[itemID]
+	if entry then
+		return entry.price, "recorded"
+	end
+	local api = Auctionator and Auctionator.API and Auctionator.API.v1
+	if api and api.GetVendorPriceByItemID then
+		local ok, price = pcall(api.GetVendorPriceByItemID, addonName, itemID)
+		if ok and type(price) == "number" and price > 0 then
+			return price, "auctionator"
+		end
+	end
+	local static = StaticItem(itemID)
+	if static and static[5] > 0 and SR.Sources:IsSoldByVendor(itemID) then
+		return static[5] / static[6], "data"
+	end
+	return nil
 end
 
 -- Cheapest known way to get one unit: returns price, "vendor" | "auction".

@@ -21,17 +21,19 @@
 	                 What merchants charge. Vendor prices are the same everywhere.
 	  recipes        [recipeID] = {
 	                   recipeID, name, icon,
-	                   profession   = localized profession name,
 	                   skillLineID  = number,
 	                   outputItemID = number | nil (enchants have no item),
 	                   quantityMin, quantityMax,
-	                   reagents     = { { itemID = n, quantity = n }, ... },
+	                   reagents     = { { itemID = n, count = n }, ... },
 	                 }
-	                 Recipe definitions are shared by all characters.
+	                 Recipes read from a profession window that the generated
+	                 game data (Data/<Flavor>/Recipes.lua) doesn't have.
+	                 Shared by all characters.
 
 	SilkRoadCharDB (per character)
 	  schemaVersion  number
 	  knownRecipes   [recipeID] = true
+	  scannedProfessions [skillLineID] = time() the profession window was last read
 ]]
 local _, SR = ...
 local Util = SR.Util
@@ -48,7 +50,7 @@ DB.ACCOUNT_DEFAULTS = {
 			angle = 200, -- degrees around the minimap, 0 = east
 		},
 		window = {
-			width = 960,
+			width = 1060,
 			height = 600,
 			scale = 1,
 			lastPage = "overview",
@@ -57,6 +59,10 @@ DB.ACCOUNT_DEFAULTS = {
 		auctionCutPercent = 5,
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
+		recipes = {
+			profession = nil,  -- skillLineID last shown on the Recipes page
+			knownOnly = false,
+		},
 	},
 	markets = {},
 	scanner = {},
@@ -67,6 +73,7 @@ DB.ACCOUNT_DEFAULTS = {
 
 DB.CHARACTER_DEFAULTS = {
 	knownRecipes = {},
+	scannedProfessions = {},
 }
 
 -- Schema upgrades: migrations[n] turns a version n-1 table into version n.
