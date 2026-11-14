@@ -1,202 +1,281 @@
+<div align="center">
+
 # SilkRoad
 
-A crafting and trading helper for **World of Warcraft: Forever**. SilkRoad
-compares what a recipe's materials cost (from vendors and the auction house)
-with what the result sells for, so profitable crafts, where to sell them and
-"craft and sell to a vendor" gold become easy to spot.
+**A crafting and trading companion for World of Warcraft: Forever.**
 
-> **Status: 0.4.0.** Every recipe of every profession (from the game's own data),
-> where each is obtained, material costs from vendors and the auction house,
-> SilkRoad's own auction scanner, and merchant price recording. Works best with
-> Questie installed (for recipe locations and vendor-sold reagents); Auctionator's
-> prices are used too when it's installed.
+Find out which recipes make gold, where to sell what you craft, and where to get the recipes you're missing.
 
-## Install (development)
+![Game](https://img.shields.io/badge/WoW-Forever-c79c6e)
+![Interface](https://img.shields.io/badge/interface-16001-blue)
+![Version](https://img.shields.io/badge/version-0.4.0-informational)
+![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua)
+![Languages](https://img.shields.io/badge/languages-English%20%7C%20Espa%C3%B1ol-lightgrey)
 
-The addon lives in the `SilkRoad/` folder of this repository. Link it into the
-game so WoW loads it straight from here:
+</div>
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/link-addon.ps1
-```
+---
 
-That creates a junction at `World of Warcraft\_forever_\Interface\AddOns\SilkRoad`
-(pass `-WowPath "D:\...\World of Warcraft"` for a different install). After
-editing code, type `/reload` in game.
+SilkRoad lists **every recipe of every profession** and works out, for each one,
+what its materials cost and what the result sells for, on the auction house and to
+a vendor. It scans the auction house on its own, knows which reagents vendors sell
+and for how much, tells you where each recipe is obtained, and marks the recipes
+your character already knows.
 
-## Using it
+## Contents
 
-- `/silkroad` or `/silk` opens and closes the window. So does the minimap button
-  and the addon compartment menu by the minimap (right-click either for settings).
-- `/silkroad help` lists every command: `scan`, `minimap`, `reset`, `debug`,
-  `version`, plus page names to jump straight to a page (`/silkroad recipes`).
-- The window can be moved, resized from the bottom-right corner, scaled in
-  Settings, and closed with Escape.
-- Item tooltips get two lines, like Auctionator's: what a vendor pays for the
-  item, and its lowest auction price (only for items that can be sold there).
-  Turn them off in **Settings > General**.
-- Set a key to open and close SilkRoad in **Settings > General** (or under
-  Options > Keybindings > AddOns > SilkRoad).
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Getting started](#getting-started)
+- [How prices are worked out](#how-prices-are-worked-out)
+- [Commands](#commands)
+- [Languages](#languages)
+- [For developers](#for-developers)
+- [Roadmap](#roadmap)
+- [Credits](#credits)
+- [License](#license)
 
-### Recipes
+## Features
 
-- Pick any profession, even one this character doesn't have (it says so in red).
-- **Level** is the skill needed to learn the recipe, coloured like the profession
-  window (red: can't learn yet, orange/yellow/green/grey: skill-up chance). For
-  trainer recipes the game data has no exact requirement, so the value is marked `~`.
-- **Obtained at**: trainer, learned with the profession, or the recipe item and who
-  sells or drops it. Click it for every source with zone and coordinates; click a
-  source to set a waypoint (TomTom when installed, otherwise the game's map pin).
-- **AH profit** and **Vendor profit** are what each way of selling earns after the
-  material cost (the AH one after the auction cut); **Sell to** says which earns
-  more, and sorting by it sorts by the better profit.
-- **Cost** uses the cheapest source per reagent: a vendor price (recorded at a
-  merchant, seen by Auctionator, or from the game data for items vendors are known
-  to sell) or the lowest auction price. **Profit** is the better of the auction
-  price after the cut and the vendor price, minus the cost.
-- SilkRoad reads which recipes you know from the spellbook at login (and whenever
-  you learn one), so **Known only** works without opening anything. Profession
-  windows are read too, which also picks up any recipe the game data lacks.
+### Recipes for every profession
 
-### Auction house scanning
+- **All 12 professions**, from Alchemy to Tailoring, including Mining smelts, Cooking,
+  First Aid and Forever's new crafts. That's **2,129 recipes**, generated from the
+  game's own data.
+- Browse professions your character **doesn't have** as well as the ones it does.
+- **Known recipes** are read from your spellbook automatically. A **Known only** filter
+  hides the rest.
+- One sortable, searchable table:
 
-- When you open the auction house, SilkRoad requests a full scan (one
-  `ReplicateItems` call that returns every listing) a few seconds later and
-  saves each item's lowest unit buyout and total quantity for the realm.
-- The server allows one full scan every **15 minutes**, so SilkRoad never asks more
-  often, automatically or manually. The time is saved account-wide, so `/reload`
-  or switching characters doesn't reset it.
-- Listings are read in batches across frames, so the game doesn't stall on a big
-  auction house. Closing the auction house mid-scan cancels it.
-- A full scan started by another addon (Auctionator, for example) is recorded too,
-  without an extra request. Auctionator's recent full scans also count toward the
-  15-minute wait.
-- The **SilkRoad** tab in the auction house window shows the last scan, a
-  countdown, a **Scan now** button, the automatic-scan toggle and shortcuts into
-  SilkRoad. `/silkroad scan` does the same from chat. Automatic scanning can be
-  turned off on the tab or in Settings.
+  | Column | Shows |
+  |---|---|
+  | **Recipe** | The item made. Recipes you haven't learned are greyed out. |
+  | **Level** | Skill needed to learn it, coloured like the profession window for your character (red: not yet, orange, yellow, green, grey). |
+  | **Obtained at** | Trainer, learned with the profession, or the vendor, drop, quest or container that gives the recipe. **Click** for every source with zone and coordinates. |
+  | **Cost** | Materials at the cheapest price per reagent, vendor or auction house. |
+  | **AH price** / **Vendor price** | What the result sells for. |
+  | **AH profit** / **Vendor profit** | Earnings after the material cost (the AH one after the auction house cut). |
+  | **Sell to** | *Auction* or *Vendor*, whichever earns more. Sorting by it sorts by the better profit. |
 
-### Pages
+- Hover a recipe for a **per-reagent cost breakdown** showing where each price comes from.
+- Click a source to set a **waypoint**, through [TomTom](https://www.curseforge.com/wow/addons/tomtom)
+  if installed, otherwise the game's own map pin.
 
-| Page | What it shows |
+### Auction house
+
+- **Automatic scans.** A few seconds after you open the auction house, SilkRoad requests a
+  full scan and saves each item's lowest buyout and the quantity listed, per realm.
+- **Respects the server's limit** of one full scan every 15 minutes, automatic or manual.
+  The limit is tracked across characters and reloads.
+- **No stutter.** Listings are processed in small batches across frames.
+- **Shares data with other addons.** When Auctionator or another addon runs a full scan,
+  SilkRoad records the results too, without a request of its own.
+- A small **SilkRoad tab** in the auction house window shows the last scan and a countdown,
+  and has a **Scan now** button, the auto-scan toggle and shortcuts into SilkRoad.
+
+### Prices everywhere
+
+- **Item tooltips** get two lines, like Auctionator's: what a vendor pays, and the lowest
+  auction price (only for items that can be sold there).
+- **Merchant prices are recorded** every time you open a vendor, but you never have to visit
+  vendors: common reagent prices come from the game data.
+- **Price Database** page: look up any item by ID, name or shift-clicked link to see every
+  known price side by side. Your last 20 lookups stay one click away.
+
+### Comfort
+
+- Open the window with **`/silkroad`**, a **key binding**, the **minimap button** or the
+  **addon compartment** menu.
+- Movable, resizable and scalable window that closes with **Escape**.
+- **Settings** in three tabs (General, Prices, Data), including a market data wipe and a
+  settings reset.
+
+## Requirements
+
+| | |
 |---|---|
-| **Overview** | Counts of indexed recipes and recorded prices, your professions, which price sources are active. |
-| **Recipes** | Every recipe of any profession, learned or not: skill level (coloured for your character), where it's obtained (click for vendors, drops and quests with waypoints), material cost, AH price, vendor price, AH profit, vendor profit and where to sell (whichever earns more). Hover a row for the cost per reagent. |
-| **Price Database** | Look up any item (ID, name, or shift-click a link) to see every known price side by side. Your last 20 lookups stay listed below for quick re-checks. |
-| **Settings** | Three tabs. **General**: minimap button, tooltip prices, window scale and position, the open/close key. **Prices**: auction house cut, preferred auction price source, automatic auction scans. **Data**: wipe market data (auction and merchant prices, every realm) or reset all settings, each after a confirmation. |
+| **Game** | World of Warcraft: Forever (interface `16001`) |
+| **Recommended** | [Questie](https://www.curseforge.com/wow/addons/questie) with its QuestieDB data addon. It provides where recipes are sold or dropped, and which reagents vendors sell. |
+| **Optional** | [Auctionator](https://www.curseforge.com/wow/addons/auctionator): its prices are used as an extra source. [TomTom](https://www.curseforge.com/wow/addons/tomtom): waypoints with an arrow. |
 
-## How it is built
+SilkRoad works on its own; the optional addons only add information.
 
-```
-SilkRoad/
-  SilkRoad.toc          interface 16001, saved variables, load order
-  Libs/                 LibStub, LibAHTab (third-party, see below)
-  Locales/enUS.lua      strings (English text doubles as the key)
-  Core/
-    Init.lua            namespace, game-version detection, events, components, slash commands
-    Util.lua            money/percent/time formatting, item helpers
-    Database.lua        saved variables, defaults, migrations, settings by path
-    Prices.lua          the price layer and pluggable auction price providers
-    Sources.lua         where recipes come from and which reagents vendors sell (QuestieDB)
-    Recipes.lua         all recipes, known recipes, cost and profit per craft
-    Merchants.lua       records merchant prices
-    Bindings.lua        the open/close key binding (Bindings.xml registers it)
-    AuctionScanner.lua  full auction house scan with the 15-minute limit
-  Game/Forever.lua      SR.Game: Forever's own APIs (profession window, merchants, waypoints)
-  Data/Forever/         generated game data (recipes, items) for Forever
-  UI/
-    Widgets.lua         small factories over Blizzard templates
-    DataTable.lua       sortable, filterable, virtualised table (ScrollBox)
-    MainFrame.lua       the window, the sidebar and the page registry
-    Launcher.lua        minimap button and addon compartment entry
-    OptionsPanel.lua    entry in Blizzard's Options > AddOns
-    AuctionHouseTab.lua the SilkRoad tab in the auction house window
-    Tooltip.lua         vendor and auction prices in item tooltips
-  Modules/              one file per page
-tools/generate_data.py  generates Data/<Version>/ from Blizzard's client tables
-tools/locales.py        checks translations and writes templates for new languages
-tests/                  smoke test that runs the addon outside the game
-scripts/                link-addon.ps1, test.ps1
-docs/                   FOREVER_API_NOTES.md (research on the Forever client and its API),
-                        TRANSLATING.md (how translations work)
-```
+## Installation
 
-- **Version-agnostic core.** Everything that differs between game versions lives in
-  `Data/<Version>/` (generated game data) and `Game/<Version>.lua` (the `SR.Game`
-  adapter for that version's APIs); both load only on their own client
-  (`SR.flavor`, set from the interface number in `Core/Init.lua`). The services and
-  pages only use `SR.Game` and the data. Supporting another version means adding a
-  flavor entry, a `Game/` adapter and a data folder. The auction scanner still calls
-  Forever's modern auction API directly and would move behind `SR.Game` then.
-- **Components.** `SR:NewComponent(name)` creates a subsystem with optional
-  `OnInitialize` (saved variables ready) and `OnEnable` (player in world) hooks.
-- **Pages.** A page is one `SR.UI:RegisterPage{ id, title, icon, order }` call plus
-  `OnCreate(frame)` and `Refresh()`. Pages are built the first time they're opened
-  and refreshed whenever they're shown or the price data changes.
-- **Prices.** Pages only talk to `SR.Prices`: vendor sell price (from the client),
-  merchant price (recorded), and auction price from *providers*. Built-in
-  providers are SilkRoad's own scans and Auctionator; new sources plug in with
-  `SR.Prices:RegisterProvider{ id, label, IsAvailable, GetPrice }`.
-- **Saved data.** `SilkRoadDB` (account) holds settings, per-realm auction data,
-  merchant prices and recipe definitions; `SilkRoadCharDB` holds what the
-  character knows. The layout is documented at the top of `Core/Database.lua`.
-- **Messages.** Components talk through `SR:Fire` / `SR:RegisterCallback`:
-  `SETTING_CHANGED`, `PRICES_UPDATED`, `ITEM_INFO_RECEIVED`, `SCAN_STATUS`,
-  `RECIPES_UPDATED`.
-- **Auction house tab.** Each auction house helper is a card on the SilkRoad tab
-  (`UI/AuctionHouseTab.lua`). The tab is meant to stay small: scan status and
-  shortcuts into SilkRoad, not a replacement for the auction house UI.
+1. Download this repository (**Code > Download ZIP**) or clone it.
+2. Copy the **`SilkRoad`** folder (the one containing `SilkRoad.toc`) into:
+
+   ```
+   World of Warcraft\_forever_\Interface\AddOns\
+   ```
+
+3. Start the game, or type `/reload` if it's already running, and check that SilkRoad is
+   enabled in the AddOns list on the character screen.
+
+> [!TIP]
+> Working on the code? Link the folder instead of copying it, so the game always loads
+> your working copy:
+>
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File scripts/link-addon.ps1
+> ```
+>
+> Pass `-WowPath "D:\Games\World of Warcraft"` if the game isn't in the default location.
+
+## Getting started
+
+1. Type **`/silkroad`** (or **`/silk`**), or click the minimap button.
+2. Open the **auction house** once. SilkRoad scans it automatically and fills in auction prices.
+3. Go to **Recipes**, pick a profession and sort by **Sell to** to see the most profitable
+   crafts first.
+4. Optional: set a key in **Settings > General > Key binding** to open SilkRoad instantly.
+
+## How prices are worked out
+
+All prices are per item, in copper, shown in gold, silver and copper.
+
+| Price | Where it comes from |
+|---|---|
+| **Auction price** | Lowest buyout from SilkRoad's latest scan of your realm, or Auctionator's price if it has one and SilkRoad doesn't. You can prefer one source in Settings. |
+| **Vendor sell price** (what a vendor pays you) | The game's item data. |
+| **Vendor buy price** (what a merchant charges) | In order: a price SilkRoad recorded at a merchant, one Auctionator recorded, or the game's item data for items vendors are known to sell (via QuestieDB). |
+| **Material cost** | Per reagent, the cheaper of its vendor buy price and auction price. Left empty when a reagent has no price at all. |
+| **AH profit** | Auction price × quantity made, minus the auction house cut (5% by default, adjustable), minus material cost. |
+| **Vendor profit** | Vendor sell price × quantity made, minus material cost. |
+
+> [!NOTE]
+> The skill needed to learn a recipe is exact for recipes taught by a pattern, plan or
+> formula. For trainer recipes the game data doesn't contain the requirement, so SilkRoad
+> shows the closest value, marked with `~`.
+
+## Commands
+
+| Command | Does |
+|---|---|
+| `/silkroad` or `/silk` | Opens or closes the window |
+| `/silkroad recipes` · `overview` · `prices` · `settings` | Opens a page directly |
+| `/silkroad scan` | Scans the auction house (it must be open) |
+| `/silkroad minimap` | Shows or hides the minimap button |
+| `/silkroad reset` | Resets the window position and size |
+| `/silkroad debug` | Toggles debug messages |
+| `/silkroad version` | Prints the version |
+| `/silkroad help` | Lists all commands |
 
 ## Languages
 
-SilkRoad's text is translatable: English is the base (`Locales/enUS.lua`) and each
-language has its own file that only applies on that client. Spanish (esES/esMX) is
-included. Game names (recipes, items, professions, zones) come from the game in its
-own language. See [docs/TRANSLATING.md](docs/TRANSLATING.md).
+SilkRoad follows the game's language. **English** and **Spanish** (esES/esMX) are
+included; anything untranslated falls back to English. Recipe, item, profession and zone
+names always come from the game in its own language.
 
-## Game data
+Want to add a language? See **[docs/TRANSLATING.md](docs/TRANSLATING.md)**: one command
+creates a file to fill in.
 
-`SilkRoad/Data/Forever/Recipes.lua` is generated, not hand-written:
+## For developers
 
-```powershell
-python tools/generate_data.py
+### Project layout
+
+```
+SilkRoad/                  the addon (this folder goes into Interface\AddOns)
+├─ SilkRoad.toc            interface 16001, saved variables, load order
+├─ Bindings.xml            the open/close key binding
+├─ Core/                   version-agnostic services
+│  ├─ Init.lua             namespace, game-version detection, events, components, slash commands
+│  ├─ Database.lua         saved variables, defaults, migrations, settings, data wipes
+│  ├─ Prices.lua           price layer with pluggable auction price providers
+│  ├─ Recipes.lua          all recipes, known recipes, cost and profit per craft
+│  ├─ Sources.lua          where recipes come from, which reagents vendors sell (QuestieDB)
+│  ├─ AuctionScanner.lua   full auction house scans within the 15-minute limit
+│  ├─ Merchants.lua        records merchant prices
+│  ├─ Bindings.lua         key binding helpers
+│  └─ Util.lua             formatting and item helpers
+├─ Game/Forever.lua        SR.Game: Forever's own APIs (professions, merchants, maps, names)
+├─ Data/Forever/           generated game data: recipes, items, prices
+├─ UI/                     window, sidebar, data table, widgets, tooltips, AH tab, launchers
+├─ Modules/                one file per page: Overview, Recipes, Price Database, Settings
+├─ Locales/                enUS (base) and translations
+└─ Libs/                   LibStub, LibAHTab
+tools/
+├─ generate_data.py        builds Data/<Version>/ from Blizzard's client tables
+└─ locales.py              translation checks and templates
+tests/                     smoke test: runs the addon outside the game against a mock client
+scripts/                   link-addon.ps1, test.ps1
+docs/                      FOREVER_API_NOTES.md, TRANSLATING.md
 ```
 
-It downloads the client tables for the pinned Forever build from
-[wago.tools](https://wago.tools) (cached in `tools/.cache/`) and writes every
-profession recipe (reagents, product, quantity, skill thresholds, recipe item) and
-the items they use (name, quality, icon, vendor buy and sell prices). Regenerate after
-a game patch with `--build <new build>`. Where recipe items are sold or dropped isn't
-in the client tables; SilkRoad reads it at runtime from QuestieDB.
+### Architecture
 
-## Testing
+- **Version-agnostic core.** Everything that differs between game versions lives in
+  `Data/<Version>/` (generated game data) and `Game/<Version>.lua` (the `SR.Game` adapter
+  for that version's APIs). Both load only on their own client (`SR.flavor`, from the
+  interface number). Supporting another version means adding a flavor entry, an adapter
+  and a data folder.
+- **Components.** `SR:NewComponent(name)` creates a service with optional `OnInitialize`
+  (saved variables ready) and `OnEnable` (player in the world) hooks.
+- **Pages.** One `SR.UI:RegisterPage{ id, title, icon, order }` call plus `OnCreate(frame)`
+  and `Refresh()`. Built on first open, refreshed when shown or when data changes.
+- **Prices.** Everything reads through `SR.Prices`. New auction price sources plug in with
+  `SR.Prices:RegisterProvider{ id, label, IsAvailable, GetPrice }`.
+- **Messages.** Components talk through `SR:Fire` / `SR:RegisterCallback`:
+  `SETTING_CHANGED`, `PRICES_UPDATED`, `RECIPES_UPDATED`, `SCAN_STATUS`, `ITEM_INFO_RECEIVED`.
+- **Saved data.** `SilkRoadDB` (account: settings, auction data per realm, merchant prices)
+  and `SilkRoadCharDB` (per character: known recipes). Documented in `Core/Database.lua`.
+
+### Testing
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/test.ps1
 ```
 
-This runs `tests/smoke_test.py`: the addon is compiled with real Lua 5.1 and
-driven through `tests/scenario.lua` against a mock of the game client. The
-mock checks every widget method, frame template and game global the addon
-touches against the generated API lists for the Forever client, and rejects
-over-constrained anchors and stray globals. It can't show what the window looks
-like; that still needs a `/reload` in game. The first run creates `tests/.venv`
-(with [lupa](https://pypi.org/project/lupa/)) and downloads the API lists into
-`tests/.api`.
+The smoke test compiles the addon with real **Lua 5.1** (the game's version) and drives it
+through `tests/scenario.lua` against a mock game client: every page, the auction scanner,
+recipes, tooltips, settings and key binding, plus a second pass as a Spanish client. The mock
+checks every widget method, frame template and game function the addon uses against the
+API lists generated from the Forever client, and rejects layout and global-variable mistakes.
+The first run sets up `tests/.venv` (with [lupa](https://pypi.org/project/lupa/)) and downloads
+the API lists. Visual checks still need a `/reload` in game.
+
+### Game data
+
+`SilkRoad/Data/Forever/Recipes.lua` is generated from the game's own client tables, published
+by [wago.tools](https://wago.tools):
+
+```powershell
+python tools/generate_data.py                       # pinned Forever build
+python tools/generate_data.py --build 1.60.1.71000  # after a patch
+```
+
+It writes every profession recipe (reagents, product, quantity, skill thresholds, recipe item)
+and the items they use (name, quality, icon, vendor prices). Where recipe items are sold or
+dropped isn't in the client tables; SilkRoad reads that from QuestieDB at runtime.
+
+Research on the Forever client, its APIs and their quirks is collected in
+**[docs/FOREVER_API_NOTES.md](docs/FOREVER_API_NOTES.md)**.
 
 ## Roadmap
 
-1. Shopping lists for missing materials, crafting queue.
-2. Price history and trends, tooltip prices.
-3. Other game versions, through the version layer described above.
+- [x] Recipe list for every profession with costs, profits and where to sell
+- [x] Recipe sources with waypoints
+- [x] Automatic auction house scanning
+- [x] Known recipes from the spellbook
+- [x] Tooltip prices, key binding, translations
+- [ ] Shopping list for missing materials and a crafting queue
+- [ ] Price history and trends
+- [ ] More languages
+- [ ] Other game versions, through the version layer
 
-API research for each of these is in [docs/FOREVER_API_NOTES.md](docs/FOREVER_API_NOTES.md).
+## Credits
 
-## Third-party libraries
+- Recipe and item data: Blizzard's client tables, via [wago.tools](https://wago.tools).
+- Recipe sources and vendor lists: [Questie](https://github.com/Questie/Questie)'s QuestieDB, read at runtime.
+- Bundled libraries, unmodified, in `SilkRoad/Libs/`:
+  - [LibStub](https://www.wowace.com/projects/libstub): public domain.
+  - [LibAHTab](https://github.com/Auctionator/LibAHTab) by plusmouse: MIT (`Libs/LibAHTab/LICENSE`).
+    Adds the auction house tab without tainting it.
 
-Bundled in `SilkRoad/Libs/`, unmodified:
+World of Warcraft is a trademark of Blizzard Entertainment, Inc. SilkRoad is a fan-made addon
+and isn't affiliated with or endorsed by Blizzard.
 
-- [LibStub](https://www.wowace.com/projects/libstub): public domain.
-- [LibAHTab](https://github.com/Auctionator/LibAHTab) v5 by plusmouse: MIT
-  (`Libs/LibAHTab/LICENSE`). Adds the auction house tab without tainting the
-  auction house.
+## License
+
+No license has been chosen yet. Until one is added, all rights are reserved by the author.
