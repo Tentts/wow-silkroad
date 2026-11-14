@@ -4,6 +4,7 @@
 ]]
 local M = MOCK
 local SR = SilkRoad
+local Util = SR.Util
 local checks = 0
 
 local function check(condition, message)
@@ -59,7 +60,7 @@ check(SR.UI.currentPageID == "overview", "opens on the overview page")
 check(SilkRoadMainFrame.PageTitle:GetText() == "Overview", "page title shown")
 check(UISpecialFrames[1] == "SilkRoadMainFrame", "window closes with Escape")
 local nav = SR.UI.navButtons
-check(#nav == 5, "five pages in the sidebar")
+check(#nav == 4, "four pages in the sidebar")
 
 ---------------------------------------------------------------------------
 step("overview")
@@ -143,12 +144,15 @@ check(bolt.cost == 100, "cost = 2 x 50c Linen Cloth from the auction house")
 check(bolt.auctionPrice == 300, "AH price of the product")
 check(bolt.vendorPrice == SR.StaticData.items[2996][4], "vendor price from the game data, no item loading")
 check(bolt.profit == 285 - 100, "profit = auction price after the 5% cut - cost")
+check(bolt.auctionProfit == 185 and bolt.vendorProfit == bolt.vendorPrice - 100, "AH and vendor profit columns")
+check(bolt.bestSale == "auction", "sell to: auction")
 check(bolt.source == "Learned with the profession", "auto-learned recipes say so")
 check(bolt.levelText == "|cff808080" .. "1|r", "skill level coloured grey: Tailoring 75 is past its grey threshold")
 
 local belt = RowFor(8776) -- Linen Belt: Bolt of Linen Cloth + Coarse Thread, from a trainer
 check(belt.cost == 300 + 10, "cost mixes auction (bolt) and recorded vendor (thread) prices")
 check(belt.profit == belt.vendorPrice - 310, "no auction price: profit uses the vendor price")
+check(belt.auctionProfit == nil and belt.bestSale == "vendor", "no auction price: no AH profit, sell to vendor")
 check(belt.source == "Trainer", "trainer recipes")
 check(belt.levelText == "|cff40c040~50|r", "approximate trainer requirement, coloured green for skill 75")
 
@@ -320,18 +324,6 @@ rawset(_G, "QuestieLoader", nil)
 SR.Sources:ResetCache()
 
 ---------------------------------------------------------------------------
-step("vendor flips")
-SR.UI:OpenPage("flips")
-local flipsPage
-for _, page in ipairs(SR.UI:GetPages()) do
-	if page.id == "flips" then flipsPage = page end
-end
-check(flipsPage.Count:GetText() == "1 of 2 items", "only profitable flips by default")
-local silk = flipsPage.Table.ScrollBox.__active[1].row
-check(silk.itemID == 4306 and silk.profit == 380 - 150, "silk flip profit uses the net auction price")
-M.Click(flipsPage.ProfitableOnly)
-check(flipsPage.Count:GetText() == "2 of 2 items", "unchecking shows every vendor item")
-
 ---------------------------------------------------------------------------
 step("price database")
 SR.UI:OpenPage("prices")
@@ -436,7 +428,7 @@ local settingsPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "settings" then settingsPage = page end
 end
-local minimapCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+local minimapCheck, tooltipCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
 check(minimapCheck:GetChecked() == true, "minimap checkbox reflects the setting")
 M.Click(minimapCheck)
 check(SR:GetSetting("minimap.hide") == true and not SilkRoadMinimapButton:IsShown(), "minimap button hidden")
@@ -705,20 +697,8 @@ SilkRoad.UI:Toggle()
 step("wiping data")
 SR.UI:OpenPage("settings")
 M.Click(tabButtons[3])
-check(settingsPage.PersonalSummary:GetText():find("known recipes", 1, true), "personal data summarised")
+check(settingsPage.PersonalSummary == nil and settingsPage.WipePersonalButton == nil, "no personal data wipe")
 check(settingsPage.MarketSummary:GetText():find("auction prices on 1 realm(s)", 1, true), "market data summarised")
-local knownBefore = SR.Recipes:CountKnown()
-check(knownBefore > 0, "there is personal data to wipe")
-M.Click(settingsPage.WipePersonalButton)
-check(M.lastPopup and M.lastPopup.text:find("Wipe this character", 1, true), "asks for confirmation first")
-check(SR.Recipes:CountKnown() == knownBefore, "nothing wiped before confirming")
-M.knownSpells = {}
-M.AcceptPopup()
-M.RunTimers()
-check(SR.Recipes:CountKnown() == 0 and next(SR.DB.char.scannedProfessions) == nil, "known recipes and professions wiped")
-check(settingsPage.PersonalSummary:GetText():find("^0 known recipes"), "summary updated")
-check(next(SR.DB:GetMarket().auction) ~= nil, "market data untouched by the personal wipe")
-
 local lastRequest = SR.DB.global.scanner.lastRequest
 M.Click(settingsPage.WipeMarketButton)
 M.AcceptPopup()
@@ -741,6 +721,27 @@ check(SilkRoadMinimapButton:IsShown(), "listeners notified (minimap button back)
 check(SR.DB.settings == SilkRoadDB.settings, "settings table kept in place")
 check(settingsPage.tabs.data:IsVisible(), "stays on the Data tab")
 SR.UI:Hide()
+
+---------------------------------------------------------------------------
+step("prices in item tooltips")
+local addTooltipLines = M.tooltipPostCalls[Enum.TooltipDataType.Item]
+check(addTooltipLines ~= nil, "item tooltip hook registered")
+SR.DB:GetMarket().auction[2589] = { price = 47, quantity = 10, seen = time() }
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, { id = 2589, lines = { { leftText = "Linen Cloth" } } })
+check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(SR.StaticData.items[2589][4]), "vendor price line")
+check(M.tooltipLines[2] == "SilkRoad auction|" .. Util.FormatMoney(47), "auction price line")
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, { id = 2589, lines = { { leftText = "Linen Cloth" }, { leftText = "Soulbound" } } })
+check(#M.tooltipLines == 1 and M.tooltipLines[1]:find("^SilkRoad vendor"), "no auction line for soulbound items")
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, { id = 60001, lines = {} })
+check(M.tooltipLines[#M.tooltipLines] == "SilkRoad auction|" .. "|cff808080no data|r", "items without an auction price say so")
+SR:SetSetting("tooltipPrices", false)
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, { id = 2589, lines = {} })
+check(#M.tooltipLines == 0, "turned off in settings")
+SR:SetSetting("tooltipPrices", true)
 
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")

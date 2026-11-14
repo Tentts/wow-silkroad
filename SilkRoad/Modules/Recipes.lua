@@ -68,7 +68,18 @@ function Page:BuildRow(recipe, profession)
 		source = SR.Sources:Summarize(recipe),
 		cost = evaluation.cost, auctionPrice = evaluation.auctionPrice,
 		vendorPrice = evaluation.vendorPrice, profit = evaluation.profit,
+		auctionProfit = evaluation.auctionProfit, vendorProfit = evaluation.vendorProfit,
+		bestSale = evaluation.bestSale,
 	}
+end
+
+local function FormatSellTo(_, row)
+	if row.bestSale == "auction" then
+		return Util.ColorText(L["Auction"], COLORS.link)
+	elseif row.bestSale == "vendor" then
+		return Util.ColorText(L["Vendor"], COLORS.yellow)
+	end
+	return Util.ColorText("-", COLORS.gray)
 end
 
 local function FormatName(_, row)
@@ -168,17 +179,20 @@ function Page:OnCreate(frame)
 	self.Table = Widgets.CreateDataTable(frame, {
 		columns = {
 			{ key = "name", title = L["Recipe"], kind = "item", format = FormatName },
-			{ key = "learn", title = L["Level"], width = 52, align = "RIGHT", format = function(_, row) return row.levelText end },
+			{ key = "learn", title = L["Level"], width = 46, align = "RIGHT", format = function(_, row) return row.levelText end },
 			{
-				key = "source", title = L["Obtained at"], width = 175,
+				key = "source", title = L["Obtained at"], width = 150,
 				format = function(value) return Util.ColorText(value, COLORS.link) end,
 				onClick = function(row) SR.SourcePopup:Show(row.recipe) end,
 				tooltip = ShowSourceTooltip,
 			},
-			{ key = "cost", title = L["Cost"], width = 100, kind = "money", align = "RIGHT", sortDescFirst = true },
-			{ key = "auctionPrice", title = L["AH price"], width = 100, kind = "money", align = "RIGHT", sortDescFirst = true },
-			{ key = "vendorPrice", title = L["Vendor price"], width = 92, kind = "money", align = "RIGHT", sortDescFirst = true },
-			{ key = "profit", title = L["Profit"], width = 108, kind = "profit", align = "RIGHT", sortDescFirst = true },
+			{ key = "cost", title = L["Cost"], width = 88, kind = "money", align = "RIGHT", sortDescFirst = true },
+			{ key = "auctionPrice", title = L["AH price"], width = 88, kind = "money", align = "RIGHT", sortDescFirst = true },
+			{ key = "vendorPrice", title = L["Vendor price"], width = 82, kind = "money", align = "RIGHT", sortDescFirst = true },
+			{ key = "auctionProfit", title = L["AH profit"], width = 92, kind = "profit", align = "RIGHT", sortDescFirst = true },
+			{ key = "vendorProfit", title = L["Vendor profit"], width = 92, kind = "profit", align = "RIGHT", sortDescFirst = true },
+			-- Where to sell; sorting by it sorts by the better of the two profits.
+			{ key = "profit", title = L["Sell to"], width = 66, align = "CENTER", sortDescFirst = true, format = FormatSellTo },
 		},
 		sortKey = "profit",
 		sortDesc = true,

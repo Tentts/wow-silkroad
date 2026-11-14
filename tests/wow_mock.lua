@@ -1110,3 +1110,38 @@ function M.AcceptPopup()
 	M.lastPopup = nil
 	popup.dialog.OnAccept({}, popup.data)
 end
+
+-- Item tooltips: post-call hooks, and lines added to GameTooltip ("left|right").
+M.tooltipPostCalls = {}
+M.tooltipLines = {}
+define("Enum", { TooltipDataType = { Item = 0, Spell = 1, Unit = 2 } })
+define("TooltipDataProcessor", {
+	AddTooltipPostCall = function(tooltipType, func)
+		assert(type(func) == "function", "AddTooltipPostCall: function expected")
+		M.tooltipPostCalls[tooltipType] = func
+	end,
+})
+GameTooltip.AddDoubleLine = function(self, left, right)
+	table.insert(M.tooltipLines, tostring(left) .. "|" .. tostring(right))
+end
+define("ITEM_SOULBOUND", "Soulbound")
+define("ITEM_BIND_ON_PICKUP", "Binds when picked up")
+define("ITEM_BIND_QUEST", "Quest Item")
+define("ITEM_ACCOUNTBOUND", "Account bound")
+define("ITEM_BNETACCOUNTBOUND", "Account bound")
+
+-- Client language and names the game knows in it (only used when locale ~= "enUS").
+M.locale = "enUS"
+define("GetLocale", function() return M.locale end)
+M.spellNames = { [2963] = "Paño de lino" }
+M.localizedItemNames = { [2589] = "Tela de lino" }
+M.professionNames = { [197] = "Sastrería", [171] = "Alquimia" }
+define("C_Spell", { GetSpellName = function(spellID) return M.spellNames[spellID] end })
+C_TradeSkillUI.GetTradeSkillDisplayName = function(skillLineID) return M.professionNames[skillLineID] end
+local englishItemName = C_Item.GetItemNameByID
+C_Item.GetItemNameByID = function(itemID)
+	if M.locale ~= "enUS" then
+		return M.localizedItemNames[itemID]
+	end
+	return englishItemName(itemID)
+end

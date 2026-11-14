@@ -2,7 +2,7 @@
 
 A crafting and trading helper for **World of Warcraft: Forever**. SilkRoad
 compares what a recipe's materials cost (from vendors and the auction house)
-with what the result sells for, so profitable crafts, auction house flips and
+with what the result sells for, so profitable crafts, where to sell them and
 "craft and sell to a vendor" gold become easy to spot.
 
 > **Status: 0.4.0.** Every recipe of every profession (from the game's own data),
@@ -32,6 +32,9 @@ editing code, type `/reload` in game.
   `version`, plus page names to jump straight to a page (`/silkroad recipes`).
 - The window can be moved, resized from the bottom-right corner, scaled in
   Settings, and closed with Escape.
+- Item tooltips get two lines, like Auctionator's: what a vendor pays for the
+  item, and its lowest auction price (only for items that can be sold there).
+  Turn them off in **Settings > General**.
 - Set a key to open and close SilkRoad in **Settings > General** (or under
   Options > Keybindings > AddOns > SilkRoad).
 
@@ -44,6 +47,9 @@ editing code, type `/reload` in game.
 - **Obtained at**: trainer, learned with the profession, or the recipe item and who
   sells or drops it. Click it for every source with zone and coordinates; click a
   source to set a waypoint (TomTom when installed, otherwise the game's map pin).
+- **AH profit** and **Vendor profit** are what each way of selling earns after the
+  material cost (the AH one after the auction cut); **Sell to** says which earns
+  more, and sorting by it sorts by the better profit.
 - **Cost** uses the cheapest source per reagent: a vendor price (recorded at a
   merchant, seen by Auctionator, or from the game data for items vendors are known
   to sell) or the lowest auction price. **Profit** is the better of the auction
@@ -75,10 +81,9 @@ editing code, type `/reload` in game.
 | Page | What it shows |
 |---|---|
 | **Overview** | Counts of indexed recipes and recorded prices, your professions, which price sources are active. |
-| **Recipes** | Every recipe of any profession, learned or not: skill level (coloured for your character), where it's obtained (click for vendors, drops and quests with waypoints), material cost, AH price, vendor price and profit. Hover a row for the cost per reagent. |
-| **Vendor Flips** | Items a merchant sells for less than they fetch on the auction house. |
+| **Recipes** | Every recipe of any profession, learned or not: skill level (coloured for your character), where it's obtained (click for vendors, drops and quests with waypoints), material cost, AH price, vendor price, AH profit, vendor profit and where to sell (whichever earns more). Hover a row for the cost per reagent. |
 | **Price Database** | Look up any item (ID, name, or shift-click a link) to see every known price side by side. Your last 20 lookups stay listed below for quick re-checks. |
-| **Settings** | Three tabs. **General**: minimap button, window scale and position, the open/close key. **Prices**: auction house cut, preferred auction price source, automatic auction scans. **Data**: wipe this character's data (known recipes, professions read, recent lookups), wipe market data (auction and merchant prices, every realm), reset all settings. Each asks for confirmation. |
+| **Settings** | Three tabs. **General**: minimap button, tooltip prices, window scale and position, the open/close key. **Prices**: auction house cut, preferred auction price source, automatic auction scans. **Data**: wipe market data (auction and merchant prices, every realm) or reset all settings, each after a confirmation. |
 
 ## How it is built
 
@@ -106,11 +111,14 @@ SilkRoad/
     Launcher.lua        minimap button and addon compartment entry
     OptionsPanel.lua    entry in Blizzard's Options > AddOns
     AuctionHouseTab.lua the SilkRoad tab in the auction house window
+    Tooltip.lua         vendor and auction prices in item tooltips
   Modules/              one file per page
 tools/generate_data.py  generates Data/<Version>/ from Blizzard's client tables
+tools/locales.py        checks translations and writes templates for new languages
 tests/                  smoke test that runs the addon outside the game
 scripts/                link-addon.ps1, test.ps1
-docs/                   FOREVER_API_NOTES.md (research on the Forever client and its API)
+docs/                   FOREVER_API_NOTES.md (research on the Forever client and its API),
+                        TRANSLATING.md (how translations work)
 ```
 
 - **Version-agnostic core.** Everything that differs between game versions lives in
@@ -138,6 +146,13 @@ docs/                   FOREVER_API_NOTES.md (research on the Forever client and
 - **Auction house tab.** Each auction house helper is a card on the SilkRoad tab
   (`UI/AuctionHouseTab.lua`). The tab is meant to stay small: scan status and
   shortcuts into SilkRoad, not a replacement for the auction house UI.
+
+## Languages
+
+SilkRoad's text is translatable: English is the base (`Locales/enUS.lua`) and each
+language has its own file that only applies on that client. Spanish (esES/esMX) is
+included. Game names (recipes, items, professions, zones) come from the game in its
+own language. See [docs/TRANSLATING.md](docs/TRANSLATING.md).
 
 ## Game data
 

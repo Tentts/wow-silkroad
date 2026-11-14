@@ -34,8 +34,13 @@ local function Decode(id, row)
 	for i = 1, #list, 2 do
 		reagents[#reagents + 1] = { itemID = list[i], count = list[i + 1] }
 	end
+	-- The generated names are English; other clients get the game's own.
+	local name = row[2]
+	if SR.locale ~= "enUS" then
+		name = SR.Game.GetRecipeName(id) or name
+	end
 	return {
-		id = id, skillLine = row[1], name = row[2], product = row[3] or nil, quantity = row[4],
+		id = id, skillLine = row[1], name = name, product = row[3] or nil, quantity = row[4],
 		learn = row[5], yellow = row[6], gray = row[7],
 		learnExact = row[8] % 2 == 1, auto = math.floor(row[8] / 2) % 2 == 1,
 		recipeItem = row[9] or nil, reagents = reagents,
@@ -102,8 +107,12 @@ function Recipes:GetProfessions()
 	local list = {}
 	for _, profession in ipairs(StaticData().professions) do
 		local learned = mine[profession.id] or mine[profession.name]
+		local name = profession.name
+		if SR.locale ~= "enUS" then
+			name = (learned and learned.name) or SR.Game.GetProfessionName(profession.id) or name
+		end
 		list[#list + 1] = {
-			id = profession.id, name = profession.name, icon = profession.icon, kind = profession.kind,
+			id = profession.id, name = name, icon = profession.icon, kind = profession.kind,
 			learned = learned ~= nil, rank = learned and learned.rank, maxRank = learned and learned.maxRank,
 		}
 	end
@@ -275,8 +284,10 @@ end
 	auctionPrice lowest auction buyout of the result, times the quantity made
 	auctionNet   the same after the auction house cut
 	vendorPrice  what a vendor pays for the result, times the quantity made
-	profit       best of auctionNet / vendorPrice, minus cost
-	bestSale     "auction" | "vendor"
+	auctionProfit auctionNet minus cost (nil without an auction price or a full cost)
+	vendorProfit  vendorPrice minus cost
+	profit       the better of the two
+	bestSale     "auction" | "vendor": where the result earns more
 	reagents     { { itemID, count, unitCost, source = "vendor"|"auction"|nil }, ... }
 ]]
 function Recipes:Evaluate(recipe)
@@ -307,6 +318,8 @@ function Recipes:Evaluate(recipe)
 			result.bestSale = (result.auctionNet or -1) >= (result.vendorPrice or -1) and "auction" or "vendor"
 			if complete then
 				result.profit = best - cost
+				result.auctionProfit = result.auctionNet and result.auctionNet - cost or nil
+				result.vendorProfit = result.vendorPrice and result.vendorPrice - cost or nil
 			end
 		end
 	end

@@ -16,8 +16,9 @@
 Libs\LibStub\LibStub.lua
 Libs\LibAHTab\LibAHTab.lua
 
-# Localization (must load before SilkRoad's own files: they all read SR.L)
+# Localization: English base first, then translations (each applies only on its own client language)
 Locales\enUS.lua
+Locales\esES.lua
 
 # Core: namespace, game-version ("flavor") detection, events, slash commands
 Core\Init.lua
@@ -44,10 +45,10 @@ UI\Launcher.lua
 UI\OptionsPanel.lua
 UI\AuctionHouseTab.lua
 UI\SourcePopup.lua
+UI\Tooltip.lua
 
 # Pages (menus), shown in the sidebar in their registered order
 Modules\Overview.lua
 Modules\Recipes.lua
-Modules\VendorFlips.lua
 Modules\PriceDatabase.lua
 Modules\Settings.lua

@@ -12,6 +12,7 @@
 	SR.Game.ReadRecipeSchematic(recipeID)  { name, icon, product, quantityMin, quantityMax, reagents }
 	SR.Game.ReadMerchant()                 { { itemID, price (per item) }, ... }
 	SR.Game.GetAreaName(areaID)            zone / dungeon name
+	SR.Game.GetRecipeName / GetItemName / GetProfessionName(id)  names in the client's language, or nil
 	SR.Game.SetWaypoint(uiMapID, x, y, title)  x, y in 0..1; returns true on success
 ]]
 local _, SR = ...
@@ -120,6 +121,24 @@ function Game.ReadMerchant()
 		end
 	end
 	return list
+end
+
+-- Names in the client's language. The generated game data is English;
+-- these return nil when the game can't answer right away (item names need
+-- the item cached), and callers fall back to the English name.
+function Game.GetRecipeName(recipeID)
+	return C_Spell.GetSpellName(recipeID)
+end
+
+function Game.GetItemName(itemID)
+	return C_Item.GetItemNameByID(itemID)
+end
+
+function Game.GetProfessionName(skillLineID)
+	local name = C_TradeSkillUI.GetTradeSkillDisplayName(skillLineID)
+	if name and name ~= "" then
+		return name
+	end
 end
 
 function Game.GetAreaName(areaID)

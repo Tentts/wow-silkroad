@@ -48,6 +48,12 @@ and our own out-of-combat UI work normally.
 - `GetProfessions`, `GetProfessionInfo`
 - `GetMoneyString`, `WrapTextInColorCode`, `HandleModifiedItemClick`, `IsModifiedClick`
 - `ChatFrameUtil.InsertLink` (replaces `ChatEdit_InsertLink`, which no longer exists)
+- Item tooltips: `TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, fn)`
+  (Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua); `fn(tooltip, data)` gets
+  `data.id` (item ID) and `data.lines` (each with `leftText`), e.g. to spot "Soulbound"
+- Names in the client's language: `C_Spell.GetSpellName(recipeID)`,
+  `C_Item.GetItemNameByID(itemID)` (nil until cached),
+  `C_TradeSkillUI.GetTradeSkillDisplayName(skillLineID)`; `GetLocale()`
 - `Settings.RegisterCanvasLayoutCategory`, `Settings.RegisterAddOnCategory`
 - Addon compartment: `AddonCompartmentFrame` exists in Forever
   (`Blizzard_Minimap/Camelot/AddonCompartment.xml`), so the TOC

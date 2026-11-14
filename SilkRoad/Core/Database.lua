@@ -50,7 +50,7 @@ DB.ACCOUNT_DEFAULTS = {
 			angle = 200, -- degrees around the minimap, 0 = east
 		},
 		window = {
-			width = 1060,
+			width = 1180,
 			height = 600,
 			scale = 1,
 			lastPage = "overview",
@@ -59,6 +59,7 @@ DB.ACCOUNT_DEFAULTS = {
 		auctionCutPercent = 5,
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
+		tooltipPrices = true, -- vendor and auction prices in item tooltips
 		settingsTab = "general", -- last tab shown on the Settings page
 		recipes = {
 			profession = nil,  -- skillLineID last shown on the Recipes page
@@ -189,21 +190,10 @@ function DB:GetDataSummary()
 		end
 	end
 	return {
-		knownRecipes = Util.CountKeys(self.char.knownRecipes),
-		professions = Util.CountKeys(self.char.scannedProfessions),
-		recentLookups = #self.global.recentLookups,
 		auctionPrices = auctionPrices,
 		realms = realms,
 		vendorPrices = Util.CountKeys(self.global.vendorPrices),
 	}
-end
-
--- This character's data: known recipes, professions read, recent lookups.
-function DB:WipeCharacterData()
-	Clear(self.char.knownRecipes)
-	Clear(self.char.scannedProfessions)
-	Clear(self.global.recentLookups)
-	SR:Fire("RECIPES_UPDATED")
 end
 
 -- Market data: auction prices on every realm and recorded merchant prices.
@@ -217,7 +207,7 @@ end
 
 -- Every setting back to its default. Done in place, so code holding the
 -- settings table keeps working; listeners are told about each setting.
-local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "debug" }
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipPrices", "debug" }
 
 function DB:ResetSettings()
 	Clear(self.settings)

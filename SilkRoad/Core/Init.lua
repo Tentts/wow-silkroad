@@ -36,6 +36,7 @@ local FLAVORS = {
 }
 
 SR.interface = select(4, GetBuildInfo())
+SR.locale = GetLocale()
 SR.flavor = "unsupported"
 for _, entry in ipairs(FLAVORS) do
 	if SR.interface >= entry[1] and SR.interface <= entry[2] then

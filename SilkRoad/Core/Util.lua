@@ -202,7 +202,11 @@ function Util.GetItemDisplay(itemID)
 	-- The generated game data covers recipe items without asking the client.
 	local static = SR.StaticData and SR.StaticData.items[itemID]
 	if static then
-		return { itemID = itemID, name = static[1], quality = static[2], icon = static[3] }
+		local name = static[1]
+		if SR.locale ~= "enUS" then
+			name = SR.Game.GetItemName(itemID) or name -- English until the client has the item cached
+		end
+		return { itemID = itemID, name = name, quality = static[2], icon = static[3] }
 	end
 	local name, link, quality, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
 	if not name then

@@ -37,7 +37,9 @@ VERIFIED_BY_SOURCE = {
     "UISpecialFrames",
     "SlashCmdList",
     "SOUNDKIT",
-    "StaticPopupDialogs",  # Blizzard_StaticPopup/StaticPopup.lua
+    "StaticPopupDialogs",
+    "Enum",  # generated enum tables (LuaEnum.lua)
+    "TooltipDataProcessor.AddTooltipPostCall",  # Blizzard_SharedXMLGame/Tooltip/TooltipDataHandler.lua  # Blizzard_StaticPopup/StaticPopup.lua
     "time",
     "UiMapPoint.CreateFromCoordinates",  # Blizzard_ObjectAPI/Mainline/UiMapPoint.lua
     "Minimap",  # nested <Minimap name="Minimap"> in Blizzard_Minimap/Mainline/Minimap.xml
@@ -129,44 +131,90 @@ def mock_method_names(lua):
     return [key for key in lua.globals().MOCK.Widget.keys() if not key.startswith("__")]
 
 
+LOCALE_SCENARIO = """
+-- A Spanish client: SilkRoad's text in Spanish, game names from the game.
+local M, SR = MOCK, SilkRoad
+assert(SR.locale == "esES", "client locale")
+M.professions[1][1] = "Sastrería" -- the game names learned professions in the client's language
+M.FireEvent("ADDON_LOADED", "SilkRoad")
+M.FireEvent("PLAYER_LOGIN")
+assert(SR.L["Recipes"] == "Recetas", "translated text key")
+assert(SR.L.RECIPES_DESC:find("Todas las recetas", 1, true), "translated symbolic key")
+assert(SR.L["Some text nobody translated"] == "Some text nobody translated", "untranslated text falls back to English")
+for _, page in ipairs(SR.UI:GetPages()) do
+    SR.UI:OpenPage(page.id)
+end
+assert(SilkRoadMainFrame.PageTitle:GetText() == "Ajustes", "page titles translated")
+local bolt = SR.Recipes:GetRecipe(2963)
+assert(bolt.name == "Paño de lino", "recipe names come from the game in the client's language")
+assert(SR.Util.GetItemDisplay(2589).name == "Tela de lino", "item names come from the game when cached")
+assert(SR.Util.GetItemDisplay(2996).name == "Bolt of Linen Cloth", "English data name until the client has the item")
+local names = {}
+for _, profession in ipairs(SR.Recipes:GetProfessions()) do
+    names[profession.id] = profession.name
+end
+assert(names[197] == "Sastrería", "learned profession names in the client's language")
+assert(names[171] == "Alquimia", "unlearned profession names from the game too")
+return 8
+"""
+
+
+def load_runtime(locale, api):
+    """A fresh Lua 5.1 runtime with the mock client (in `locale`) and the addon loaded."""
+    lua = lua51.LuaRuntime(unpack_returned_tuples=True)
+    lua.execute((TESTS_DIR / "wow_mock.lua").read_text(encoding="utf-8"))
+    mock = lua.globals().MOCK
+    mock.locale = locale
+    toc_fields, toc_files = read_toc()
+    mock.tocFields = lua.table_from(toc_fields)
+    if api:
+        widget_methods, known, templates = api
+        mock.widgetMethods = lua.table_from({name: True for name in widget_methods})
+        mock.knownAPI = lua.table_from({name: True for name in known})
+        mock.templates = lua.table_from(templates)
+    lua.execute(GUARD)
+    run_chunk = lua.execute(RUN_CHUNK)
+    namespace = lua.table()
+    for relative in toc_files:
+        source = (ADDON_DIR / relative).read_text(encoding="utf-8")
+        run_chunk(source, f"@{ADDON_NAME}/{relative}", ADDON_NAME, namespace)
+    return lua, mock, run_chunk, len(toc_files)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--api", default=os.environ.get("WOW_API_RESOURCES"),
                         help="BlizzardInterfaceResources/Resources folder (forever branch)")
     args = parser.parse_args()
 
-    lua = lua51.LuaRuntime(unpack_returned_tuples=True)
-    lua.execute((TESTS_DIR / "wow_mock.lua").read_text(encoding="utf-8"))
-    mock = lua.globals().MOCK
+    # Translations: no undefined keys, stale translations or broken placeholders.
+    sys.path.insert(0, str(ROOT / "tools"))
+    import locales
+    if locales.report() != 0:
+        print("FAILED: translation problems (see above)")
+        return 1
 
-    toc_fields, toc_files = read_toc()
-    mock.tocFields = lua.table_from(toc_fields)
-
+    api = None
     if args.api:
-        widget_methods, api, templates = load_api(pathlib.Path(args.api))
-        fake_methods = [name for name in mock_method_names(lua) if name not in widget_methods]
-        fake_globals = find_unverified_mocks(lua, api)
+        widget_methods, known, templates = load_api(pathlib.Path(args.api))
+        probe = lua51.LuaRuntime(unpack_returned_tuples=True)
+        probe.execute((TESTS_DIR / "wow_mock.lua").read_text(encoding="utf-8"))
+        fake_methods = [name for name in mock_method_names(probe) if name not in widget_methods]
+        fake_globals = find_unverified_mocks(probe, known)
         if fake_methods or fake_globals:
             print("The mock defines names that don't exist in the Forever API:")
             for name in fake_methods + fake_globals:
                 print("  -", name)
             return 1
-        mock.widgetMethods = lua.table_from({name: True for name in widget_methods})
-        mock.knownAPI = lua.table_from({name: True for name in api})
-        mock.templates = lua.table_from(templates)
-        print(f"API check on: {len(widget_methods)} widget names, {len(api)} globals, {len(templates)} templates")
+        api = (widget_methods, known, templates)
+        print(f"API check on: {len(widget_methods)} widget names, {len(known)} globals, {len(templates)} templates")
     else:
         print("API check off (pass --api to validate names against the Forever client API)")
 
-    lua.execute(GUARD)
-    run_chunk = lua.execute(RUN_CHUNK)
-    namespace = lua.table()
-
+    mock = None
     try:
-        for relative in toc_files:
-            source = (ADDON_DIR / relative).read_text(encoding="utf-8")
-            run_chunk(source, f"@{ADDON_NAME}/{relative}", ADDON_NAME, namespace)
-        print(f"Loaded {len(toc_files)} addon files")
+        lua, mock, run_chunk, file_count = load_runtime("enUS", api)
+        print(f"Loaded {file_count} addon files")
 
         scenario = (TESTS_DIR / "scenario.lua").read_text(encoding="utf-8")
         checks = run_chunk(scenario, "@tests/scenario.lua")
@@ -176,10 +224,14 @@ def main():
         for name, body in re.findall(r'<Binding name="([^"]+)"[^>]*>(.*?)</Binding>', bindings, re.S):
             run_chunk(body, f"@Bindings.xml:{name}")
             checks += 1
+
+        # The same addon on a Spanish client.
+        lua, mock, run_chunk, _ = load_runtime("esES", api)
+        checks += run_chunk(LOCALE_SCENARIO, "@locale-scenario")
     except LuaError as error:
         print("FAILED:", error)
         print("Last output:")
-        for line in list(mock.output.values())[-15:]:
+        for line in list(mock.output.values())[-15:] if mock else []:
             print("  ", line)
         return 1
 

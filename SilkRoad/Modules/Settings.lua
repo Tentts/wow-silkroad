@@ -3,7 +3,7 @@
 	tabs by purpose:
 	  General  minimap button, window, the open/close key binding, about
 	  Prices   auction house cut, preferred price source, automatic scans
-	  Data     wiping this character's data or market data, resetting settings
+	  Data     wiping market data, resetting settings
 ]]
 local _, SR = ...
 local L = SR.L
@@ -107,6 +107,15 @@ function Page:BuildGeneral(parent)
 		end))
 	minimap:SetPoint("TOPLEFT", general, "BOTTOMLEFT", -2, -8)
 
+	local tooltips = self:Track(Widgets.CreateCheckbox(parent, L["Prices in item tooltips"], L.TOOLTIP_PRICES_TOOLTIP,
+		function()
+			return SR:GetSetting("tooltipPrices")
+		end,
+		function(checked)
+			SR:SetSetting("tooltipPrices", checked)
+		end))
+	tooltips:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, -2)
+
 	local scale = self:Track(Widgets.CreateSlider(parent, L["Window scale"], 0.7, 1.5, 0.05,
 		function()
 			return SR:GetSetting("window.scale")
@@ -117,7 +126,7 @@ function Page:BuildGeneral(parent)
 		function(value)
 			return ("%d%%"):format(Util.Round(value * 100))
 		end))
-	scale:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 4, -10)
+	scale:SetPoint("TOPLEFT", tooltips, "BOTTOMLEFT", 4, -10)
 
 	local reset = Widgets.CreateButton(parent, L["Reset window position"], 180, function()
 		SR.UI:ResetLayout()
@@ -272,26 +281,8 @@ end
 ---------------------------------------------------------------------------
 
 function Page:BuildData(parent)
-	-- This character's data
-	local personal = Section(parent, L["Your data"])
-	local personalText = Widgets.CreateLabel(parent, L.WIPE_PERSONAL_DESC, "GameFontHighlight")
-	personalText:SetPoint("TOPLEFT", personal, "BOTTOMLEFT", 0, -8)
-	personalText:SetWidth(SECTION_WIDTH)
-	personalText:SetSpacing(2)
-	self.PersonalSummary = Note(parent, "", personalText)
-	local wipePersonal = Widgets.CreateButton(parent, L["Wipe my data"], 180, function()
-		Widgets.Confirm(L.WIPE_PERSONAL_CONFIRM, function()
-			SR.DB:WipeCharacterData()
-			SR.Recipes:ReadSpellbook()
-			SR:Print(L["Your data was wiped."])
-			self:Refresh()
-		end)
-	end)
-	wipePersonal:SetPoint("TOPLEFT", self.PersonalSummary, "BOTTOMLEFT", 0, -10)
-	self.WipePersonalButton = wipePersonal
-
 	-- Market data
-	local market = Section(parent, L["Market data"], wipePersonal, -24)
+	local market = Section(parent, L["Market data"])
 	local marketText = Widgets.CreateLabel(parent, L.WIPE_MARKET_DESC, "GameFontHighlight")
 	marketText:SetPoint("TOPLEFT", market, "BOTTOMLEFT", 0, -8)
 	marketText:SetWidth(SECTION_WIDTH)
@@ -327,8 +318,6 @@ end
 
 function Page:UpdateDataSummary()
 	local summary = SR.DB:GetDataSummary()
-	self.PersonalSummary:SetText(L["%s known recipes, %d professions read, %d recent lookups."]:format(
-		Util.FormatNumber(summary.knownRecipes), summary.professions, summary.recentLookups))
 	self.MarketSummary:SetText(L["%s auction prices on %d realm(s), %s merchant prices."]:format(
 		Util.FormatNumber(summary.auctionPrices), summary.realms, Util.FormatNumber(summary.vendorPrices)))
 end

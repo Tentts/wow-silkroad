@@ -151,7 +151,6 @@ function AuctionHouseTab:CreateInfoCard(panel)
 	local shortcuts = {
 		{ label = L["Open SilkRoad"], page = nil },
 		{ label = L["Recipes"], page = "recipes" },
-		{ label = L["Vendor Flips"], page = "flips" },
 		{ label = L["Price Database"], page = "prices" },
 	}
 	local previous
