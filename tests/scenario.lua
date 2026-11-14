@@ -17,6 +17,16 @@ local function step(name)
 	M.output[#M.output + 1] = "== " .. name
 end
 
+local function CountOutput(text)
+	local count = 0
+	for _, line in ipairs(M.output) do
+		if line:find(text, 1, true) then
+			count = count + 1
+		end
+	end
+	return count
+end
+
 local function OutputContains(text)
 	for _, line in ipairs(M.output) do
 		if line:find(text, 1, true) then
@@ -203,9 +213,41 @@ M.RunTimers() -- delivers GET_ITEM_INFO_RECEIVED, then the debounced refresh
 M.RunTimers()
 check(pricesPage.Panel.Name:GetText():find("Linen Belt", 1, true), "refreshes when the item arrives")
 
-check(#pricesPage.Table.rows == 3, "own scan data listed")
-M.Click(pricesPage.Table.ScrollBox.__active[1])
-check(pricesPage.itemID ~= nil, "clicking a scan row looks it up")
+step("item data loaded by others doesn't refresh pages")
+local originalRefresh = pricesPage.Refresh
+local refreshes = 0
+pricesPage.Refresh = function(...)
+	refreshes = refreshes + 1
+	return originalRefresh(...)
+end
+for itemID = 100001, 100500 do -- e.g. an auction scan or bags loading items
+	M.FireEvent("GET_ITEM_INFO_RECEIVED", itemID, true)
+end
+M.RunTimers()
+check(refreshes == 0, "500 unrelated item loads cause no refresh")
+pricesPage.Refresh = originalRefresh
+
+step("recent lookups instead of the full scan data")
+check(pricesPage.Summary:GetText() == "SilkRoad scan data on Test Realm: 3 items, last scan 2 min ago.", "scan data summarised in one line")
+local recent = SR.DB.global.recentLookups
+check(table.concat(recent, ",") == "7026,2996,6948,2589", "lookups remembered, most recent first, failed ones skipped")
+check(#pricesPage.Table.rows == 4 and pricesPage.Table.rows[1].itemID == 7026, "recent lookups listed in order")
+check(pricesPage.Table.rows[3].price == nil and pricesPage.Table.rows[4].price == 50, "rows show the scanned price when there is one")
+pricesPage:Lookup(2589)
+check(table.concat(recent, ",") == "2589,7026,2996,6948", "looking an item up again moves it to the top")
+M.Click(pricesPage.Table.ScrollBox.__active[3])
+check(pricesPage.itemID == 2996 and recent[1] == 2996, "clicking a recent row looks it up")
+for itemID = 50001, 50025 do
+	M.items[itemID] = { name = "Test Item " .. itemID, quality = 1, icon = 134400, sellPrice = 1 }
+	pricesPage:Lookup(itemID)
+end
+check(#recent == 20 and recent[1] == 50025, "at most 20 recent lookups kept")
+for itemID = 50001, 50025 do
+	M.items[itemID] = nil
+end
+for i = #recent, 1, -1 do
+	recent[i] = nil
+end
 
 ---------------------------------------------------------------------------
 step("Auctionator integration")
@@ -352,6 +394,13 @@ check(market.lastScanStats.items == 3 and market.lastScanStats.listings == 2504,
 check(OutputContains("Auction scan complete: 3 items from 2,504 auctions"), "completion reported in chat")
 check(SR.Prices:GetAuctionPrice(2589) == 45, "the price layer serves the new prices")
 check(SR.Scanner:GetCooldownRemaining() == 900, "the 15-minute cooldown starts")
+-- The client sent the result event three times for that one request.
+check(CountOutput("Auction scan complete") == 1, "repeated result events don't start another pass")
+check(not OutputContains("started by another addon"), "repeated result events aren't mistaken for another addon's scan")
+check(SR.Scanner.state == "idle", "scanner idle after the scan")
+M.FireEvent("REPLICATE_ITEM_LIST_UPDATE")
+M.RunTimers()
+check(SR.Scanner.state == "idle" and CountOutput("Auction scan complete") == 1, "stray result events while idle are ignored")
 
 step("the 15-minute limit")
 M.CloseAuctionHouse()
@@ -398,19 +447,30 @@ step("no answer from the server")
 M.Advance(900)
 M.ahThrottled = true
 M.OpenAuctionHouse()
-M.RunTimers() -- the automatic request gets no answer, then the timeout fires
-check(M.replicateRequests == 4 and SR.Scanner.state == "idle", "gives up after the timeout")
+M.RunTimers() -- the automatic request gets no answer
+check(M.replicateRequests == 4 and SR.Scanner.state == "waiting", "still waiting shortly after the request")
+M.Advance(121)
+check(SR.Scanner.state == "idle", "gives up after the timeout")
 check(OutputContains("didn't send scan results"), "explains why")
 M.ahThrottled = false
 
 step("full scans started by other addons are recorded")
 M.Advance(60)
-M.FireEvent("REPLICATE_ITEM_LIST_UPDATE") -- e.g. Auctionator's full scan
+local completedBefore = CountOutput("Auction scan complete")
+C_AuctionHouse.ReplicateItems() -- e.g. Auctionator's full scan
+check(SR.Scanner.state == "waiting" and OutputContains("started by another addon"), "another addon's request noticed")
 M.RunTimers()
 check(auction[2589].price == 30, "prices from another addon's scan saved")
-check(OutputContains("started by another addon"), "noted in chat")
+check(CountOutput("Auction scan complete") == completedBefore + 1, "recorded once")
 check(SR.Scanner:GetCooldownRemaining() == 900, "cooldown restarts after another addon's scan")
-check(M.replicateRequests == 4, "no extra request sent")
+check(M.replicateRequests == 5, "SilkRoad sent no request of its own")
+M.ahThrottled = true
+M.Advance(900)
+C_AuctionHouse.ReplicateItems() -- another addon's request that goes unanswered
+M.Advance(121)
+check(SR.Scanner.state == "idle", "an unanswered request from another addon times out")
+check(CountOutput("didn't send scan results") == 1, "quietly: that addon reports its own failure")
+M.ahThrottled = false
 
 step("automatic scan can be turned off")
 M.CloseAuctionHouse()
@@ -419,7 +479,7 @@ M.Click(ahPanel.AutoScan)
 check(SR:GetSetting("autoScan") == false, "checkbox turns automatic scans off")
 M.OpenAuctionHouse()
 M.RunTimers()
-check(M.replicateRequests == 4, "no automatic scan when turned off")
+check(M.replicateRequests == 6, "no automatic scan when turned off")
 SR:SetSetting("autoScan", true)
 
 step("Auctionator's full scans count toward the cooldown")
@@ -430,7 +490,7 @@ rawset(_G, "Auctionator", { SavedState = { TimeOfLastReplicateScan = time() - 60
 check(SR.Scanner:GetCooldownRemaining() == 840, "Auctionator's recent scan starts the cooldown")
 M.OpenAuctionHouse()
 M.RunTimers()
-check(M.replicateRequests == 4, "SilkRoad doesn't send a second request")
+check(M.replicateRequests == 6, "SilkRoad doesn't send a second request")
 rawset(_G, "Auctionator", { SavedState = "unexpected" })
 check(SR.Scanner:GetCooldownRemaining() == 0, "unexpected Auctionator data is ignored")
 rawset(_G, "Auctionator", nil)

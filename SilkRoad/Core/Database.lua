@@ -16,6 +16,7 @@
 	                 When the last full scan was requested (by SilkRoad or
 	                 another addon). Account-wide, to respect the server's
 	                 15-minute limit across characters and reloads.
+	  recentLookups  { itemID, ... } most recent first, at most 20 (Price Database page)
 	  vendorPrices   [itemID] = { price = copper per unit, seen = time() }
 	                 What merchants charge. Vendor prices are the same everywhere.
 	  recipes        [recipeID] = {
@@ -59,6 +60,7 @@ DB.ACCOUNT_DEFAULTS = {
 	},
 	markets = {},
 	scanner = {},
+	recentLookups = {},
 	vendorPrices = {},
 	recipes = {},
 }

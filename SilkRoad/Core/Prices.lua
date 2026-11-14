@@ -25,7 +25,7 @@ local providerOrder = {}
 
 function Prices:OnInitialize()
 	SR:RegisterEvent("GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
-		if success then
+		if Util.TakeRequestedItem(itemID) and success then
 			SR:Fire("ITEM_INFO_RECEIVED", itemID)
 		end
 	end)
@@ -109,7 +109,7 @@ function Prices:GetVendorSellPrice(itemID)
 	end
 	local sellPrice = select(11, C_Item.GetItemInfo(itemID))
 	if sellPrice == nil then
-		C_Item.RequestLoadItemDataByID(itemID)
+		Util.RequestItem(itemID)
 	end
 	return sellPrice
 end

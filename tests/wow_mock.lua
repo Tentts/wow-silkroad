@@ -21,6 +21,7 @@ MOCK = {
 	knownAPI = nil,      -- set of real global API names, or nil = permissive
 	tocFields = {},
 	pendingItems = {},
+	loadingItems = {},
 	loadedAddons = {},
 	modifiedClick = false,
 	now = 1800000000, -- time()
@@ -574,18 +575,35 @@ function M.FireEvent(event, ...)
 	end
 end
 
+-- Timers fire in order of their due time. RunTimers lets "a few seconds" of
+-- game time pass without moving the clock: everything due within
+-- SHORT_WAIT runs (debounces, frame-by-frame batches, short delays), while
+-- long timers such as timeouts only fire once M.Advance moves the clock.
+local SHORT_WAIT = 5
+local timerSequence = 0
+
+function M.Schedule(delay, callback)
+	timerSequence = timerSequence + 1
+	table.insert(M.timers, { due = M.clock + delay, sequence = timerSequence, callback = callback })
+end
+
 function M.RunTimers()
-	for _ = 1, 50 do
-		local queue = M.timers
-		if #queue == 0 then
+	local horizon = M.clock + SHORT_WAIT
+	for _ = 1, 10000 do
+		local nextIndex, nextTimer
+		for index, timer in ipairs(M.timers) do
+			if timer.due <= horizon and (not nextTimer or timer.due < nextTimer.due
+				or (timer.due == nextTimer.due and timer.sequence < nextTimer.sequence)) then
+				nextIndex, nextTimer = index, timer
+			end
+		end
+		if not nextTimer then
 			return
 		end
-		M.timers = {}
-		for _, callback in ipairs(queue) do
-			callback()
-		end
+		table.remove(M.timers, nextIndex)
+		nextTimer.callback()
 	end
-	error("RunTimers: timers keep scheduling more timers")
+	error("RunTimers: timers keep scheduling more timers (endless loop?)")
 end
 
 ---------------------------------------------------------------------------
@@ -682,6 +700,7 @@ define("GetTime", function() return M.clock end)
 function M.Advance(seconds)
 	M.now = M.now + seconds
 	M.clock = M.clock + seconds
+	M.RunTimers()
 end
 
 define("BreakUpLargeNumbers", function(value)
@@ -796,12 +815,16 @@ end)
 
 -- Full scans: ReplicateItems answers on a later frame unless throttled.
 define("C_AuctionHouse", {
+	-- Like the real client, the result event fires more than once per
+	-- request (again as item data for the listings arrives).
 	ReplicateItems = function()
 		M.replicateRequests = M.replicateRequests + 1
 		if not M.ahThrottled then
-			table.insert(M.timers, function()
-				M.FireEvent("REPLICATE_ITEM_LIST_UPDATE")
-			end)
+			for _, delay in ipairs({ 0, 0.5, 1.5 }) do
+				M.Schedule(delay, function()
+					M.FireEvent("REPLICATE_ITEM_LIST_UPDATE")
+				end)
+			end
 		end
 	end,
 	GetNumReplicateItems = function()
@@ -851,7 +874,7 @@ end
 define("C_Timer", {
 	After = function(delay, callback)
 		assert(type(delay) == "number" and type(callback) == "function", "C_Timer.After: delay and callback expected")
-		table.insert(M.timers, callback)
+		M.Schedule(delay, callback)
 	end,
 })
 
@@ -903,9 +926,12 @@ define("C_Item", {
 	end,
 	RequestLoadItemDataByID = function(itemID)
 		assert(type(itemID) == "number", "RequestLoadItemDataByID: itemID expected")
-		if M.pendingItems[itemID] then
-			M.pendingItems[itemID] = nil
-			table.insert(M.timers, function()
+		-- The data arrives later, together with the event, as in the client.
+		if M.pendingItems[itemID] and not M.loadingItems[itemID] then
+			M.loadingItems[itemID] = true
+			M.Schedule(0, function()
+				M.pendingItems[itemID] = nil
+				M.loadingItems[itemID] = nil
 				M.FireEvent("GET_ITEM_INFO_RECEIVED", itemID, true)
 			end)
 		end

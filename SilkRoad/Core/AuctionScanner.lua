@@ -11,9 +11,9 @@
 	quantity listed, in markets[realm].auction (see Core/Database.lua).
 	Items missing from a scan keep their last price with quantity 0.
 
-	When another addon (Auctionator, for example) runs a full scan, its
-	results arrive here too, and SilkRoad records them without sending a
-	request of its own.
+	When another addon (Auctionator, for example) runs a full scan, SilkRoad
+	sees the request through a hook on C_AuctionHouse.ReplicateItems and
+	records the results without sending a request of its own.
 
 	Callbacks fired: SCAN_STATUS (state, progress) whenever the state or
 	progress changes, and PRICES_UPDATED when a scan has been saved.
@@ -173,24 +173,17 @@ local function ProcessBatch(id)
 	end
 end
 
+-- REPLICATE_ITEM_LIST_UPDATE fires several times per request (again as item
+-- data for the listings arrives), so only the first one after a request is
+-- read; the rest are ignored.
 local function OnReplicateListUpdate()
-	if Scanner.state == "processing" then
+	if Scanner.state ~= "waiting" then
 		return
 	end
 	local total = C_AuctionHouse.GetNumReplicateItems()
 	if total == 0 then
-		if Scanner.state == "waiting" then
-			Scanner:Fail(L["The auction house returned no listings."])
-		end
+		Scanner:Fail(L["The auction house returned no listings."])
 		return
-	end
-
-	if Scanner.state == "idle" then
-		-- Another addon asked for a full scan: record its results for free,
-		-- and respect the cooldown it just started.
-		SR.DB.global.scanner.lastRequest = time()
-		startedAt = GetTime()
-		SR:Print(L["Recording prices from a full scan started by another addon."])
 	end
 
 	scanID = scanID + 1
@@ -215,21 +208,48 @@ function Scanner:StartScan(isAutomatic)
 		return false
 	end
 
+	SR:Print(isAutomatic and L["Scanning the auction house (automatic, at most once every 15 minutes)..."]
+		or L["Scanning the auction house..."])
+	self:BeginWaiting(false)
+	C_AuctionHouse.ReplicateItems()
+	return true
+end
+
+-- A full scan request was just sent, by SilkRoad or by another addon: wait
+-- for its results, and give up if the server doesn't answer.
+function Scanner:BeginWaiting(isExternal)
 	scanID = scanID + 1
 	local id = scanID
 	startedAt = GetTime()
 	SR.DB.global.scanner.lastRequest = time()
 	SetState("waiting")
-	SR:Print(isAutomatic and L["Scanning the auction house (automatic, at most once every 15 minutes)..."]
-		or L["Scanning the auction house..."])
-	C_AuctionHouse.ReplicateItems()
 
 	C_Timer.After(RESPONSE_TIMEOUT, function()
-		if id == scanID and self.state == "waiting" then
+		if id ~= scanID or self.state ~= "waiting" then
+			return
+		end
+		if isExternal then
+			-- The other addon's request went unanswered; nothing to report.
+			scanID = scanID + 1
+			SetState("idle")
+		else
 			self:Fail(L.SCAN_NO_RESPONSE)
 		end
 	end)
-	return true
+end
+
+-- Every ReplicateItems call goes through this hook, SilkRoad's own included
+-- (it is already waiting by then). A call from another addon means its
+-- results are coming: record them too, without a request of our own.
+local function OnAnyReplicateRequest()
+	if Scanner.state == "idle" and Scanner.isAuctionHouseOpen then
+		SR:Print(L["Recording prices from a full scan started by another addon."])
+		Scanner:BeginWaiting(true)
+	end
+end
+
+if C_AuctionHouse and type(C_AuctionHouse.ReplicateItems) == "function" then
+	hooksecurefunc(C_AuctionHouse, "ReplicateItems", OnAnyReplicateRequest)
 end
 
 ---------------------------------------------------------------------------

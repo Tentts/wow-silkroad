@@ -57,6 +57,10 @@ local function Dispatch(registry, key, ...)
 	if not list then
 		return
 	end
+	if #list == 1 then
+		list[1](key, ...)
+		return
+	end
 	-- Iterate over a snapshot so listeners can unregister themselves safely.
 	local snapshot = { unpack(list) }
 	for i = 1, #snapshot do
@@ -89,7 +93,8 @@ end
 -- handler(name, ...). Messages in use:
 --   SETTING_CHANGED (path, value)  a setting changed through SR:SetSetting
 --   PRICES_UPDATED ()              price data changed (scan, import, ...)
---   ITEM_INFO_RECEIVED (itemID)    the client finished loading an item
+--   ITEM_INFO_RECEIVED (itemID)    an item SilkRoad requested (Util.RequestItem) finished loading
+--   SCAN_STATUS (state, progress)  the auction scanner's state changed
 function SR:RegisterCallback(name, handler)
 	AddListener(callbackListeners, name, handler)
 end

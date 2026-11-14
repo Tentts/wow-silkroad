@@ -42,7 +42,9 @@ and our own out-of-combat UI work normally.
 - `C_Item.GetItemInfo` returns `sellPrice` as the 11th value (what a vendor pays you);
   `C_Item.GetItemInfoInstant`, `GetItemIconByID`, `GetItemNameByID`,
   `GetItemQualityByID`, `GetItemQualityColor`, `RequestLoadItemDataByID`;
-  event `GET_ITEM_INFO_RECEIVED`
+  event `GET_ITEM_INFO_RECEIVED`. That event fires for **every** item anything
+  loads (bags, tooltips, auction scans: thousands at a time), so only react to
+  items you requested yourself (SilkRoad's `Util.RequestItem`).
 - `GetProfessions`, `GetProfessionInfo`
 - `GetMoneyString`, `WrapTextInColorCode`, `HandleModifiedItemClick`, `IsModifiedClick`
 - `ChatFrameUtil.InsertLink` (replaces `ChatEdit_InsertLink`, which no longer exists)
@@ -77,9 +79,13 @@ items), not the Classic one. `GetAuctionItemInfo`, `QueryAuctionItems` and
   - The server allows one `ReplicateItems` request per **15 minutes**; extra requests
     get no answer. It has no `HasRestrictions` flag, so it doesn't need a click and
     can run when the AH opens (Auctionator's auto-scan does the same).
-  - `REPLICATE_ITEM_LIST_UPDATE` fires for any addon's request, so one addon's
-    full scan can be recorded by every listening addon. Auctionator saves the time of
-    its last one in `Auctionator.SavedState.TimeOfLastReplicateScan`.
+  - `REPLICATE_ITEM_LIST_UPDATE` fires **several times per request** (again as item
+    data for the listings arrives). Read only the first one after a request and
+    ignore the rest; treating every event as a new scan loops forever.
+  - It fires for any addon's request, so one addon's full scan can be recorded by
+    every listening addon. To know when another addon sent one, hook it:
+    `hooksecurefunc(C_AuctionHouse, "ReplicateItems", ...)`. Auctionator saves the time
+    of its last one in `Auctionator.SavedState.TimeOfLastReplicateScan`.
   - The data is gone once the AH closes: abort a scan on `AUCTION_HOUSE_CLOSED`.
 - Targeted queries: `C_AuctionHouse.SendBrowseQuery`, `GetBrowseResults`,
   `SendSearchQuery`, `GetCommoditySearchResultInfo`, `GetItemSearchResultInfo`;

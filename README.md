@@ -57,7 +57,7 @@ editing code, type `/reload` in game.
 | **Overview** | Counts of indexed recipes and recorded prices, your professions, which price sources are active. |
 | **Recipes** | Each recipe's material cost, auction value after the cut, vendor value and profit, sortable and filterable by profession and name. |
 | **Vendor Flips** | Items a merchant sells for less than they fetch on the auction house. |
-| **Price Database** | Look up any item (ID, name, or shift-click a link) to see every known price side by side, and browse SilkRoad's own auction data. |
+| **Price Database** | Look up any item (ID, name, or shift-click a link) to see every known price side by side. Your last 20 lookups stay listed below for quick re-checks. |
 | **Settings** | Minimap button, window scale, auction house cut, preferred auction price source, automatic auction scans. |
 
 ## How it is built

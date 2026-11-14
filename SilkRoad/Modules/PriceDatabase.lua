@@ -1,6 +1,8 @@
 --[[ SilkRoad - Modules/PriceDatabase.lua
 	Item price lookup (vendor, merchant and every auction source side by
-	side) and a browser for SilkRoad's own auction scan data.
+	side), a one-line summary of SilkRoad's scan data, and the last items
+	looked up. The scan data itself is never listed in full: it can hold
+	tens of thousands of items.
 ]]
 local _, SR = ...
 local L = SR.L
@@ -92,26 +94,30 @@ function Page:OnCreate(frame)
 	end
 	addLine("net")
 
-	-- Own scan data
-	local header = Widgets.CreateHeader(frame, L["SilkRoad auction data"])
-	header:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -16)
-	header:SetPoint("TOPRIGHT", panel, "BOTTOMRIGHT", 0, -16)
-	self.DataHeader = header
+	-- Scan data summary. The full index can hold tens of thousands of items,
+	-- so it is never listed here; look items up instead.
+	self.Summary = Widgets.CreateLabel(frame, "", "GameFontDisableSmall")
+	self.Summary:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 2, -8)
+
+	-- Recent lookups
+	local header = Widgets.CreateHeader(frame, L["Recent lookups"])
+	header:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -28)
+	header:SetPoint("TOPRIGHT", panel, "BOTTOMRIGHT", 0, -28)
 
 	self.Table = Widgets.CreateDataTable(frame, {
 		columns = {
 			{ key = "name", title = L["Item"], kind = "item" },
-			{ key = "price", title = L["Price"], width = 120, kind = "money", align = "RIGHT", sortDescFirst = true },
+			{ key = "price", title = L["Lowest buyout"], width = 120, kind = "money", align = "RIGHT", sortDescFirst = true },
 			{ key = "quantity", title = L["Available"], width = 90, align = "RIGHT", sortDescFirst = true },
 			{
 				key = "seen", title = L["Seen"], width = 110, align = "RIGHT", sortDescFirst = true,
 				format = function(value) return Util.TimeAgo(value) end,
 			},
 		},
-		sortKey = "name",
+		-- No sort key: rows stay in lookup order, most recent first.
 		emptyIcon = "Interface\\Icons\\INV_Misc_Book_09",
-		emptyTitle = L.PRICES_EMPTY_TITLE,
-		emptyBody = L.PRICES_EMPTY_BODY,
+		emptyTitle = L.RECENT_EMPTY_TITLE,
+		emptyBody = L.RECENT_EMPTY_BODY,
 		onRowClick = function(row)
 			self.Input:SetText(row.link or tostring(row.itemID))
 			self:Lookup(row.itemID)
@@ -121,9 +127,28 @@ function Page:OnCreate(frame)
 	self.Table:SetPoint("BOTTOMRIGHT")
 end
 
+local MAX_RECENT_LOOKUPS = 20
+
+local function RememberLookup(itemID)
+	local recent = SR.DB.global.recentLookups
+	for i = #recent, 1, -1 do
+		if recent[i] == itemID then
+			table.remove(recent, i)
+		end
+	end
+	table.insert(recent, 1, itemID)
+	for i = #recent, MAX_RECENT_LOOKUPS + 1, -1 do
+		recent[i] = nil
+	end
+end
+
 function Page:Lookup(input)
 	self.itemID = Util.ParseItemID(input)
 	self.lookupFailed = input ~= nil and input ~= "" and self.itemID == nil
+	if self.itemID and C_Item.DoesItemExistByID(self.itemID) then
+		RememberLookup(self.itemID)
+		self:RefreshRecent()
+	end
 	self:RefreshResult()
 end
 
@@ -182,18 +207,30 @@ function Page:RefreshResult()
 	self.lines.net.Value:SetText(netText)
 end
 
-function Page:Refresh()
-	self:RefreshResult()
-
-	local market = SR.DB:GetMarket()
-	self.DataHeader.Text:SetText(L["SilkRoad auction data: %s"]:format(SR.DB:GetMarketKey()))
+-- At most MAX_RECENT_LOOKUPS rows, so this stays cheap however big the scan data gets.
+function Page:RefreshRecent()
+	local auction = SR.DB:GetMarket().auction
 	local rows = {}
-	for itemID, entry in pairs(market.auction) do
+	for _, itemID in ipairs(SR.DB.global.recentLookups) do
 		local row = Util.GetItemDisplay(itemID)
-		row.price = entry.price
-		row.quantity = entry.quantity
-		row.seen = entry.seen
+		local entry = auction[itemID]
+		if entry then
+			row.price, row.quantity, row.seen = entry.price, entry.quantity, entry.seen
+		end
 		rows[#rows + 1] = row
 	end
 	self.Table:SetRows(rows)
+end
+
+function Page:Refresh()
+	self:RefreshResult()
+
+	local stats = SR.Prices:GetStats()
+	if stats.auctionItems > 0 then
+		self.Summary:SetText(L["SilkRoad scan data on %s: %s items, last scan %s."]:format(
+			stats.marketKey, Util.FormatNumber(stats.auctionItems), Util.TimeAgo(stats.lastScan)))
+	else
+		self.Summary:SetText(L.NO_SCAN_DATA)
+	end
+	self:RefreshRecent()
 end

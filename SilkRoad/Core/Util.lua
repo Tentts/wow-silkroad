@@ -176,12 +176,32 @@ function Util.ParseItemID(input)
 	return (C_Item.GetItemInfoInstant(input))
 end
 
+-- Items SilkRoad asked the client to load. The client sends
+-- GET_ITEM_INFO_RECEIVED for every item anything loads (bags, tooltips,
+-- auction scans: often thousands), so SilkRoad only reacts to its own.
+local requestedItems = {}
+
+-- Called only while an item isn't loaded yet; asking again is harmless.
+function Util.RequestItem(itemID)
+	requestedItems[itemID] = true
+	C_Item.RequestLoadItemDataByID(itemID)
+end
+
+-- True (once) if the item was requested through Util.RequestItem.
+function Util.TakeRequestedItem(itemID)
+	if requestedItems[itemID] then
+		requestedItems[itemID] = nil
+		return true
+	end
+	return false
+end
+
 -- Basic display data for an item. Fields are nil while the client is still
--- loading the item; a GET_ITEM_INFO_RECEIVED event follows once it is ready.
+-- loading the item; ITEM_INFO_RECEIVED fires once it is ready.
 function Util.GetItemDisplay(itemID)
 	local name, link, quality, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemID)
 	if not name then
-		C_Item.RequestLoadItemDataByID(itemID)
+		Util.RequestItem(itemID)
 		return {
 			itemID = itemID,
 			name = L["Item #%d"]:format(itemID),
