@@ -184,6 +184,7 @@ recipesPage.Table:Refresh()
 step("recipes: reading the profession window")
 -- Forever's window: the child profession (ID 2830) names Tailoring (197) as its parent.
 M.tradeSkill = { professionID = 197, name = "Tailoring", recipes = { [2963] = true, [8776] = false, [999001] = true } }
+M.recipeProfessions[999001] = 197 -- not in the generated data: the game says it's Tailoring
 M.schematics[999001] = {
 	name = "Silkroad Test Robe", icon = 132149, outputItemID = 4306, quantityMin = 1, quantityMax = 1,
 	reagentSlotSchematics = {
@@ -206,6 +207,20 @@ check(recipesPage.Count:GetText():match("^2 of %d+ recipes$"), "'Known only' sho
 M.Click(recipesPage.KnownOnly)
 check(not recipesPage.Count:GetText():match("^2 of"), "unchecking shows everything again")
 
+-- Forever's Leatherworking window reports no profession at all: the recipe
+-- IDs alone say whose they are.
+local leatherworking = {}
+for recipeID, row in pairs(SR.StaticData.recipes) do
+	if row[1] == 165 and #leatherworking < 2 then leatherworking[#leatherworking + 1] = recipeID end
+end
+M.professions[2] = { "Leatherworking", 136247, 30, 75, 0, 0, 165 }
+M.tradeSkill = { anonymous = true, name = "Leatherworking", recipes = { [leatherworking[1]] = true, [leatherworking[2]] = false } }
+M.FireEvent("TRADE_SKILL_SHOW")
+M.RunTimers()
+check(SR.DB.char.scannedProfessions[165] == time() and SR.DB.char.knownRecipes[leatherworking[1]]
+	and not SR.DB.char.knownRecipes[leatherworking[2]], "a window that doesn't say its profession is still recorded")
+M.professions[2] = { "Enchanting", 136244, 40, 75, 0, 0, 333 }
+
 -- A window that only gives a name still maps to the right profession.
 M.tradeSkill = { professionID = nil, childID = 3000, name = "Enchanting", recipes = { [7421] = true } }
 M.FireEvent("TRADE_SKILL_LIST_UPDATE")
@@ -221,6 +236,29 @@ check(SR.DB.char.scannedProfessions[164] == nil and OutputContains("Profession w
 	"an empty window isn't recorded, and debug output says why")
 SR:SetSetting("debug", false)
 M.tradeSkill = nil
+
+step("recipes: known recipes from the spellbook, no window needed")
+local cooking = {}
+for recipeID, row in pairs(SR.StaticData.recipes) do
+	if row[1] == 185 and #cooking < 3 then cooking[#cooking + 1] = recipeID end
+end
+check(not SR.Recipes:HasRead(185), "Cooking not known yet")
+M.knownSpells[cooking[1]] = true
+M.knownSpells[cooking[2]] = true
+M.FireEvent("LEARNED_SPELL_IN_SKILL_LINE")
+M.RunTimers()
+check(SR.Recipes:HasRead(185) and SR.DB.char.knownRecipes[cooking[1]] and SR.DB.char.knownRecipes[cooking[2]],
+	"learned recipes found in the spellbook")
+check(SR.Recipes:IsKnown(SR.Recipes:GetRecipe(cooking[3])) == false, "the rest count as not learned")
+check(not SR.Recipes:HasRead(171), "professions the character lacks aren't checked")
+
+step("recipes: dropping a profession forgets its recipes")
+local enchanting = M.professions[2]
+M.professions[2] = nil
+SR.Recipes:ForgetDroppedProfessions()
+check(not SR.Recipes:HasRead(333) and not SR.DB.char.knownRecipes[7421], "dropped profession forgotten")
+check(SR.Recipes:HasRead(197) and SR.DB.char.knownRecipes[2963], "the others are kept")
+M.professions[2] = enchanting
 
 step("recipes: sources from QuestieDB")
 local recipeItem = itemRecipe.recipe.recipeItem

@@ -145,6 +145,21 @@ The QuestieDB addon (Questie's data, with a Forever build) has a public API:
 `QuestieLoader:ImportModule("ZoneDB"):GetUiMapIdByAreaId(areaID)`. Zone names:
 `C_Map.GetAreaInfo(areaID)`.
 
+### Known recipes
+
+- **The spellbook knows them.** Recipes are spells, and in Forever
+  `C_SpellBook.IsSpellKnown(recipeSpellID)` returns true for learned recipes (confirmed
+  in game). SilkRoad checks every recipe of the character's professions at login and
+  on `LEARNED_SPELL_IN_SKILL_LINE` / `SKILL_LINES_CHANGED`; no window needed. (The old
+  globals `IsSpellKnown` / `IsPlayerSpell` don't exist in this client.)
+- **Profession windows don't always say which profession they show.** For some
+  (Leatherworking, in testing) both `GetChildProfessionInfo()` and
+  `GetBaseProfessionInfo()` come back with no ID or name. It doesn't matter: record
+  `GetAllRecipeIDs()` + `GetRecipeInfo(id).learned` per recipe ID, and take each
+  recipe's profession from the game data or `C_TradeSkillUI.GetProfessionInfoByRecipeID`.
+  Addons that key on the window's profession name (DoesMyAltKnowThat, for one) can't
+  record such windows.
+
 ### Professions (the profession window, used by `Core/Recipes.lua`)
 
 Forever uses the **retail professions UI** (`ProfessionsFrame`, `C_TradeSkillUI`).

@@ -46,8 +46,9 @@ editing code, type `/reload` in game.
   merchant, seen by Auctionator, or from the game data for items vendors are known
   to sell) or the lowest auction price. **Profit** is the better of the auction
   price after the cut and the vendor price, minus the cost.
-- Open each of your profession windows once: SilkRoad then marks which recipes you
-  know (and offers a **Known only** filter), and picks up any recipe its data lacks.
+- SilkRoad reads which recipes you know from the spellbook at login (and whenever
+  you learn one), so **Known only** works without opening anything. Profession
+  windows are read too, which also picks up any recipe the game data lacks.
 
 ### Auction house scanning
 

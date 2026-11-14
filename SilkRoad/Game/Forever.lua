@@ -6,7 +6,9 @@
 
 	SR.Game.events                         event names, by purpose
 	SR.Game.GetPlayerProfessions()         { { skillLine, name, icon, rank, maxRank }, ... }
-	SR.Game.ReadOpenProfession()           { ids, names, learned = { [recipeID] = bool } }, or nil, reason
+	SR.Game.ReadOpenProfession()           { [recipeID] = learned } for the open window, or nil, reason
+	SR.Game.GetRecipeProfession(recipeID)  { id, name } for recipes missing from the game data
+	SR.Game.IsRecipeKnown(recipeID)        true / false from the spellbook, nil if unknown
 	SR.Game.ReadRecipeSchematic(recipeID)  { name, icon, product, quantityMin, quantityMax, reagents }
 	SR.Game.ReadMerchant()                 { { itemID, price (per item) }, ... }
 	SR.Game.GetAreaName(areaID)            zone / dungeon name
@@ -23,6 +25,7 @@ SR.Game = Game
 Game.events = {
 	professionChanged = { "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED" },
 	merchantChanged = { "MERCHANT_SHOW", "MERCHANT_UPDATE" },
+	spellsChanged = { "LEARNED_SPELL_IN_SKILL_LINE", "SKILL_LINES_CHANGED" },
 }
 
 function Game.GetPlayerProfessions()
@@ -40,43 +43,13 @@ function Game.GetPlayerProfessions()
 	return list
 end
 
--- Which profession the window shows, the way Blizzard's own profession UI
--- works it out (Professions.GetProfessionInfo): the child profession's info,
--- falling back to the base info when there's no child; the profession itself
--- is the child's parent. Returns a list of candidate IDs and names.
-local function OpenProfessionIdentity()
-	local info = C_TradeSkillUI.GetChildProfessionInfo()
-	if not info or not info.professionID or info.professionID == 0 then
-		info = C_TradeSkillUI.GetBaseProfessionInfo()
-	end
-	if not info then
-		return nil
-	end
-	local ids, names = {}, {}
-	for _, id in ipairs({ info.parentProfessionID, info.professionID }) do
-		if id and id > 0 then
-			ids[#ids + 1] = id
-		end
-	end
-	for _, name in ipairs({ info.parentProfessionName, info.professionName }) do
-		if name and name ~= "" then
-			names[#names + 1] = name
-		end
-	end
-	return ids, names
-end
-
--- The profession window's recipes, when it shows one of the player's own
--- professions (not a linked or guild one). Returns
---   { ids = { candidate skill line IDs }, names = { candidate names }, learned = { [recipeID] = bool } }
--- or nil plus the reason, for debug output.
+-- Recipes listed in the open profession window, learned or not:
+-- { [recipeID] = learned }. Which profession the window shows doesn't
+-- matter (and Forever doesn't always say): every recipe ID belongs to one
+-- profession. Returns nil plus the reason when there's nothing to read.
 function Game.ReadOpenProfession()
 	if C_TradeSkillUI.IsTradeSkillLinked() or C_TradeSkillUI.IsTradeSkillGuild() then
 		return nil, "another player's profession is shown"
-	end
-	local ids, names = OpenProfessionIdentity()
-	if not ids or (#ids == 0 and #names == 0) then
-		return nil, "the profession window reports no profession"
 	end
 	local learned, count = {}, 0
 	for _, recipeID in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
@@ -89,7 +62,28 @@ function Game.ReadOpenProfession()
 	if count == 0 then
 		return nil, "the profession window has no recipes yet"
 	end
-	return { ids = ids, names = names, learned = learned }
+	return learned
+end
+
+-- Profession of a recipe the game data doesn't have: { id, name } or nil.
+function Game.GetRecipeProfession(recipeID)
+	local ok, info = pcall(C_TradeSkillUI.GetProfessionInfoByRecipeID, recipeID)
+	if not ok or not info then
+		return nil
+	end
+	local id = (info.parentProfessionID and info.parentProfessionID > 0 and info.parentProfessionID) or info.professionID
+	if id and id > 0 then
+		return { id = id, name = info.parentProfessionName or info.professionName }
+	end
+end
+
+-- Whether this character knows a recipe, from the spellbook (recipes are
+-- spells). nil when the game can't say.
+function Game.IsRecipeKnown(recipeID)
+	local ok, known = pcall(C_SpellBook.IsSpellKnown, recipeID)
+	if ok and known ~= nil then
+		return known and true or false
+	end
 end
 
 function Game.ReadRecipeSchematic(recipeID)

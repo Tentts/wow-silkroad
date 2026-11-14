@@ -982,8 +982,8 @@ define("C_TradeSkillUI", {
 	-- the profession); the base info carries no profession ID.
 	GetChildProfessionInfo = function()
 		local open = M.tradeSkill
-		if not open then
-			return { professionID = 0 }
+		if not open or open.anonymous then
+			return { professionID = 0 } -- some Forever windows report nothing
 		end
 		return { professionID = open.childID or 2830, professionName = "Classic " .. open.name,
 			parentProfessionID = open.professionID, parentProfessionName = open.name }
@@ -1002,6 +1002,10 @@ define("C_TradeSkillUI", {
 		local learned = M.tradeSkill and M.tradeSkill.recipes[recipeID]
 		if learned == nil then return nil end
 		return { recipeID = recipeID, learned = learned }
+	end,
+	GetProfessionInfoByRecipeID = function(recipeID)
+		local skillLine = M.recipeProfessions[recipeID]
+		return skillLine and { professionID = 9000 + skillLine, parentProfessionID = skillLine } or { professionID = 0 }
 	end,
 	GetRecipeSchematic = function(recipeID, isRecraft)
 		assert(isRecraft == false, "GetRecipeSchematic: isRecraft expected")
@@ -1040,3 +1044,13 @@ define("UiMapPoint", {
 define("ButtonFrameTemplate_HidePortrait", function(frame)
 	assert(frame.Inset, "ButtonFrameTemplate_HidePortrait: ButtonFrameTemplate frame expected")
 end)
+
+-- The spellbook: recipe spells this character knows.
+M.knownSpells = {}
+M.recipeProfessions = {} -- [recipeID] = skillLine, for recipes outside the generated data
+define("C_SpellBook", {
+	IsSpellKnown = function(spellID)
+		assert(type(spellID) == "number", "IsSpellKnown: spell ID expected")
+		return M.knownSpells[spellID] == true
+	end,
+})

@@ -110,7 +110,8 @@ function Recipes:GetProfessions()
 	return list
 end
 
--- true / false once the profession window has been read; nil before that.
+-- true / false once SilkRoad knows the character's recipes for that
+-- profession (from the spellbook or a profession window); nil before that.
 function Recipes:IsKnown(recipe)
 	if SR.DB.char.knownRecipes[recipe.id] then
 		return true
@@ -129,68 +130,139 @@ function Recipes:CountKnown()
 	return Util.CountKeys(SR.DB.char.knownRecipes)
 end
 
--- Matches the window's profession to one in the game data, by ID first,
--- then by name. Falls back to the first ID when nothing matches.
-local function ResolveSkillLine(ids, names)
-	local professions = StaticData().professions
-	for _, id in ipairs(ids) do
-		for _, profession in ipairs(professions) do
-			if profession.id == id then
-				return profession.id
-			end
-		end
+-- Profession of a recipe ID: from the game data, from recipes saved earlier,
+-- or by asking the game.
+local function RecipeSkillLine(recipeID)
+	local row = StaticData().recipes[recipeID]
+	if row then
+		return row[1]
 	end
-	for _, name in ipairs(names) do
-		for _, profession in ipairs(professions) do
-			if profession.name == name then
-				return profession.id
-			end
-		end
+	local saved = SR.DB.global.recipes[recipeID]
+	if saved and saved.skillLineID then
+		return saved.skillLineID
 	end
-	return ids[1]
+	local profession = SR.Game.GetRecipeProfession(recipeID)
+	return profession and profession.id
 end
 
+-- Saves a recipe the game data lacks, from the open profession window.
+local function SaveLiveRecipe(recipeID, skillLine)
+	local schematic = SR.Game.ReadRecipeSchematic(recipeID)
+	if schematic and #schematic.reagents > 0 and skillLine then
+		SR.DB.global.recipes[recipeID] = {
+			recipeID = recipeID, name = schematic.name, icon = schematic.icon,
+			skillLineID = skillLine, outputItemID = schematic.product,
+			quantityMin = schematic.quantityMin, quantityMax = schematic.quantityMax,
+			reagents = schematic.reagents,
+		}
+		return true
+	end
+	return false
+end
+
+-- Records which of the listed recipes the character has learned. Which
+-- profession the window shows doesn't matter: each recipe ID belongs to one
+-- profession, and every profession seen this way counts as read.
 function Recipes:ReadProfessionWindow()
-	local window, reason = SR.Game.ReadOpenProfession()
-	if not window then
+	local learned, reason = SR.Game.ReadOpenProfession()
+	if not learned then
 		SR:Debug("Profession window not read:", reason)
 		return
 	end
-	local skillLine = ResolveSkillLine(window.ids, window.names)
-	if not skillLine then
-		SR:Debug("Profession window not read: unknown profession", table.concat(window.names, ", "))
-		return
-	end
-	local learned = window.learned
-	local known = SR.DB.char.knownRecipes
-	local added = 0
+	local known, read = SR.DB.char.knownRecipes, SR.DB.char.scannedProfessions
+	local professions, added, now = {}, 0, time()
 	for recipeID, isLearned in pairs(learned) do
 		known[recipeID] = isLearned or nil
-		if not StaticData().recipes[recipeID] and not SR.DB.global.recipes[recipeID] then
-			local schematic = SR.Game.ReadRecipeSchematic(recipeID)
-			if schematic and #schematic.reagents > 0 then
-				SR.DB.global.recipes[recipeID] = {
-					recipeID = recipeID, name = schematic.name, icon = schematic.icon,
-					skillLineID = skillLine, outputItemID = schematic.product,
-					quantityMin = schematic.quantityMin, quantityMax = schematic.quantityMax,
-					reagents = schematic.reagents,
-				}
-				added = added + 1
+		local skillLine = RecipeSkillLine(recipeID)
+		if skillLine then
+			professions[skillLine] = (professions[skillLine] or 0) + 1
+			read[skillLine] = now
+		end
+		if not StaticData().recipes[recipeID] and not SR.DB.global.recipes[recipeID] and SaveLiveRecipe(recipeID, skillLine) then
+			added = added + 1
+		end
+	end
+	if SR.DB.settings.debug then
+		local parts = {}
+		for skillLine, count in pairs(professions) do
+			parts[#parts + 1] = skillLine .. "=" .. count
+		end
+		SR:Debug("Read profession window:", Util.CountKeys(learned), "recipes, professions:", table.concat(parts, " "), "new:", added)
+	end
+	SR:Fire("RECIPES_UPDATED")
+end
+
+-- Asks the spellbook which recipes of the character's professions are
+-- learned, so no profession window has to be opened (works in Forever).
+-- Only trusted for a profession when the spellbook knows at least one of
+-- its recipes, in case the game ever stops answering for recipes; the
+-- profession window then still fills in.
+function Recipes:ReadSpellbook()
+	local known, read, now = SR.DB.char.knownRecipes, SR.DB.char.scannedProfessions, time()
+	local changed = false
+	for _, profession in ipairs(self:GetProfessions()) do
+		if profession.learned then
+			local found = {}
+			for _, recipe in ipairs(self:GetRecipes(profession.id)) do
+				if SR.Game.IsRecipeKnown(recipe.id) then
+					found[#found + 1] = recipe.id
+				end
+			end
+			SR:Debug("Spellbook:", profession.name, #found, "known recipes")
+			if #found > 0 then
+				for _, recipeID in ipairs(found) do
+					changed = changed or not known[recipeID]
+					known[recipeID] = true
+				end
+				changed = changed or read[profession.id] == nil
+				read[profession.id] = read[profession.id] or now
 			end
 		end
 	end
-	SR.DB.char.scannedProfessions[skillLine] = time()
-	SR:Debug("Read profession window:", skillLine, "recipes:", Util.CountKeys(learned), "new:", added)
-	SR:Fire("RECIPES_UPDATED", skillLine)
+	if changed then
+		SR:Fire("RECIPES_UPDATED")
+	end
+end
+
+-- Forgets recipes of professions the character no longer has, so they
+-- don't count as known (or as read) after dropping a profession.
+function Recipes:ForgetDroppedProfessions()
+	local mine = {}
+	for _, profession in ipairs(self:GetProfessions()) do
+		if profession.learned then
+			mine[profession.id] = true
+		end
+	end
+	local read, known = SR.DB.char.scannedProfessions, SR.DB.char.knownRecipes
+	for skillLine in pairs(read) do
+		if not mine[skillLine] then
+			read[skillLine] = nil
+			SR:Debug("Forgetting recipes of a dropped profession:", skillLine)
+		end
+	end
+	for recipeID in pairs(known) do
+		local skillLine = RecipeSkillLine(recipeID)
+		if skillLine and not mine[skillLine] then
+			known[recipeID] = nil
+		end
+	end
 end
 
 function Recipes:OnEnable()
+	self:ForgetDroppedProfessions()
 	local read = Util.Debounce(0.5, function()
 		self:ReadProfessionWindow()
 	end)
 	for _, event in ipairs(SR.Game.events.professionChanged) do
 		SR:RegisterEvent(event, read)
 	end
+	local readSpellbook = Util.Debounce(1, function()
+		self:ReadSpellbook()
+	end)
+	for _, event in ipairs(SR.Game.events.spellsChanged) do
+		SR:RegisterEvent(event, readSpellbook)
+	end
+	readSpellbook()
 end
 
 ---------------------------------------------------------------------------
