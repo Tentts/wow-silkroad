@@ -16,8 +16,11 @@
 	Data/<Flavor>/Gathering.lua. Zones of the other faction are left out.
 
 	Gathering:Plan(kind, from, to) returns
-	  { steps = { { from, to, targets = { text, ... }, zones = { text, ... }, note }, ... },
+	  { steps = { { from, to, targets = { text, ... }, zones = { text, ... },
+	                zoneIDs = { mapID, ... }, note, kind, nodeID (ore/herbs) }, ... },
 	    hasNodeData }
+	Gathering:ShowOnMap(step, mapID) opens the map there (with a waypoint at
+	the densest node spot for ore and herbs).
 ]]
 local _, SR = ...
 local L = SR.L
@@ -124,6 +127,7 @@ function Gathering:NodeName(kind, node)
 	return node[2]
 end
 
+-- Top zones for a node: display texts and their map IDs.
 function Gathering:TopZones(kind, nodeID)
 	local list = {}
 	for mapID, count in pairs(self:ZoneCounts(kind)[nodeID] or {}) do
@@ -132,13 +136,64 @@ function Gathering:TopZones(kind, nodeID)
 		end
 	end
 	table.sort(list, function(a, b)
-		return a.count > b.count
+		return a.count > b.count or (a.count == b.count and a.mapID < b.mapID)
 	end)
-	local zones = {}
+	local zones, zoneIDs = {}, {}
 	for i = 1, math.min(MAX_ZONES, #list) do
 		zones[i] = L["%s (%d nodes)"]:format(self:ZoneName(list[i].mapID), list[i].count)
+		zoneIDs[i] = list[i].mapID
 	end
-	return zones
+	return zones, zoneIDs
+end
+
+-- GatherMate2 stores positions as x * 10^10 + y * 10^6 (in ten-thousandths).
+local function DecodeLocation(coord)
+	return math.floor(coord / 1000000) / 10000, math.floor(coord % 1000000 / 100) / 10000
+end
+
+-- Where a node type is densest in a zone: the node closest to the average
+-- position of all of them there. Returns x, y (0..1) or nil.
+function Gathering:NodeSpot(kind, nodeID, mapID)
+	local db = NodeDatabase(kind)
+	local nodes = db and db[mapID]
+	if type(nodes) ~= "table" then
+		return nil
+	end
+	local points, sumX, sumY = {}, 0, 0
+	for coord, id in pairs(nodes) do
+		if id == nodeID then
+			local x, y = DecodeLocation(coord)
+			points[#points + 1] = { x, y }
+			sumX, sumY = sumX + x, sumY + y
+		end
+	end
+	if #points == 0 then
+		return nil
+	end
+	local centerX, centerY = sumX / #points, sumY / #points
+	local best, bestDistance
+	for _, point in ipairs(points) do
+		local distance = (point[1] - centerX) ^ 2 + (point[2] - centerY) ^ 2
+		if not best or distance < bestDistance then
+			best, bestDistance = point, distance
+		end
+	end
+	return best[1], best[2]
+end
+
+-- Opens the world map on a zone of a step and, for ore and herbs, sets a
+-- waypoint where that node is densest.
+function Gathering:ShowOnMap(step, mapID)
+	SR.Game.OpenMap(mapID)
+	local zone = self:ZoneName(mapID)
+	if step.nodeID then
+		local x, y = self:NodeSpot(step.kind, step.nodeID, mapID)
+		if x and SR.Game.SetWaypoint(mapID, x, y, step.targets[1]) then
+			SR:Print(L["%s in %s: waypoint set (%.1f, %.1f)."]:format(step.targets[1], zone, x * 100, y * 100))
+			return
+		end
+	end
+	SR:Print(L["Showing %s on the map."]:format(zone))
 end
 
 ---------------------------------------------------------------------------
@@ -178,7 +233,8 @@ function Gathering:PlanNodes(kind, from, to)
 				step.targets[#step.targets + 1] = self:NodeName(kind, other)
 			end
 		end
-		step.zones = self:TopZones(kind, node[1])
+		step.zones, step.zoneIDs = self:TopZones(kind, node[1])
+		step.kind, step.nodeID = kind, node[1]
 		step.note = L["needs %d; orange until %d, yellow until %d"]:format(node[3], node[3] + colors.yellow, node[3] + colors.green)
 	end
 	return steps
@@ -212,15 +268,16 @@ function Gathering:PlanSkinning(from, to)
 		local stepTo = math.min(to, (math.floor(skill / SKINNING_BRACKET) + 1) * SKINNING_BRACKET)
 		local maxLevel = self.MaxSkinnableLevel(skill)
 		local minLevel = math.max(1, maxLevel - SKINNING_LEVEL_WINDOW)
-		local zones = {}
+		local zones, zoneIDs = {}, {}
 		for i, zone in ipairs(ZonesForLevels(minLevel, maxLevel)) do
 			if i > MAX_ZONES then break end
 			zones[i] = self:ZoneName(zone.mapID)
+			zoneIDs[i] = zone.mapID
 		end
 		steps[#steps + 1] = {
-			from = skill, to = stepTo,
+			from = skill, to = stepTo, kind = "skinning",
 			targets = { L["Beasts level %d-%d"]:format(minLevel, maxLevel) },
-			zones = zones,
+			zones = zones, zoneIDs = zoneIDs,
 			note = L["skin creatures up to level %d"]:format(maxLevel),
 		}
 		skill = stepTo
@@ -233,14 +290,16 @@ function Gathering:PlanFishing(from, to)
 	for _, bracket in ipairs(Data().fishing) do
 		local low, high = math.max(from, bracket[1]), math.min(to, bracket[2])
 		if low < high then
-			local zones = {}
+			local zones, zoneIDs = {}, {}
 			for _, mapID in ipairs(bracket[3]) do
 				if ZoneAllowed(mapID) and #zones < MAX_ZONES + 1 then
 					zones[#zones + 1] = self:ZoneName(mapID)
+					zoneIDs[#zoneIDs + 1] = mapID
 				end
 			end
 			steps[#steps + 1] = {
-				from = low, to = high, targets = { L["Fish in open water or pools"] }, zones = zones,
+				from = low, to = high, kind = "fishing", targets = { L["Fish in open water or pools"] },
+				zones = zones, zoneIDs = zoneIDs,
 				note = L["fish here so they don't get away"],
 			}
 		end

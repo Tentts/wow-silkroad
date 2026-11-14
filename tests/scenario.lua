@@ -471,6 +471,39 @@ SR.DB.settings.guide.profession = 197
 guidePage:Refresh()
 check(guidePage.Steps:IsShown() and not guidePage.GatherSteps:IsShown(), "back to the crafting plan for Tailoring")
 
+step("gathering locations on the map")
+rawset(_G, "GatherMateData2MineDB", {
+	[1411] = { [4000500000] = 201, [4200520000] = 201, [8000100000] = 201, [3000300000] = 202 }, -- Durotar
+	[1413] = { [5000500000] = 201 },                                                          -- The Barrens
+})
+Gathering:ResetCache()
+local x, y = Gathering:NodeSpot("mining", 201, 1411)
+check(x == 0.4 and y == 0.5, "densest spot: the copper vein closest to the average position")
+check(Gathering:NodeSpot("mining", 201, 1429) == nil, "no spot where there are no nodes")
+guidePage.skillLine = 186
+SR.DB.settings.guide.profession = 186
+guidePage:Refresh()
+local copperRow = guidePage.GatherSteps.ScrollBox.__active[1]
+check(copperRow.row.step.nodeID == 201 and #copperRow.row.step.zoneIDs == 2, "the step knows its node and zones")
+M.RunScript(copperRow, "OnEnter")
+M.Click(copperRow)
+check(M.contextMenu and M.contextMenu.items[1].text == "Show on the map", "several zones: a menu to pick one")
+M.PickContextMenu(1)
+local waypoint = M.waypoints[#M.waypoints]
+check(M.openedMap == 1411, "the world map opens on the zone")
+check(waypoint.uiMapID == 1411 and waypoint.x == 0.4 and waypoint.y == 0.5, "with a waypoint at the densest spot")
+check(OutputContains("Copper Vein in Durotar: waypoint set (40.0, 50.0)."), "confirmed in chat")
+local skinningStep = Gathering:Plan("skinning", 1, 25).steps[1]
+skinningStep.zoneIDs = { skinningStep.zoneIDs[1] }
+skinningStep.zones = { skinningStep.zones[1] }
+local waypointsBefore = #M.waypoints
+guidePage:ShowStepOnMap(skinningStep, copperRow)
+check(M.openedMap == skinningStep.zoneIDs[1] and #M.waypoints == waypointsBefore, "one zone: straight to the map, no waypoint for creatures")
+rawset(_G, "GatherMateData2MineDB", nil)
+Gathering:ResetCache()
+guidePage.skillLine = 197
+SR.DB.settings.guide.profession = 197
+
 ---------------------------------------------------------------------------
 step("price database")
 SR.UI:OpenPage("prices")

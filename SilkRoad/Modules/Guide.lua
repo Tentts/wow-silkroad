@@ -234,7 +234,14 @@ function Page:OnCreate(frame)
 			GameTooltip:SetText(row.targets, 1, 1, 1, 1, true)
 			GameTooltip:AddLine(row.zones, 1, 0.82, 0, true)
 			GameTooltip:AddLine(row.note, 0.8, 0.8, 0.8, true)
+			if #row.step.zoneIDs > 0 then
+				GameTooltip:AddLine(row.step.nodeID and L["Click to show it on the map, with a waypoint."]
+					or L["Click to show it on the map."], 0.4, 0.75, 1, true)
+			end
 			GameTooltip:Show()
+		end,
+		onRowClick = function(row, _, rowFrame)
+			self:ShowStepOnMap(row.step, rowFrame)
 		end,
 	})
 	self.GatherSteps:SetPoint("TOPLEFT", self.Status, "BOTTOMLEFT", -2, -8)
@@ -313,6 +320,22 @@ function Page:BuildShoppingRows(plan)
 	return rows
 end
 
+-- One zone: straight to the map. Several: pick one from a small menu.
+function Page:ShowStepOnMap(step, owner)
+	local zoneIDs = step.zoneIDs or {}
+	if #zoneIDs == 1 then
+		SR.Gathering:ShowOnMap(step, zoneIDs[1])
+	elseif #zoneIDs > 1 then
+		local options = {}
+		for index, mapID in ipairs(zoneIDs) do
+			options[index] = { label = step.zones[index], mapID = mapID }
+		end
+		SR.Game.ShowMenu(owner, L["Show on the map"], options, function(option)
+			SR.Gathering:ShowOnMap(step, option.mapID)
+		end)
+	end
+end
+
 -- Crafting and gathering professions show different controls and tables.
 function Page:SetMode(gathering)
 	self.AvailabilityDropdown:SetShown(not gathering)
@@ -349,7 +372,7 @@ function Page:RefreshGathering(profession, kind)
 			skillText = Util.ColorText(skillText, COLORS.done)
 			targets = Util.ColorText(targets, COLORS.done)
 		end
-		rows[#rows + 1] = { from = step.from, skillText = skillText, targets = targets, zones = zones, note = step.note }
+		rows[#rows + 1] = { step = step, from = step.from, skillText = skillText, targets = targets, zones = zones, note = step.note }
 	end
 	self.GatherSteps:SetRows(rows)
 

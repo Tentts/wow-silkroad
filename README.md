@@ -83,6 +83,8 @@ worked out from current prices instead of a fixed guide.
   gather at each skill and where. Mining and Herbalism list the best node for each bracket and
   the zones with the most of them (from GatherMate2's node database); Skinning suggests creature
   levels and zones; Fishing suggests zones where fish don't get away.
+  **Click a step** to open the world map on its zone (pick one if there are several); for ore
+  and herbs a waypoint marks where those nodes are densest.
 
 ### Auction house
 

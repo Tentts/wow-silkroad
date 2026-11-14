@@ -1163,3 +1163,26 @@ C_AddOns.LoadAddOn = function(name)
 	table.insert(M.loadAddOnCalls, name)
 	return false, "MISSING"
 end
+
+-- World map and context menus.
+define("OpenWorldMap", function(uiMapID)
+	assert(type(uiMapID) == "number", "OpenWorldMap: map ID expected")
+	M.openedMap = uiMapID
+end)
+define("MenuUtil", {
+	CreateContextMenu = function(owner, generator)
+		local root = NewMenuDescription()
+		generator(owner, root)
+		M.contextMenu = root
+		return root
+	end,
+})
+-- Clicks the n-th button of the last context menu (titles don't count).
+function M.PickContextMenu(index)
+	local buttons = {}
+	for _, item in ipairs(M.contextMenu.items) do
+		if item.kind == "button" then buttons[#buttons + 1] = item end
+	end
+	assert(buttons[index], "PickContextMenu: no button " .. index)
+	buttons[index].a(buttons[index].data)
+end

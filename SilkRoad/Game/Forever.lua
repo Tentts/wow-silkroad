@@ -148,6 +148,23 @@ function Game.GetItemCount(itemID)
 	return C_Item.GetItemCount(itemID, true, false, true) or 0
 end
 
+function Game.OpenMap(uiMapID)
+	OpenWorldMap(uiMapID)
+end
+
+-- A small menu at the cursor: a title, then one entry per option;
+-- onPick(option) runs for the one clicked. options = { { label, ... }, ... }
+function Game.ShowMenu(owner, title, options, onPick)
+	MenuUtil.CreateContextMenu(owner, function(_, rootDescription)
+		rootDescription:CreateTitle(title)
+		for _, option in ipairs(options) do
+			rootDescription:CreateButton(option.label, function()
+				onPick(option)
+			end)
+		end
+	end)
+end
+
 function Game.GetMapName(uiMapID)
 	local info = uiMapID and C_Map.GetMapInfo(uiMapID)
 	return info and info.name or nil
