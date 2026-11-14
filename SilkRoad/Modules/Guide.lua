@@ -17,7 +17,7 @@ local Page = SR.UI:RegisterPage({
 	icon = "Interface\\Icons\\INV_Misc_Book_07",
 })
 
-local COLORS = { current = "ff40ff40", done = "ff808080", gap = "ffff4040", link = "ff66bbff", gain = "ff55ff55" }
+local COLORS = { current = "ff40ff40", done = "ff808080", gap = "ffff4040", link = "ff66bbff", gain = "ff55ff55", train = "ffffd100" }
 local SHOPPING_HEIGHT = 160
 
 local AVAILABILITY_LABELS = {
@@ -33,6 +33,7 @@ local RESALE_LABELS = {
 	best = L["Sell results where they earn most"],
 }
 local SOURCE_TAGS = { vendor = L["Vendor"], auction = L["AH"] }
+local RANK_NAMES = { Journeyman = L["Journeyman"], Expert = L["Expert"], Artisan = L["Artisan"] }
 
 local function FormatNetCost(cost)
 	if cost == nil then
@@ -62,6 +63,12 @@ end
 local function ShowStepTooltip(rowFrame, row)
 	local step = row.step
 	GameTooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
+	if step.milestone then
+		GameTooltip:SetText(row.name, 1, 0.82, 0)
+		GameTooltip:AddLine(row.note, 1, 1, 1, true)
+		GameTooltip:Show()
+		return
+	end
 	if step.gap then
 		GameTooltip:SetText(L["No recipe for these points"], 1, 0.25, 0.25)
 		GameTooltip:AddLine(L.GUIDE_GAP_HINT, 1, 0.82, 0, true)
@@ -320,6 +327,33 @@ function Page:BuildShoppingRows(plan)
 	return rows
 end
 
+-- "Train <rank>" rows: every rank between the plan's start and target that
+-- the character hasn't trained yet (its current cap is profession.maxRank).
+-- Sorted just before the steps at the skill where it can be learned.
+function Page:MilestoneRows(profession, from, to)
+	local ranks = SR.GatheringData and SR.GatheringData.ranks or {}
+	local rows = {}
+	for _, rank in ipairs(ranks) do
+		local trained = profession.learned and (profession.maxRank or 0) > rank.cap
+		if not trained and rank.cap > from and rank.cap < to then
+			local at = math.max(rank.learnAt, from)
+			local name = L["Train %s %s"]:format(RANK_NAMES[rank.name] or rank.name, profession.name)
+			local note = L["Learnable at skill %d; needed to go past %d."]:format(rank.learnAt, rank.cap)
+			if rank.cap == 75 then
+				note = note .. " " .. L.TRAINER_STARTING_ZONE_NOTE
+			end
+			local skillText = Util.ColorText(tostring(rank.learnAt), COLORS.train)
+			local label = Util.ColorText(name, COLORS.train)
+			rows[#rows + 1] = {
+				step = { milestone = true, zoneIDs = {} }, from = at - 0.01, name = name, note = note,
+				skillText = skillText, nameText = label, targets = label, zones = "", crafts = "",
+				learnText = Util.ColorText(L["Trainer"], COLORS.train), cost = nil,
+			}
+		end
+	end
+	return rows
+end
+
 -- One zone: straight to the map. Several: pick one from a small menu.
 function Page:ShowStepOnMap(step, owner)
 	local zoneIDs = step.zoneIDs or {}
@@ -350,7 +384,7 @@ function Page:RefreshGathering(profession, kind)
 	local skill = profession.learned and profession.rank or nil
 	local from = skill or 1
 	local maxSkill = SR.Gathering:MaxSkill()
-	local target = settings.target or (profession.learned and profession.maxRank) or maxSkill
+	local target = settings.target or maxSkill
 	target = math.min(math.max(target, from + 1), math.max(maxSkill, from + 1))
 
 	local plan = SR.Gathering:Plan(kind, from, target)
@@ -373,6 +407,9 @@ function Page:RefreshGathering(profession, kind)
 			targets = Util.ColorText(targets, COLORS.done)
 		end
 		rows[#rows + 1] = { step = step, from = step.from, skillText = skillText, targets = targets, zones = zones, note = step.note }
+	end
+	for _, milestone in ipairs(self:MilestoneRows(profession, from, target)) do
+		rows[#rows + 1] = milestone
 	end
 	self.GatherSteps:SetRows(rows)
 
@@ -411,7 +448,7 @@ function Page:Refresh()
 	local maxSkill = SR.Planner:MaxSkill(profession.id)
 	local skill = profession.learned and profession.rank or nil
 	local from = skill or 1
-	local target = settings.target or (profession.learned and profession.maxRank) or maxSkill
+	local target = settings.target or maxSkill
 	target = math.min(math.max(target, from + 1), math.max(maxSkill, from + 1))
 
 	local plan = SR.Planner:Plan(profession.id, {
@@ -420,6 +457,9 @@ function Page:Refresh()
 	self.plan = plan
 
 	local rows, currentIndex = self:BuildStepRows(plan, skill)
+	for _, milestone in ipairs(self:MilestoneRows(profession, from, target)) do
+		rows[#rows + 1] = milestone
+	end
 	self.Steps:SetRows(rows)
 	self.Shopping:SetRows(self:BuildShoppingRows(plan))
 

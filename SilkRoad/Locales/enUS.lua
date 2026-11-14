@@ -69,3 +69,4 @@ L.GUIDE_DESC = "How to level a profession from your skill: the cheapest crafts a
 L.GUIDE_GAP_HINT = "No recipe this plan may use gives skill-ups here. Allow more recipe sources (trainer, vendor, auction house, drops) in the second dropdown."
 L.GUIDE_EMPTY_BODY = "There is nothing to plan for this profession and target."
 L.GATHER_NO_NODE_DATA = "Install GatherMate2 (with GatherMate2_Data) to see which zones have the most nodes."
+L.TRAINER_STARTING_ZONE_NOTE = "Starting-zone trainers only teach up to 75: find a trainer in a capital or a larger town."

@@ -295,3 +295,11 @@ L["Showing %s on the map."] = "Mostrando %s en el mapa."
 L["Click to show it on the map, with a waypoint."] = "Haz clic para verlo en el mapa, con un punto de ruta."
 L["Click to show it on the map."] = "Haz clic para verlo en el mapa."
 L["Show on the map"] = "Mostrar en el mapa"
+
+-- Training milestones
+L.TRAINER_STARTING_ZONE_NOTE = "Los instructores de las zonas de inicio solo enseñan hasta 75: busca un instructor en una capital o en una ciudad más grande."
+L["Train %s %s"] = "Entrenar %s de %s"
+L["Learnable at skill %d; needed to go past %d."] = "Se aprende con habilidad %d; necesario para pasar de %d."
+L["Journeyman"] = "Oficial"
+L["Expert"] = "Experto"
+L["Artisan"] = "Artesano"

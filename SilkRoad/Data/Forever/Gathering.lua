@@ -62,7 +62,17 @@ SR.GatheringData = {
 		},
 	},
 
+	-- Profession ranks (every profession): train the next rank once the
+	-- skill reaches learnAt, to go past the current cap. In Forever the
+	-- starting-zone trainers only teach up to 75.
+	ranks = {
+		{ name = "Journeyman", learnAt = 50, cap = 75 },
+		{ name = "Expert", learnAt = 125, cap = 150 },
+		{ name = "Artisan", learnAt = 200, cap = 225 },
+	},
+
 	zones = {
+		[2521] = { 1, 10, nil, "Zephras Isle" }, -- Forever's Skyborne starting zone
 		[1429] = { 1, 10, "A", "Elwynn Forest" },
 		[1426] = { 1, 10, "A", "Dun Morogh" },
 		[1438] = { 1, 10, "A", "Teldrassil" },

@@ -79,6 +79,8 @@ worked out from current prices instead of a fixed guide.
   your skill goes up, prices change or you learn a recipe.
 - A **shopping list** with what you need, what's already in your bags and bank, and the
   cheapest source for the rest.
+- **Training reminders**: rows marking when to train Journeyman (at 50), Expert (125) and
+  Artisan (200), for ranks you haven't trained yet.
 - **Gathering professions** (Mining, Herbalism, Skinning, Fishing) get a simple route: what to
   gather at each skill and where. Mining and Herbalism list the best node for each bracket and
   the zones with the most of them (from GatherMate2's node database); Skinning suggests creature
@@ -298,6 +300,8 @@ Research on the Forever client, its APIs and their quirks is collected in
 - Recipe and item data: Blizzard's client tables, via [wago.tools](https://wago.tools).
 - Recipe sources and vendor lists: [Questie](https://github.com/Questie/Questie)'s QuestieDB, read at runtime.
 - Ore and herb node locations: [GatherMate2](https://www.curseforge.com/wow/addons/gathermate2)'s GatherMate2_Data, read at runtime.
+- Herbalism requirements, training ranks and Forever's zone notes cross-checked against
+  [wow-professions.com](https://www.wow-professions.com/forever/herbalism-leveling-guide)'s Forever guide (facts only).
 - Bundled libraries, unmodified, in `SilkRoad/Libs/`:
   - [LibStub](https://www.wowace.com/projects/libstub): public domain.
   - [LibAHTab](https://github.com/Auctionator/LibAHTab) by plusmouse: MIT (`Libs/LibAHTab/LICENSE`).

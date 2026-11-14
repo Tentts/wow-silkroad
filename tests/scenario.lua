@@ -394,10 +394,25 @@ guidePage.skillLine = nil
 SR.DB.settings.guide.profession = 197
 SR.DB.settings.guide.availability = "trainer"
 guidePage:Refresh()
-check(guidePage.SkillLabel:GetText() == "Skill 75, plan up to" and guidePage.TargetInput:GetText() == "150",
-	"plans from the character's skill to its current maximum")
+check(guidePage.SkillLabel:GetText() == "Skill 75, plan up to" and guidePage.TargetInput:GetText() == tostring(SR.Planner:MaxSkill(197)),
+	"plans from the character's skill to the profession's maximum")
+local trainRows = {}
+for _, row in ipairs(guidePage.Steps.rows) do
+	if row.step.milestone then trainRows[#trainRows + 1] = row.name end
+end
+check(table.concat(trainRows, ",") == "Train Expert Tailoring,Train Artisan Tailoring",
+	"training milestones for the ranks not trained yet (Tailoring 75/150: Journeyman done)")
+local expertRow
+for _, row in ipairs(guidePage.Steps.rows) do
+	if row.name == "Train Expert Tailoring" then expertRow = row end
+end
+check(expertRow.from < 125 and expertRow.note == "Learnable at skill 125; needed to go past 150.", "placed where the rank can be learned")
 local stepRows = guidePage.Steps.rows
-check(#stepRows == #guidePage.plan.steps and #stepRows > 0, "one row per step")
+local planRows = 0
+for _, row in ipairs(stepRows) do
+	if not row.step.milestone then planRows = planRows + 1 end
+end
+check(planRows == #guidePage.plan.steps and planRows > 0, "one row per step, plus training rows")
 check(stepRows[1].current and stepRows[1].step.from == 75, "the current step is highlighted")
 check(guidePage.Status:GetText():find("step 1 of", 1, true) or guidePage.Status:GetText():find("no usable recipe", 1, true), "status line")
 check(#guidePage.Shopping.rows == #guidePage.plan.shopping, "shopping list shown")
@@ -462,7 +477,11 @@ SR.DB.settings.guide.profession = 186
 guidePage:Refresh()
 check(guidePage.GatherSteps:IsShown() and not guidePage.Steps:IsShown() and not guidePage.Shopping:IsShown(), "gathering view replaces the crafting plan")
 check(not guidePage.AvailabilityDropdown:IsShown(), "no recipe options for gathering")
-check(#guidePage.GatherSteps.rows == 9, "one row per bracket")
+local gatherRows, gatherTrain = 0, 0
+for _, row in ipairs(guidePage.GatherSteps.rows) do
+	if row.step.milestone then gatherTrain = gatherTrain + 1 else gatherRows = gatherRows + 1 end
+end
+check(gatherRows == 9 and gatherTrain == 3, "one row per bracket, plus all three training ranks (not learned)")
 check(guidePage.Status:GetText():find("You don't have this profession", 1, true), "not learned: plan from 1")
 check(guidePage.Summary:GetText():find("GatherMate2", 1, true), "suggests GatherMate2 for zones")
 M.RunScript(guidePage.GatherSteps.ScrollBox.__active[1], "OnEnter")
