@@ -11,6 +11,7 @@ Find out which recipes make gold, where to sell what you craft, and where to get
 ![Version](https://img.shields.io/badge/version-0.4.0-informational)
 ![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Espa%C3%B1ol-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 </div>
 
@@ -278,4 +279,4 @@ and isn't affiliated with or endorsed by Blizzard.
 
 ## License
 
-No license has been chosen yet. Until one is added, all rights are reserved by the author.
+Released under the [MIT License](LICENSE). Bundled libraries keep their own licenses (see [Credits](#credits)).
