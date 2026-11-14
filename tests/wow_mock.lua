@@ -967,8 +967,9 @@ define("GetBuildInfo", function()
 	return "1.60.1", "70938", "Nov 1 2026", 16001
 end)
 
+M.faction = "Horde"
 define("UnitFactionGroup", function(unit)
-	return "Horde", "Horde"
+	return M.faction, M.faction
 end)
 
 -- The open profession window: M.tradeSkill = { professionID, name, recipes = { [recipeID] = learned } }

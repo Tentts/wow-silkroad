@@ -29,7 +29,7 @@ local Gathering = SR:NewComponent("Gathering")
 
 Gathering.KINDS = { [186] = "mining", [182] = "herbalism", [393] = "skinning", [356] = "fishing" }
 
-local MAX_ZONES = 3
+local MAX_ZONES = 4
 local SKINNING_BRACKET = 25
 local SKINNING_LEVEL_WINDOW = 5
 local NODE_DATABASES = {

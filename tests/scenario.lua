@@ -437,7 +437,8 @@ check(Gathering:KindOf(186) == "mining" and Gathering:KindOf(393) == "skinning" 
 
 local mining = Gathering:Plan("mining", 1, 300)
 check(not mining.hasNodeData, "no node locations without GatherMate2")
-check(table.concat(mining.steps[1].zones, ",") == "Durotar,Silverpine Forest", "zones from SilkRoad's own list without GatherMate2, this faction only")
+check(table.concat(mining.steps[1].zones, ",") == "Durotar,Duskwood,Silverpine Forest,Redridge Mountains",
+	"zones from SilkRoad's own list without GatherMate2: Horde and contested only")
 check(mining.steps[1].zoneIDs[1] == 1411, "with their map IDs")
 check(M.loadAddOnCalls[1] == "GatherMate2_Data", "tries to load GatherMate2's data")
 local miningTargets = {}
@@ -467,7 +468,15 @@ check(Gathering.MaxSkinnableLevel(50) == 15 and Gathering.MaxSkinnableLevel(100)
 	"skinnable level from skill")
 local skinning = Gathering:Plan("skinning", 1, 300)
 check(#skinning.steps == 6 and skinning.steps[1].targets[1] == "Beasts level 1-10", "skinning brackets from the data")
-check(table.concat(skinning.steps[1].zones, ",") == "Mulgore,Durotar,Zephras Isle", "skinning zones for this faction")
+check(table.concat(skinning.steps[1].zones, ",") == "Mulgore,Durotar,Tirisfal Glades,The Barrens,Moonglade", "skinning zones for this faction")
+M.faction = "Alliance"
+local alliancePeacebloom = Gathering:Plan("herbalism", 1, 15).steps[1]
+check(table.concat(alliancePeacebloom.zones, ",") == "Dun Morogh,Elwynn Forest,Teldrassil,Darkshore", "an Alliance character gets Alliance zones")
+local allianceCopper = Gathering:Plan("mining", 1, 65).steps[1]
+check(table.concat(allianceCopper.zones, ",") == "Westfall,Duskwood,Loch Modan,Redridge Mountains", "and Alliance mining zones")
+local allianceSkinning = Gathering:Plan("skinning", 1, 10).steps[1]
+check(table.concat(allianceSkinning.zones, ",") == "Dun Morogh,Elwynn Forest,Teldrassil,Darkshore,Moonglade", "and Alliance skinning zones")
+M.faction = "Horde"
 check(skinning.steps[2].targets[1] == "Beasts level 11-20" and skinning.steps[2].from == 10 and skinning.steps[2].to == 100, "11-20 beasts up to skill 100")
 for _, zone in ipairs(skinning.steps[1].zones) do
 	check(zone ~= "Elwynn Forest" and zone ~= "Dun Morogh" and zone ~= "Teldrassil", "skinning zones of this faction")
