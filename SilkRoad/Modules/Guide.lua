@@ -218,6 +218,29 @@ function Page:OnCreate(frame)
 	self.Steps:SetPoint("TOPLEFT", self.Status, "BOTTOMLEFT", -2, -8)
 	self.Steps:SetPoint("BOTTOMRIGHT", self.Shopping, "TOPRIGHT", 0, 12)
 
+	-- Gathering professions: what to gather at each skill, and where.
+	self.GatherSteps = Widgets.CreateDataTable(frame, {
+		columns = {
+			{ key = "from", title = L["Skill"], width = 74, format = function(_, row) return row.skillText end },
+			{ key = "targets", title = L["Gather"], sortable = false },
+			{ key = "zones", title = L["Where"], sortable = false },
+			{ key = "note", title = L["Note"], width = 230, sortable = false },
+		},
+		sortKey = "from",
+		emptyTitle = L["No plan"],
+		emptyBody = L.GUIDE_EMPTY_BODY,
+		onRowEnter = function(rowFrame, row)
+			GameTooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
+			GameTooltip:SetText(row.targets, 1, 1, 1, 1, true)
+			GameTooltip:AddLine(row.zones, 1, 0.82, 0, true)
+			GameTooltip:AddLine(row.note, 0.8, 0.8, 0.8, true)
+			GameTooltip:Show()
+		end,
+	})
+	self.GatherSteps:SetPoint("TOPLEFT", self.Status, "BOTTOMLEFT", -2, -8)
+	self.GatherSteps:SetPoint("BOTTOMRIGHT")
+	self.GatherSteps:Hide()
+
 	SR:RegisterCallback("SKILL_CHANGED", function()
 		if frame:IsVisible() then
 			self:Refresh()
@@ -290,6 +313,63 @@ function Page:BuildShoppingRows(plan)
 	return rows
 end
 
+-- Crafting and gathering professions show different controls and tables.
+function Page:SetMode(gathering)
+	self.AvailabilityDropdown:SetShown(not gathering)
+	self.ResaleDropdown:SetShown(not gathering)
+	self.Steps:SetShown(not gathering)
+	self.Shopping:SetShown(not gathering)
+	self.GatherSteps:SetShown(gathering)
+end
+
+function Page:RefreshGathering(profession, kind)
+	local settings = SR.DB.settings.guide
+	local skill = profession.learned and profession.rank or nil
+	local from = skill or 1
+	local maxSkill = SR.Gathering:MaxSkill()
+	local target = settings.target or (profession.learned and profession.maxRank) or maxSkill
+	target = math.min(math.max(target, from + 1), math.max(maxSkill, from + 1))
+
+	local plan = SR.Gathering:Plan(kind, from, target)
+	self.plan = plan
+	local currentIndex
+	local rows = {}
+	for index, step in ipairs(plan.steps) do
+		local isCurrent = skill and skill >= step.from and skill < step.to
+		if isCurrent then
+			currentIndex = index
+		end
+		local skillText = ("%d - %d"):format(step.from, step.to)
+		local targets = table.concat(step.targets, ", ")
+		local zones = #step.zones > 0 and table.concat(step.zones, ", ") or Util.ColorText(L["unknown"], COLORS.done)
+		if isCurrent then
+			skillText = Util.ColorText("> " .. skillText, COLORS.current)
+			targets = Util.ColorText(targets, COLORS.current)
+		elseif skill and step.to <= skill then
+			skillText = Util.ColorText(skillText, COLORS.done)
+			targets = Util.ColorText(targets, COLORS.done)
+		end
+		rows[#rows + 1] = { from = step.from, skillText = skillText, targets = targets, zones = zones, note = step.note }
+	end
+	self.GatherSteps:SetRows(rows)
+
+	self.SkillLabel:SetText(L["Skill %d, plan up to"]:format(from))
+	self.TargetInput:SetText(tostring(target))
+	if plan.hasNodeData then
+		self.Summary:SetText(L["%d steps"]:format(#plan.steps))
+	else
+		self.Summary:SetText(Util.ColorText(L.GATHER_NO_NODE_DATA, COLORS.gap))
+	end
+	if not profession.learned then
+		self.Status:SetText(Util.ColorText(L["You don't have this profession; the plan starts at skill 1."], COLORS.gap))
+	elseif currentIndex then
+		self.Status:SetText(L["You're on step %d of %d."]:format(currentIndex, #plan.steps))
+	else
+		self.Status:SetText(L["You've reached the target."])
+	end
+	self.ProfessionDropdown:Refresh()
+end
+
 function Page:Refresh()
 	local profession = self:CurrentProfession()
 	if not profession then
@@ -297,6 +377,13 @@ function Page:Refresh()
 	end
 	local settings = SR.DB.settings.guide
 	self.skillLine = profession.id
+
+	local gatheringKind = SR.Gathering:KindOf(profession.id)
+	self:SetMode(gatheringKind ~= nil)
+	if gatheringKind then
+		self:RefreshGathering(profession, gatheringKind)
+		return
+	end
 
 	local maxSkill = SR.Planner:MaxSkill(profession.id)
 	local skill = profession.learned and profession.rank or nil

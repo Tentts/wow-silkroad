@@ -2,7 +2,7 @@
 ## Title: |cffe6c35cSilkRoad|r
 ## Notes: Crafting and trading helper: recipe costs, auction house and vendor prices.
 ## Author: Tentts
-## Version: 0.5.0
+## Version: 0.6.0
 ## Category: Professions
 ## IconTexture: Interface\Icons\INV_Fabric_Silk_02
 ## SavedVariables: SilkRoadDB
@@ -10,7 +10,7 @@
 ## AddonCompartmentFunc: SilkRoad_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: SilkRoad_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: SilkRoad_OnAddonCompartmentLeave
-## OptionalDeps: Auctionator, QuestieDB, Questie, TomTom
+## OptionalDeps: Auctionator, QuestieDB, Questie, TomTom, GatherMate2
 
 # Libraries (skipped automatically when another addon loaded the same or newer version)
 Libs\LibStub\LibStub.lua
@@ -26,6 +26,7 @@ Core\Init.lua
 # Game-version layer: each file returns early unless it matches SR.flavor
 Game\Forever.lua
 Data\Forever\Recipes.lua
+Data\Forever\Gathering.lua
 
 # Core services (version-agnostic)
 Core\Util.lua
@@ -34,6 +35,7 @@ Core\Prices.lua
 Core\Sources.lua
 Core\Recipes.lua
 Core\Planner.lua
+Core\Gathering.lua
 Core\Merchants.lua
 Core\Bindings.lua
 Core\AuctionScanner.lua

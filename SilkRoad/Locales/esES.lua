@@ -233,7 +233,6 @@ L["toggle debug output"] = "activa o desactiva la depuración"
 L["vendor"] = "vendedor"
 
 -- Leveling guide
-L.GUIDE_DESC = "La forma más barata de subir una profesión desde tu habilidad, calculada con los precios actuales y las recetas que puedes conseguir."
 L.GUIDE_GAP_HINT = "Ninguna receta que pueda usar este plan da puntos aquí. Permite más fuentes de recetas (instructor, vendedor, casa de subastas, botín) en el segundo desplegable."
 L.GUIDE_EMPTY_BODY = "No hay nada que planificar para esta profesión y objetivo."
 L["%d points have no usable recipe with this availability."] = "%d puntos no tienen ninguna receta utilizable con esta disponibilidad."
@@ -276,3 +275,18 @@ L["You don't have this profession; the plan starts at skill 1."] = "No tienes es
 L["You're on step %d of %d."] = "Estás en el paso %d de %d."
 L["You've reached the target."] = "Has llegado al objetivo."
 L["widen availability"] = "amplía la disponibilidad"
+
+-- Gathering guides
+L.GUIDE_DESC = "Cómo subir una profesión desde tu habilidad: las fabricaciones más baratas a precios actuales, o qué recolectar y dónde."
+L.GATHER_NO_NODE_DATA = "Instala GatherMate2 (con GatherMate2_Data) para ver qué zonas tienen más nodos."
+L["%d steps"] = "%d pasos"
+L["%s (%d nodes)"] = "%s (%d nodos)"
+L["Beasts level %d-%d"] = "Bestias de nivel %d-%d"
+L["Fish in open water or pools"] = "Pesca en aguas abiertas o en bancos"
+L["Gather"] = "Recolectar"
+L["Note"] = "Nota"
+L["Where"] = "Dónde"
+L["fish here so they don't get away"] = "pesca aquí para que no se escapen"
+L["needs %d; orange until %d, yellow until %d"] = "requiere %d; naranja hasta %d, amarillo hasta %d"
+L["skin creatures up to level %d"] = "despelleja criaturas hasta nivel %d"
+L["unknown"] = "desconocido"

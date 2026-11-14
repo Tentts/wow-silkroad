@@ -65,6 +65,7 @@ L.RESET_SETTINGS_DESC = "Puts every SilkRoad setting back to its default, includ
 L.RESET_SETTINGS_CONFIRM = "Reset every SilkRoad setting to its default?"
 L.TOOLTIP_PRICES_TOOLTIP = "Adds what a vendor pays and the lowest auction price to item tooltips. The auction line only shows for items that can be sold there."
 
-L.GUIDE_DESC = "The cheapest way to level a profession from your skill, worked out from current prices and the recipes you can get."
+L.GUIDE_DESC = "How to level a profession from your skill: the cheapest crafts at current prices, or what to gather and where."
 L.GUIDE_GAP_HINT = "No recipe this plan may use gives skill-ups here. Allow more recipe sources (trainer, vendor, auction house, drops) in the second dropdown."
 L.GUIDE_EMPTY_BODY = "There is nothing to plan for this profession and target."
+L.GATHER_NO_NODE_DATA = "Install GatherMate2 (with GatherMate2_Data) to see which zones have the most nodes."

@@ -49,7 +49,7 @@ check(SR:GetSetting("minimap.hide") == false, "nested default setting")
 M.FireEvent("PLAYER_LOGIN")
 check(SilkRoadMinimapButton ~= nil and SilkRoadMinimapButton:IsShown(), "minimap button created")
 check(M.settingsRegistered, "options panel registered with Blizzard settings")
-check(SR.version == "0.5.0", "version read from the TOC")
+check(SR.version == "0.6.0", "version read from the TOC")
 
 ---------------------------------------------------------------------------
 step("open window")
@@ -416,6 +416,61 @@ M.professions[1][3] = 75
 SR.DB.settings.guide.target = nil
 M.bags[2589] = nil
 
+step("gathering guides")
+local Gathering = SR.Gathering
+check(Gathering:KindOf(186) == "mining" and Gathering:KindOf(393) == "skinning" and Gathering:KindOf(197) == nil, "gathering professions recognised")
+
+local mining = Gathering:Plan("mining", 1, 300)
+check(not mining.hasNodeData, "no node locations without GatherMate2")
+check(M.loadAddOnCalls[1] == "GatherMate2_Data", "tries to load GatherMate2's data")
+local miningTargets = {}
+for _, gatherStep in ipairs(mining.steps) do miningTargets[#miningTargets + 1] = gatherStep.targets[1] end
+check(table.concat(miningTargets, ",") == "Copper Vein,Tin Vein,Silver Vein,Iron Deposit,Gold Vein,Mithril Deposit,Truesilver Deposit,Small Thorium Vein,Rich Thorium Vein",
+	"one bracket per best node, from copper to rich thorium")
+check(mining.steps[2].from == 65 and mining.steps[2].to == 75, "brackets start at each node's requirement")
+check(mining.steps[2].note == "needs 65; orange until 90, yellow until 115", "skill-up colours in the note")
+check(#mining.steps[3].targets >= 2, "nodes still yellow are suggested too")
+
+rawset(_G, "GatherMateData2MineDB", {
+	[1411] = { [1] = 201, [2] = 201, [3] = 202 }, -- Durotar
+	[1413] = { [1] = 201 },                       -- The Barrens
+	[1429] = { [1] = 201, [2] = 201, [3] = 201 }, -- Elwynn Forest (Alliance)
+})
+local located = Gathering:Plan("mining", 1, 70)
+check(located.hasNodeData, "node locations from GatherMate2's data")
+check(located.steps[1].zones[1] == "Durotar (2 nodes)" and located.steps[1].zones[2] == "The Barrens (1 nodes)",
+	"zones ranked by node count")
+for _, zone in ipairs(located.steps[1].zones) do
+	check(not zone:find("Elwynn", 1, true), "the other faction's zones are left out")
+end
+rawset(_G, "GatherMateData2MineDB", nil)
+Gathering:ResetCache()
+
+check(Gathering.MaxSkinnableLevel(50) == 15 and Gathering.MaxSkinnableLevel(100) == 20 and Gathering.MaxSkinnableLevel(200) == 40,
+	"skinnable level from skill")
+local skinning = Gathering:Plan("skinning", 1, 300)
+check(#skinning.steps == 12 and skinning.steps[1].targets[1] == "Beasts level 5-10", "skinning brackets of 25 skill")
+for _, zone in ipairs(skinning.steps[1].zones) do
+	check(zone ~= "Elwynn Forest" and zone ~= "Dun Morogh" and zone ~= "Teldrassil", "skinning zones of this faction")
+end
+local fishing = Gathering:Plan("fishing", 1, 300)
+check(#fishing.steps == 4 and fishing.steps[1].zones[1] == "Durotar", "fishing brackets and zones")
+
+SR.UI:OpenPage("guide")
+guidePage.skillLine = 186
+SR.DB.settings.guide.profession = 186
+guidePage:Refresh()
+check(guidePage.GatherSteps:IsShown() and not guidePage.Steps:IsShown() and not guidePage.Shopping:IsShown(), "gathering view replaces the crafting plan")
+check(not guidePage.AvailabilityDropdown:IsShown(), "no recipe options for gathering")
+check(#guidePage.GatherSteps.rows == 9, "one row per bracket")
+check(guidePage.Status:GetText():find("You don't have this profession", 1, true), "not learned: plan from 1")
+check(guidePage.Summary:GetText():find("GatherMate2", 1, true), "suggests GatherMate2 for zones")
+M.RunScript(guidePage.GatherSteps.ScrollBox.__active[1], "OnEnter")
+guidePage.skillLine = 197
+SR.DB.settings.guide.profession = 197
+guidePage:Refresh()
+check(guidePage.Steps:IsShown() and not guidePage.GatherSteps:IsShown(), "back to the crafting plan for Tailoring")
+
 ---------------------------------------------------------------------------
 step("price database")
 SR.UI:OpenPage("prices")
@@ -571,7 +626,7 @@ SlashCmdList.SILKROAD("help")
 check(OutputContains("/silkroad minimap"), "help lists commands")
 check(OutputContains("/silkroad scan"), "help lists the scan command")
 SlashCmdList.SILKROAD("version")
-check(OutputContains("0.5.0"), "version command")
+check(OutputContains("0.6.0"), "version command")
 SlashCmdList.SILKROAD("bogus")
 check(OutputContains("Unknown command:"), "unknown commands are reported")
 SlashCmdList.SILKROAD("debug")

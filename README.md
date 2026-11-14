@@ -8,7 +8,7 @@ Find out which recipes make gold, where to sell what you craft, where to get the
 
 ![Game](https://img.shields.io/badge/WoW-Forever-c79c6e)
 ![Interface](https://img.shields.io/badge/interface-16001-blue)
-![Version](https://img.shields.io/badge/version-0.5.0-informational)
+![Version](https://img.shields.io/badge/version-0.6.0-informational)
 ![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Espa%C3%B1ol-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -79,6 +79,10 @@ worked out from current prices instead of a fixed guide.
   your skill goes up, prices change or you learn a recipe.
 - A **shopping list** with what you need, what's already in your bags and bank, and the
   cheapest source for the rest.
+- **Gathering professions** (Mining, Herbalism, Skinning, Fishing) get a simple route: what to
+  gather at each skill and where. Mining and Herbalism list the best node for each bracket and
+  the zones with the most of them (from GatherMate2's node database); Skinning suggests creature
+  levels and zones; Fishing suggests zones where fish don't get away.
 
 ### Auction house
 
@@ -115,7 +119,7 @@ worked out from current prices instead of a fixed guide.
 |---|---|
 | **Game** | World of Warcraft: Forever (interface `16001`) |
 | **Recommended** | [Questie](https://www.curseforge.com/wow/addons/questie) with its QuestieDB data addon. It provides where recipes are sold or dropped, and which reagents vendors sell. |
-| **Optional** | [Auctionator](https://www.curseforge.com/wow/addons/auctionator): its prices are used as an extra source. [TomTom](https://www.curseforge.com/wow/addons/tomtom): waypoints with an arrow. |
+| **Optional** | [Auctionator](https://www.curseforge.com/wow/addons/auctionator): its prices are used as an extra source. [TomTom](https://www.curseforge.com/wow/addons/tomtom): waypoints with an arrow. [GatherMate2](https://www.curseforge.com/wow/addons/gathermate2) with GatherMate2_Data: zones with the most ore and herb nodes in the gathering guides. |
 
 SilkRoad works on its own; the optional addons only add information.
 
@@ -204,13 +208,14 @@ SilkRoad/                  the addon (this folder goes into Interface\AddOns)
 │  ├─ Prices.lua           price layer with pluggable auction price providers
 │  ├─ Recipes.lua          all recipes, known recipes, cost and profit per craft
 │  ├─ Planner.lua          levelling planner: cheapest route, steps, shopping list
+│  ├─ Gathering.lua        gathering guides: nodes, creature levels and zones per skill
 │  ├─ Sources.lua          where recipes come from, which reagents vendors sell (QuestieDB)
 │  ├─ AuctionScanner.lua   full auction house scans within the 15-minute limit
 │  ├─ Merchants.lua        records merchant prices
 │  ├─ Bindings.lua         key binding helpers
 │  └─ Util.lua             formatting and item helpers
 ├─ Game/Forever.lua        SR.Game: Forever's own APIs (professions, merchants, maps, names)
-├─ Data/Forever/           generated game data: recipes, items, prices
+├─ Data/Forever/           game data: recipes and items (generated), gathering facts (hand-kept)
 ├─ UI/                     window, sidebar, data table, widgets, tooltips, AH tab, launchers
 ├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Price Database, Settings
 ├─ Locales/                enUS (base) and translations
@@ -280,7 +285,7 @@ Research on the Forever client, its APIs and their quirks is collected in
 - [x] Known recipes from the spellbook
 - [x] Tooltip prices, key binding, translations
 - [x] Dynamic levelling planner with progress tracking and a shopping list
-- [ ] Levelling routes for gathering professions (Mining, Herbalism, Skinning, Fishing)
+- [x] Simple levelling guides for gathering professions
 - [ ] Crafting queue
 - [ ] Price history and trends
 - [ ] More languages
@@ -290,6 +295,7 @@ Research on the Forever client, its APIs and their quirks is collected in
 
 - Recipe and item data: Blizzard's client tables, via [wago.tools](https://wago.tools).
 - Recipe sources and vendor lists: [Questie](https://github.com/Questie/Questie)'s QuestieDB, read at runtime.
+- Ore and herb node locations: [GatherMate2](https://www.curseforge.com/wow/addons/gathermate2)'s GatherMate2_Data, read at runtime.
 - Bundled libraries, unmodified, in `SilkRoad/Libs/`:
   - [LibStub](https://www.wowace.com/projects/libstub): public domain.
   - [LibAHTab](https://github.com/Auctionator/LibAHTab) by plusmouse: MIT (`Libs/LibAHTab/LICENSE`).

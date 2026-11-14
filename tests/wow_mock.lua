@@ -1152,3 +1152,14 @@ C_Item.GetItemCount = function(itemID, includeBank, includeUses, includeReagentB
 	assert(type(itemID) == "number", "GetItemCount: item ID expected")
 	return M.bags[itemID] or 0
 end
+
+-- Maps and load-on-demand addons.
+M.mapNames = {}
+C_Map.GetMapInfo = function(uiMapID)
+	return M.mapNames[uiMapID] and { name = M.mapNames[uiMapID] } or nil
+end
+M.loadAddOnCalls = {}
+C_AddOns.LoadAddOn = function(name)
+	table.insert(M.loadAddOnCalls, name)
+	return false, "MISSING"
+end

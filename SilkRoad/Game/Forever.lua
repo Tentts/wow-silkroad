@@ -148,6 +148,20 @@ function Game.GetItemCount(itemID)
 	return C_Item.GetItemCount(itemID, true, false, true) or 0
 end
 
+function Game.GetMapName(uiMapID)
+	local info = uiMapID and C_Map.GetMapInfo(uiMapID)
+	return info and info.name or nil
+end
+
+-- Loads a load-on-demand addon if it's installed and enabled; harmless otherwise.
+function Game.LoadOptionalAddOn(name)
+	if C_AddOns.IsAddOnLoaded(name) then
+		return true
+	end
+	local ok, loaded = pcall(C_AddOns.LoadAddOn, name)
+	return ok and loaded and true or false
+end
+
 function Game.GetAreaName(areaID)
 	local name = areaID and C_Map.GetAreaInfo(areaID)
 	return name
