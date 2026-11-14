@@ -5,11 +5,17 @@
 	  schemaVersion  number
 	  settings       see ACCOUNT_DEFAULTS.settings
 	  markets        [marketKey] = {
-	                   auction  = { [itemID] = { price = copper per unit, quantity = n, seen = time() } },
+	                   auction  = { [itemID] = { price = lowest unit buyout, quantity = n listed, seen = time() } },
 	                   lastScan = time() | nil,
+	                   lastScanStats = { items = n, listings = n, seconds = n } | nil,
 	                 }
 	                 Auction prices are kept per market (realm) because every
-	                 realm has its own auction house economy.
+	                 realm has its own auction house economy. quantity is 0
+	                 for items that were missing from the latest full scan.
+	  scanner        { lastRequest = time() | nil }
+	                 When the last full scan was requested (by SilkRoad or
+	                 another addon). Account-wide, to respect the server's
+	                 15-minute limit across characters and reloads.
 	  vendorPrices   [itemID] = { price = copper per unit, seen = time() }
 	                 What merchants charge. Vendor prices are the same everywhere.
 	  recipes        [recipeID] = {
@@ -49,8 +55,10 @@ DB.ACCOUNT_DEFAULTS = {
 		},
 		auctionCutPercent = 5,
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
+		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
 	},
 	markets = {},
+	scanner = {},
 	vendorPrices = {},
 	recipes = {},
 }

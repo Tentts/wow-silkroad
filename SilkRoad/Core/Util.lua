@@ -109,6 +109,20 @@ function Util.FormatPercent(ratio)
 	return text
 end
 
+-- 425 -> "7:05", 4500 -> "1h 15m"
+function Util.FormatDuration(seconds)
+	seconds = math.max(0, math.floor(seconds + 0.5))
+	if seconds >= 3600 then
+		return ("%dh %02dm"):format(math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
+	end
+	return ("%d:%02d"):format(math.floor(seconds / 60), seconds % 60)
+end
+
+-- 18442 -> "18,442" (separator follows the client's locale)
+function Util.FormatNumber(value)
+	return BreakUpLargeNumbers(value or 0)
+end
+
 function Util.TimeAgo(timestamp)
 	if not timestamp then
 		return L["Never"]

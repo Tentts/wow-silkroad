@@ -28,7 +28,9 @@ L.OVERVIEW_GETTING_STARTED = table.concat({
 	"|cffffd100Vendor Flips|r lists vendor items that are worth more on the auction house.",
 	"|cffffd100Price Database|r shows every price SilkRoad knows for an item.",
 	"",
-	"Auction prices are read from Auctionator when it is installed. SilkRoad's own auction scanner, recipe indexer and vendor price recorder are the next steps on the roadmap.",
+	"When you open the auction house, SilkRoad scans it automatically (at most once every 15 minutes) and saves the lowest price of every item. The |cffffd100SilkRoad|r tab in the auction house shows the scan status and lets you scan manually. Auctionator's prices are used too when it is installed.",
+	"",
+	"The recipe indexer and vendor price recorder are the next steps on the roadmap.",
 }, "\n")
 
 L.RECIPES_EMPTY_TITLE = "No recipes indexed yet"
@@ -36,9 +38,14 @@ L.RECIPES_EMPTY_BODY = "Recipes will appear here once SilkRoad can read them fro
 L.FLIPS_EMPTY_TITLE = "No vendor prices recorded yet"
 L.FLIPS_EMPTY_BODY = "SilkRoad will record what merchants charge when you visit them, then compare those prices with the auction house. The vendor price recorder is on the roadmap."
 L.PRICES_EMPTY_TITLE = "No auction scans yet"
-L.PRICES_EMPTY_BODY = "Items from SilkRoad's own auction house scans will be listed here. Until the scanner lands, auction prices come from Auctionator when it is installed."
+L.PRICES_EMPTY_BODY = "Open the auction house and SilkRoad scans it automatically (at most once every 15 minutes). Every item it finds is listed here."
 L.NO_MATCHES_TITLE = "Nothing matches"
 L.NO_MATCHES_BODY = "Try a different search or filter."
 L.LOOKUP_HINT = "Type an item ID or name, or shift-click an item link into the box."
 L.LOOKUP_NOT_FOUND = "SilkRoad doesn't recognise that item. Names only work for items your client has already seen; item IDs and links always work."
 L.NO_AUCTION_SOURCE = "none yet"
+
+L.SCAN_NO_RESPONSE = "The auction house didn't send scan results. The server allows one full scan every 15 minutes, and another addon may have used it; SilkRoad will try again next time."
+L.AH_SCAN_NOTE = "The server allows one full scan every 15 minutes. Full scans started by other addons, such as Auctionator, are recorded too."
+L.AH_ABOUT = "Auction prices from these scans feed SilkRoad's recipe costs, vendor flips and price lookups."
+L.AUTO_SCAN_TOOLTIP = "When the auction house opens, scan it if the last full scan was at least 15 minutes ago."

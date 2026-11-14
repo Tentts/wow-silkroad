@@ -38,7 +38,7 @@ check(SR:GetSetting("minimap.hide") == false, "nested default setting")
 M.FireEvent("PLAYER_LOGIN")
 check(SilkRoadMinimapButton ~= nil and SilkRoadMinimapButton:IsShown(), "minimap button created")
 check(M.settingsRegistered, "options panel registered with Blizzard settings")
-check(SR.version == "0.1.0", "version read from the TOC")
+check(SR.version == "0.2.0", "version read from the TOC")
 
 ---------------------------------------------------------------------------
 step("open window")
@@ -289,8 +289,9 @@ check(panel ~= nil, "options panel frame registered")
 step("slash commands")
 SlashCmdList.SILKROAD("help")
 check(OutputContains("/silkroad minimap"), "help lists commands")
+check(OutputContains("/silkroad scan"), "help lists the scan command")
 SlashCmdList.SILKROAD("version")
-check(OutputContains("0.1.0"), "version command")
+check(OutputContains("0.2.0"), "version command")
 SlashCmdList.SILKROAD("bogus")
 check(OutputContains("Unknown command:"), "unknown commands are reported")
 SlashCmdList.SILKROAD("debug")
@@ -309,6 +310,137 @@ SilkRoadMainFrame:Hide()
 check(not SR.UI:IsShown(), "hidden by the client")
 SR.UI:Toggle()
 check(SR.UI:IsShown() and SR.UI.currentPageID == "settings", "reopens on the last page")
+SR.UI:Hide()
+
+---------------------------------------------------------------------------
+step("auction house tab")
+local LibAHTab = LibStub("LibAHTab-1-0")
+check(not LibAHTab:DoesIDExist("SilkRoad"), "no tab before the auction house UI loads")
+M.LoadAuctionHouseUI()
+check(LibAHTab:DoesIDExist("SilkRoad"), "tab created when Blizzard_AuctionHouseUI loads")
+local ahPanel = SilkRoadAuctionHousePanel
+check(not ahPanel:IsShown(), "tab content starts hidden")
+
+step("automatic scan when the auction house opens")
+M.replicate = {
+	{ 2589, 20, 900 },  -- Linen Cloth, 45c each
+	{ 2589, 5, 300 },   -- Linen Cloth, 60c each
+	{ 4306, 1, 380 },   -- Silk Cloth, 380c
+	{ 4306, 10, 4500 }, -- Silk Cloth, 450c each
+	{ 2589, 3, 0 },     -- bid only: ignored
+	{ 4306, 0, 100 },   -- no quantity: ignored
+	{ 99999, 1, 5 },    -- an item that doesn't exist: ignored
+}
+for i = 1, 2500 do -- enough listings to need several batches
+	M.replicate[#M.replicate + 1] = { 2320, 1, 20 + (i % 7) } -- Coarse Thread, 20-26c
+end
+local scanStartedAt = time()
+M.OpenAuctionHouse()
+check(SR.Scanner.isAuctionHouseOpen, "scanner knows the auction house is open")
+check(M.replicateRequests == 0, "the automatic scan waits a moment after opening")
+M.RunTimers()
+check(M.replicateRequests == 1, "one full scan requested automatically")
+local market = SR.DB:GetMarket()
+local auction = market.auction
+check(auction[2589].price == 45 and auction[2589].quantity == 25, "lowest unit buyout and total quantity")
+check(auction[4306].price == 380 and auction[4306].quantity == 11, "a single cheap listing sets the lowest price")
+check(auction[2320].price == 20 and auction[2320].quantity == 2500, "listings spread over several batches")
+check(auction[99999] == nil, "items that don't exist are ignored")
+check(auction[2996].price == 300 and auction[2996].quantity == 0, "items missing from the scan keep their price with quantity 0")
+check(market.lastScan == scanStartedAt, "scan time saved")
+check(market.lastScanStats.items == 3 and market.lastScanStats.listings == 2504, "scan statistics saved")
+check(OutputContains("Auction scan complete: 3 items from 2,504 auctions"), "completion reported in chat")
+check(SR.Prices:GetAuctionPrice(2589) == 45, "the price layer serves the new prices")
+check(SR.Scanner:GetCooldownRemaining() == 900, "the 15-minute cooldown starts")
+
+step("the 15-minute limit")
+M.CloseAuctionHouse()
+M.Advance(300)
+M.OpenAuctionHouse()
+M.RunTimers()
+check(M.replicateRequests == 1, "no automatic scan within 15 minutes")
+SlashCmdList.SILKROAD("scan")
+check(M.replicateRequests == 1, "no manual scan within 15 minutes either")
+check(OutputContains("Next full scan available in 10:00."), "the manual scan explains the wait")
+LibAHTab:SetSelected("SilkRoad")
+check(ahPanel:IsVisible(), "selecting the tab shows SilkRoad's panel")
+check(AuctionHouseFrame.__title == "SilkRoad", "auction house title follows the tab")
+check(not ahPanel.ScanButton:IsEnabled(), "scan button disabled during the cooldown")
+check(ahPanel.Cooldown:GetText() == "Next scan in 10:00", "countdown shown")
+check(ahPanel.LastScan:GetText() == "Last scan: 5 min ago", "last scan time shown")
+check(ahPanel.ScanDetail:GetText() == "3 items from 2,504 auctions on Test Realm", "scan statistics shown")
+check(ahPanel.AutoScan:GetChecked(), "automatic scan checkbox reflects the setting")
+M.Advance(600)
+M.RunScript(ahPanel, "OnUpdate", 1)
+check(ahPanel.ScanButton:IsEnabled() and ahPanel.Cooldown:GetText():find("Ready to scan", 1, true), "ready again after 15 minutes")
+
+step("manual scan from the tab")
+M.replicate[1] = { 2589, 20, 800 } -- Linen Cloth now 40c
+M.Click(ahPanel.ScanButton)
+check(SR.Scanner.state == "waiting" and ahPanel.Progress:IsShown(), "progress shown while waiting for the server")
+check(ahPanel.Progress.Text:GetText() == "Waiting for the auction house...", "waiting text")
+M.RunTimers()
+check(M.replicateRequests == 2 and auction[2589].price == 40, "manual scan updates prices")
+check(not ahPanel.Progress:IsShown() and not ahPanel.ScanButton:IsEnabled(), "progress hidden and cooldown restarted")
+
+step("closing the auction house cancels a scan")
+M.Advance(900)
+check(SR.Scanner:StartScan(false), "scan started")
+M.CloseAuctionHouse()
+check(SR.Scanner.state == "idle" and OutputContains("Auction scan cancelled"), "scan cancelled on close")
+M.replicate[1] = { 2589, 20, 600 }
+M.RunTimers() -- the server's late answer arrives after closing and is ignored
+check(auction[2589].price == 40, "a cancelled scan saves nothing")
+SR.Scanner:StartScan(false)
+check(OutputContains("Open the auction house to scan it."), "scanning needs the auction house open")
+
+step("no answer from the server")
+M.Advance(900)
+M.ahThrottled = true
+M.OpenAuctionHouse()
+M.RunTimers() -- the automatic request gets no answer, then the timeout fires
+check(M.replicateRequests == 4 and SR.Scanner.state == "idle", "gives up after the timeout")
+check(OutputContains("didn't send scan results"), "explains why")
+M.ahThrottled = false
+
+step("full scans started by other addons are recorded")
+M.Advance(60)
+M.FireEvent("REPLICATE_ITEM_LIST_UPDATE") -- e.g. Auctionator's full scan
+M.RunTimers()
+check(auction[2589].price == 30, "prices from another addon's scan saved")
+check(OutputContains("started by another addon"), "noted in chat")
+check(SR.Scanner:GetCooldownRemaining() == 900, "cooldown restarts after another addon's scan")
+check(M.replicateRequests == 4, "no extra request sent")
+
+step("automatic scan can be turned off")
+M.CloseAuctionHouse()
+M.Advance(900)
+M.Click(ahPanel.AutoScan)
+check(SR:GetSetting("autoScan") == false, "checkbox turns automatic scans off")
+M.OpenAuctionHouse()
+M.RunTimers()
+check(M.replicateRequests == 4, "no automatic scan when turned off")
+SR:SetSetting("autoScan", true)
+
+step("Auctionator's full scans count toward the cooldown")
+M.CloseAuctionHouse()
+M.Advance(900)
+check(SR.Scanner:GetCooldownRemaining() == 0, "ready before Auctionator scans")
+rawset(_G, "Auctionator", { SavedState = { TimeOfLastReplicateScan = time() - 60 } })
+check(SR.Scanner:GetCooldownRemaining() == 840, "Auctionator's recent scan starts the cooldown")
+M.OpenAuctionHouse()
+M.RunTimers()
+check(M.replicateRequests == 4, "SilkRoad doesn't send a second request")
+rawset(_G, "Auctionator", { SavedState = "unexpected" })
+check(SR.Scanner:GetCooldownRemaining() == 0, "unexpected Auctionator data is ignored")
+rawset(_G, "Auctionator", nil)
+
+step("Blizzard's tabs take over again")
+LibAHTab:SetSelected("SilkRoad")
+check(ahPanel:IsVisible(), "SilkRoad tab open")
+AuctionHouseFrame:SetDisplayMode({ "AuctionsFrame" })
+check(not ahPanel:IsShown(), "switching to a Blizzard tab hides SilkRoad's panel")
+M.CloseAuctionHouse()
 
 M.RunTimers()
 return checks

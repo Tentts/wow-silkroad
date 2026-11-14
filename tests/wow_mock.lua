@@ -21,13 +21,22 @@ MOCK = {
 	knownAPI = nil,      -- set of real global API names, or nil = permissive
 	tocFields = {},
 	pendingItems = {},
+	loadedAddons = {},
 	modifiedClick = false,
+	now = 1800000000, -- time()
+	clock = 1000,     -- GetTime()
+	replicate = {},   -- auction listings for full scans: { itemID, count, buyoutPrice }
+	replicateRequests = 0,
+	ahThrottled = false, -- true: ReplicateItems gets no answer
 	allowedNilGlobals = {
 		SilkRoadDB = true, SilkRoadCharDB = true, -- saved variables on first login
 		GetMinimapShape = true, -- defined by minimap addons, checked before use
 		Auctionator = true,     -- optional dependency, checked before use
+		LibStub = true,         -- LibStub checks for an existing copy before creating one
+		AuctionHouseFrame = true, -- exists once Blizzard_AuctionHouseUI has loaded
 	},
 	allowedNewGlobals = {
+		LibStub = true,
 		SilkRoad = true, SilkRoadDB = true, SilkRoadCharDB = true,
 		SLASH_SILKROAD1 = true, SLASH_SILKROAD2 = true,
 		SilkRoad_OnAddonCompartmentClick = true,
@@ -134,6 +143,22 @@ function Widget:IsVisible() return IsVisible(self) end
 function Widget:GetParent() return self.__parent end
 function Widget:GetName() return self.__name end
 function Widget:GetObjectType() return self.__type end
+
+local REGION_TYPES = { Texture = true, FontString = true }
+function Widget:IsObjectType(objectType)
+	return objectType == self.__type or (objectType == "Frame" and not REGION_TYPES[self.__type])
+end
+
+function Widget:SetEnabled(enabled) self.__disabled = not enabled end
+function Widget:Enable() self.__disabled = false end
+function Widget:Disable() self.__disabled = true end
+function Widget:IsEnabled() return not self.__disabled end
+
+function Widget:SetValue(value)
+	assert(type(value) == "number", "SetValue: number expected")
+	self.__value = value
+end
+function Widget:GetValue() return self.__value end
 
 function Widget:SetScript(scriptType, handler)
 	assert(type(scriptType) == "string", "SetScript: script type must be a string")
@@ -651,8 +676,24 @@ define("print", function(...)
 	end
 	table.insert(M.output, table.concat(parts, " "))
 end)
-define("time", os.time)
+-- A controllable clock: M.Advance(seconds) moves both time() and GetTime().
+define("time", function() return M.now end)
+define("GetTime", function() return M.clock end)
+function M.Advance(seconds)
+	M.now = M.now + seconds
+	M.clock = M.clock + seconds
+end
+
+define("BreakUpLargeNumbers", function(value)
+	local text = tostring(math.floor(value))
+	local formatted
+	repeat
+		text, formatted = text:gsub("^(-?%d+)(%d%d%d)", "%1,%2")
+	until formatted == 0
+	return text
+end)
 define("tinsert", table.insert)
+define("strmatch", string.match)
 define("strtrim", function(text)
 	return (text:gsub("^%s+", ""):gsub("%s+$", ""))
 end)
@@ -727,7 +768,85 @@ define("C_AddOns", {
 		assert(addon == "SilkRoad", "GetAddOnMetadata: unexpected addon " .. tostring(addon))
 		return M.tocFields[field]
 	end,
+	IsAddOnLoaded = function(addon)
+		assert(type(addon) == "string", "IsAddOnLoaded: addon name expected")
+		local loaded = M.loadedAddons[addon] or false
+		return loaded, loaded
+	end,
 })
+
+---------------------------------------------------------------------------
+-- Auction house
+---------------------------------------------------------------------------
+
+-- Constants from the client, read by LibAHTab.
+define("WOW_PROJECT_MAINLINE", 1)
+define("WOW_PROJECT_CAMELOT", 21)
+define("WOW_PROJECT_ID", WOW_PROJECT_CAMELOT)
+
+define("PanelTemplates_TabResize", function(tab, padding, absoluteSize, minWidth)
+	assert(type(tab) == "table", "PanelTemplates_TabResize: tab expected")
+end)
+define("PanelTemplates_SelectTab", function(tab)
+	tab.__selected = true
+end)
+define("PanelTemplates_DeselectTab", function(tab)
+	tab.__selected = false
+end)
+
+-- Full scans: ReplicateItems answers on a later frame unless throttled.
+define("C_AuctionHouse", {
+	ReplicateItems = function()
+		M.replicateRequests = M.replicateRequests + 1
+		if not M.ahThrottled then
+			table.insert(M.timers, function()
+				M.FireEvent("REPLICATE_ITEM_LIST_UPDATE")
+			end)
+		end
+	end,
+	GetNumReplicateItems = function()
+		return #M.replicate
+	end,
+	GetReplicateItemInfo = function(index)
+		assert(type(index) == "number" and index >= 0 and index < #M.replicate,
+			"GetReplicateItemInfo: 0-based index out of range: " .. tostring(index))
+		local listing = M.replicate[index + 1]
+		local item = M.items[listing[1]]
+		return item and item.name, item and item.icon, listing[2], 1, true, 10, "PLAYER", 0, 0,
+			listing[3], 0, nil, nil, "Seller", "Seller-Realm", 0, listing[1], item ~= nil
+	end,
+})
+
+-- Simulates Blizzard_AuctionHouseUI loading the first time an auctioneer is visited.
+function M.LoadAuctionHouseUI()
+	local frame = NewWidget("Frame", "AuctionHouseFrame", UIParent)
+	frame:Hide()
+	frame:SetSize(800, 538)
+	frame.Tabs = {}
+	for i = 1, 3 do
+		frame.Tabs[i] = CreateFrame("Button", nil, frame, "AuctionHouseFrameDisplayModeTabTemplate")
+	end
+	frame.SetDisplayMode = function(self, displayMode)
+		assert(type(displayMode) == "table", "SetDisplayMode: display mode table expected")
+		self.displayMode = displayMode
+	end
+	frame.SetTitle = function(self, title)
+		self.__title = title
+	end
+	M.loadedAddons.Blizzard_AuctionHouseUI = true
+	M.FireEvent("ADDON_LOADED", "Blizzard_AuctionHouseUI")
+end
+
+function M.OpenAuctionHouse()
+	AuctionHouseFrame:Show()
+	AuctionHouseFrame:SetDisplayMode({ "CategoriesList", "SearchBar", "BrowseResultsFrame" })
+	M.FireEvent("AUCTION_HOUSE_SHOW")
+end
+
+function M.CloseAuctionHouse()
+	AuctionHouseFrame:Hide()
+	M.FireEvent("AUCTION_HOUSE_CLOSED")
+end
 
 define("C_Timer", {
 	After = function(delay, callback)
@@ -803,5 +922,9 @@ define("C_Item", {
 	GetItemQualityColor = function(quality)
 		assert(type(quality) == "number", "GetItemQualityColor: quality expected")
 		return 1, 1, 1, "ffffffff"
+	end,
+	DoesItemExistByID = function(itemID)
+		assert(type(itemID) == "number", "DoesItemExistByID: itemID expected")
+		return M.items[itemID] ~= nil
 	end,
 })

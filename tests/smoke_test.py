@@ -39,6 +39,10 @@ VERIFIED_BY_SOURCE = {
     "SOUNDKIT",
     "time",
     "Minimap",  # nested <Minimap name="Minimap"> in Blizzard_Minimap/Mainline/Minimap.xml
+    # Client constants (not in the generated lists) read by the vendored LibAHTab.
+    "WOW_PROJECT_ID",
+    "WOW_PROJECT_MAINLINE",
+    "WOW_PROJECT_CAMELOT",
 }
 
 GUARD = """

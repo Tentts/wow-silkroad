@@ -96,9 +96,27 @@ function Page:OnCreate(frame)
 	local sourceHelp = Widgets.CreateLabel(frame, L["If the preferred source has no price for an item, the other sources are tried in order."], "GameFontDisableSmall")
 	sourceHelp:SetPoint("TOPLEFT", source, "BOTTOMLEFT", 0, -6)
 
+	-- Auction house
+	local auctionHouse = Widgets.CreateHeader(frame, L["Auction house"])
+	auctionHouse:SetPoint("TOPLEFT", sourceHelp, "BOTTOMLEFT", 0, -24)
+	auctionHouse:SetWidth(SECTION_WIDTH)
+
+	local autoScan = track(Widgets.CreateCheckbox(frame, L["Scan automatically when the auction house opens"], L.AUTO_SCAN_TOOLTIP,
+		function()
+			return SR:GetSetting("autoScan")
+		end,
+		function(checked)
+			SR:SetSetting("autoScan", checked)
+		end))
+	autoScan:SetPoint("TOPLEFT", auctionHouse, "BOTTOMLEFT", -2, -8)
+
+	local autoScanHelp = Widgets.CreateLabel(frame, L.AH_SCAN_NOTE, "GameFontDisableSmall")
+	autoScanHelp:SetPoint("TOPLEFT", autoScan, "BOTTOMLEFT", 2, -4)
+	autoScanHelp:SetWidth(SECTION_WIDTH)
+
 	-- About
 	local about = Widgets.CreateHeader(frame, L["About"])
-	about:SetPoint("TOPLEFT", sourceHelp, "BOTTOMLEFT", 0, -24)
+	about:SetPoint("TOPLEFT", autoScanHelp, "BOTTOMLEFT", 0, -24)
 	about:SetWidth(SECTION_WIDTH)
 
 	local aboutText = Widgets.CreateLabel(frame, "", "GameFontHighlight")

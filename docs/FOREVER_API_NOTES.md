@@ -58,22 +58,50 @@ and our own out-of-combat UI work normally.
   `ScrollUtil.InitScrollBoxListWithScrollBar` and `CreateDataProvider`
 - `UISpecialFrames` (close with Escape), atlas `auctionhouse-ui-sortarrow`
 
-### Auction house (next: SilkRoad's own scanner)
+### Auction house (used by the scanner, `Core/AuctionScanner.lua`)
 
 Forever uses the **retail auction house** (`AuctionHouseFrame`, commodities and
 items), not the Classic one. `GetAuctionItemInfo`, `QueryAuctionItems` and
 `PlaceAuctionBid` don't exist.
 
 - Full scan: `C_AuctionHouse.ReplicateItems()` → event `REPLICATE_ITEM_LIST_UPDATE` →
-  `C_AuctionHouse.GetNumReplicateItems()` and
-  `C_AuctionHouse.GetReplicateItemInfo(index)` (fields include `itemID`, `count`,
-  `buyoutPrice`, `hasAllInfo`), `GetReplicateItemLink(index)`
+  `C_AuctionHouse.GetNumReplicateItems()` and `C_AuctionHouse.GetReplicateItemInfo(index)`.
+  - Indices are **0-based** (the documented type is `number`, not `luaIndex`).
+  - Returns, in order: `name, texture, count, qualityID, usable, level, levelType,
+    minBid, minIncrement, buyoutPrice, bidAmount, highBidder, bidderFullName, owner,
+    ownerFullName, saleStatus, itemID, hasAllInfo`. `count`, `buyoutPrice` and
+    `itemID` are never nil; `name`/`texture` can be until the item is cached
+    (`hasAllInfo`). The unit price is `buyoutPrice / count`.
+  - Skip `buyoutPrice == 0` (bid-only) and `count == 0`. The server sometimes lists
+    items that don't exist: filter with `C_Item.DoesItemExistByID`.
+  - The server allows one `ReplicateItems` request per **15 minutes**; extra requests
+    get no answer. It has no `HasRestrictions` flag, so it doesn't need a click and
+    can run when the AH opens (Auctionator's auto-scan does the same).
+  - `REPLICATE_ITEM_LIST_UPDATE` fires for any addon's request, so one addon's
+    full scan can be recorded by every listening addon. Auctionator saves the time of
+    its last one in `Auctionator.SavedState.TimeOfLastReplicateScan`.
+  - The data is gone once the AH closes: abort a scan on `AUCTION_HOUSE_CLOSED`.
 - Targeted queries: `C_AuctionHouse.SendBrowseQuery`, `GetBrowseResults`,
   `SendSearchQuery`, `GetCommoditySearchResultInfo`, `GetItemSearchResultInfo`;
   events `AUCTION_HOUSE_BROWSE_RESULTS_UPDATED`, `COMMODITY_SEARCH_RESULTS_UPDATED`,
   `ITEM_SEARCH_RESULTS_UPDATED`
 - Throttling: `C_AuctionHouse.IsThrottledMessageSystemReady()`
 - Open / close: `AUCTION_HOUSE_SHOW`, `AUCTION_HOUSE_CLOSED`
+
+#### Adding a tab to the auction house window
+
+`Blizzard_AuctionHouseUI` loads on demand, the first time an auctioneer is
+opened (watch `ADDON_LOADED`). Its tabs switch through
+`AuctionHouseFrame:SetDisplayMode(AuctionHouseFrameDisplayMode.X)`, which shows
+and hides subframes by name.
+
+Don't add tabs with `PanelTemplates_SetNumTabs` / `AuctionHouseFrame.Tabs`:
+that taints the AH and, through it, the player's bags (blocked actions even in
+combat after leaving the AH). [LibAHTab](https://github.com/Auctionator/LibAHTab)
+(MIT, by plusmouse, used by Auctionator) adds tabs on a separate row parented to
+the AH, hooks `SetDisplayMode` with `hooksecurefunc`, and selects its own tabs
+with `SetDisplayMode({})`. Because it's shared through LibStub, every addon using it
+gets one tidy tab row. SilkRoad bundles it in `SilkRoad/Libs/`.
 
 ### Professions (next: recipe indexer)
 
