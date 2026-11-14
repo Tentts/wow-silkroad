@@ -4,11 +4,11 @@
 
 **A crafting and trading companion for World of Warcraft: Forever.**
 
-Find out which recipes make gold, where to sell what you craft, and where to get the recipes you're missing.
+Find out which recipes make gold, where to sell what you craft, where to get the recipes you're missing, and the cheapest way to level a profession.
 
 ![Game](https://img.shields.io/badge/WoW-Forever-c79c6e)
 ![Interface](https://img.shields.io/badge/interface-16001-blue)
-![Version](https://img.shields.io/badge/version-0.4.0-informational)
+![Version](https://img.shields.io/badge/version-0.5.0-informational)
 ![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Espa%C3%B1ol-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -62,6 +62,23 @@ your character already knows.
 - Hover a recipe for a **per-reagent cost breakdown** showing where each price comes from.
 - Click a source to set a **waypoint**, through [TomTom](https://www.curseforge.com/wow/addons/tomtom)
   if installed, otherwise the game's own map pin.
+
+### Leveling guide
+
+A **dynamic levelling planner**: the cheapest route from your current skill to a target,
+worked out from current prices instead of a fixed guide.
+
+- For every skill point it picks the craft with the **lowest cost per expected skill-up**,
+  using each recipe's skill-up chance (orange, yellow, green, grey).
+- Costs come from live prices. Intermediates such as bolts of cloth are **crafted when
+  that's cheaper than buying them**, and you can count **resale** (to vendors, or wherever
+  the result earns most).
+- Choose which recipes may be used: **known only**, + trainer, + vendor, + auction house,
+  + drops. Recipes to learn are marked; click to see where to get them.
+- **Progress tracking**: the current step is highlighted and the plan **re-calculates** when
+  your skill goes up, prices change or you learn a recipe.
+- A **shopping list** with what you need, what's already in your bags and bank, and the
+  cheapest source for the rest.
 
 ### Auction house
 
@@ -130,7 +147,8 @@ SilkRoad works on its own; the optional addons only add information.
 2. Open the **auction house** once. SilkRoad scans it automatically and fills in auction prices.
 3. Go to **Recipes**, pick a profession and sort by **Sell to** to see the most profitable
    crafts first.
-4. Optional: set a key in **Settings > General > Key binding** to open SilkRoad instantly.
+4. Want to level up? Open **Leveling Guide**, pick the profession and follow the steps.
+5. Optional: set a key in **Settings > General > Key binding** to open SilkRoad instantly.
 
 ## How prices are worked out
 
@@ -155,7 +173,7 @@ All prices are per item, in copper, shown in gold, silver and copper.
 | Command | Does |
 |---|---|
 | `/silkroad` or `/silk` | Opens or closes the window |
-| `/silkroad recipes` · `overview` · `prices` · `settings` | Opens a page directly |
+| `/silkroad recipes` · `guide` · `overview` · `prices` · `settings` | Opens a page directly |
 | `/silkroad scan` | Scans the auction house (it must be open) |
 | `/silkroad minimap` | Shows or hides the minimap button |
 | `/silkroad reset` | Resets the window position and size |
@@ -185,6 +203,7 @@ SilkRoad/                  the addon (this folder goes into Interface\AddOns)
 │  ├─ Database.lua         saved variables, defaults, migrations, settings, data wipes
 │  ├─ Prices.lua           price layer with pluggable auction price providers
 │  ├─ Recipes.lua          all recipes, known recipes, cost and profit per craft
+│  ├─ Planner.lua          levelling planner: cheapest route, steps, shopping list
 │  ├─ Sources.lua          where recipes come from, which reagents vendors sell (QuestieDB)
 │  ├─ AuctionScanner.lua   full auction house scans within the 15-minute limit
 │  ├─ Merchants.lua        records merchant prices
@@ -193,7 +212,7 @@ SilkRoad/                  the addon (this folder goes into Interface\AddOns)
 ├─ Game/Forever.lua        SR.Game: Forever's own APIs (professions, merchants, maps, names)
 ├─ Data/Forever/           generated game data: recipes, items, prices
 ├─ UI/                     window, sidebar, data table, widgets, tooltips, AH tab, launchers
-├─ Modules/                one file per page: Overview, Recipes, Price Database, Settings
+├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Price Database, Settings
 ├─ Locales/                enUS (base) and translations
 └─ Libs/                   LibStub, LibAHTab
 tools/
@@ -260,7 +279,9 @@ Research on the Forever client, its APIs and their quirks is collected in
 - [x] Automatic auction house scanning
 - [x] Known recipes from the spellbook
 - [x] Tooltip prices, key binding, translations
-- [ ] Shopping list for missing materials and a crafting queue
+- [x] Dynamic levelling planner with progress tracking and a shopping list
+- [ ] Levelling routes for gathering professions (Mining, Herbalism, Skinning, Fishing)
+- [ ] Crafting queue
 - [ ] Price history and trends
 - [ ] More languages
 - [ ] Other game versions, through the version layer

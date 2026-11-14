@@ -61,6 +61,12 @@ DB.ACCOUNT_DEFAULTS = {
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
 		tooltipPrices = true, -- vendor and auction prices in item tooltips
 		settingsTab = "general", -- last tab shown on the Settings page
+		guide = {
+			profession = nil,         -- skillLineID last shown on the Leveling Guide page
+			availability = "trainer", -- see Planner.AVAILABILITY
+			resale = "vendor",        -- see Planner.RESALE
+			target = nil,             -- target skill; nil = the profession's current maximum
+		},
 		recipes = {
 			profession = nil,  -- skillLineID last shown on the Recipes page
 			knownOnly = false,

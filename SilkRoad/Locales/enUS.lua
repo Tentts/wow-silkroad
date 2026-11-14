@@ -64,3 +64,7 @@ L.WIPE_MARKET_CONFIRM = "Wipe all auction and merchant prices SilkRoad has recor
 L.RESET_SETTINGS_DESC = "Puts every SilkRoad setting back to its default, including the window size and position. Your data and key binding stay."
 L.RESET_SETTINGS_CONFIRM = "Reset every SilkRoad setting to its default?"
 L.TOOLTIP_PRICES_TOOLTIP = "Adds what a vendor pays and the lowest auction price to item tooltips. The auction line only shows for items that can be sold there."
+
+L.GUIDE_DESC = "The cheapest way to level a profession from your skill, worked out from current prices and the recipes you can get."
+L.GUIDE_GAP_HINT = "No recipe this plan may use gives skill-ups here. Allow more recipe sources (trainer, vendor, auction house, drops) in the second dropdown."
+L.GUIDE_EMPTY_BODY = "There is nothing to plan for this profession and target."

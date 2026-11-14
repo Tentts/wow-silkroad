@@ -267,6 +267,7 @@ function Recipes:OnEnable()
 	end
 	local readSpellbook = Util.Debounce(1, function()
 		self:ReadSpellbook()
+		SR:Fire("SKILL_CHANGED") -- profession skill may have gone up
 	end)
 	for _, event in ipairs(SR.Game.events.spellsChanged) do
 		SR:RegisterEvent(event, readSpellbook)

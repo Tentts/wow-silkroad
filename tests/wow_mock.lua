@@ -1145,3 +1145,10 @@ C_Item.GetItemNameByID = function(itemID)
 	end
 	return englishItemName(itemID)
 end
+
+-- Items the character has (bags and bank): M.bags[itemID] = count.
+M.bags = {}
+C_Item.GetItemCount = function(itemID, includeBank, includeUses, includeReagentBank)
+	assert(type(itemID) == "number", "GetItemCount: item ID expected")
+	return M.bags[itemID] or 0
+end

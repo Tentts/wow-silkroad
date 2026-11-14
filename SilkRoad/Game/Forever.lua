@@ -12,6 +12,7 @@
 	SR.Game.ReadRecipeSchematic(recipeID)  { name, icon, product, quantityMin, quantityMax, reagents }
 	SR.Game.ReadMerchant()                 { { itemID, price (per item) }, ... }
 	SR.Game.GetAreaName(areaID)            zone / dungeon name
+	SR.Game.GetItemCount(itemID)           how many the character has (bags and bank)
 	SR.Game.GetRecipeName / GetItemName / GetProfessionName(id)  names in the client's language, or nil
 	SR.Game.SetWaypoint(uiMapID, x, y, title)  x, y in 0..1; returns true on success
 ]]
@@ -27,6 +28,7 @@ Game.events = {
 	professionChanged = { "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED" },
 	merchantChanged = { "MERCHANT_SHOW", "MERCHANT_UPDATE" },
 	spellsChanged = { "LEARNED_SPELL_IN_SKILL_LINE", "SKILL_LINES_CHANGED" },
+	bagsChanged = { "BAG_UPDATE_DELAYED" },
 }
 
 function Game.GetPlayerProfessions()
@@ -139,6 +141,11 @@ function Game.GetProfessionName(skillLineID)
 	if name and name ~= "" then
 		return name
 	end
+end
+
+-- How many the character has: bags, reagent bag and bank.
+function Game.GetItemCount(itemID)
+	return C_Item.GetItemCount(itemID, true, false, true) or 0
 end
 
 function Game.GetAreaName(areaID)

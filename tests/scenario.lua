@@ -49,7 +49,7 @@ check(SR:GetSetting("minimap.hide") == false, "nested default setting")
 M.FireEvent("PLAYER_LOGIN")
 check(SilkRoadMinimapButton ~= nil and SilkRoadMinimapButton:IsShown(), "minimap button created")
 check(M.settingsRegistered, "options panel registered with Blizzard settings")
-check(SR.version == "0.4.0", "version read from the TOC")
+check(SR.version == "0.5.0", "version read from the TOC")
 
 ---------------------------------------------------------------------------
 step("open window")
@@ -60,7 +60,7 @@ check(SR.UI.currentPageID == "overview", "opens on the overview page")
 check(SilkRoadMainFrame.PageTitle:GetText() == "Overview", "page title shown")
 check(UISpecialFrames[1] == "SilkRoadMainFrame", "window closes with Escape")
 local nav = SR.UI.navButtons
-check(#nav == 4, "four pages in the sidebar")
+check(#nav == 5, "five pages in the sidebar")
 
 ---------------------------------------------------------------------------
 step("overview")
@@ -324,6 +324,98 @@ rawset(_G, "QuestieLoader", nil)
 SR.Sources:ResetCache()
 
 ---------------------------------------------------------------------------
+step("leveling planner")
+local Planner = SR.Planner
+local chance = Planner.SkillUpChance
+local sample = { yellow = 25, gray = 50 }
+check(chance(sample, 10) == 1 and chance(sample, 25) == 1, "orange and the start of yellow always skill up")
+check(math.abs(chance(sample, 37.5) - 0.5) < 1e-9 and chance(sample, 50) == 0, "chance falls to 0 at grey")
+check(chance({ yellow = 105, gray = 105 }, 104) == 1, "recipes without a yellow range are orange until grey")
+
+local function Contiguous(plan)
+	for index = 2, #plan.steps do
+		if plan.steps[index].from ~= plan.steps[index - 1].to then return false end
+	end
+	return plan.steps[1].from == plan.from and plan.steps[#plan.steps].to == plan.to
+end
+
+local knownPlan = Planner:Plan(197, { from = 1, to = 50, availability = "known", resale = "none" })
+check(Contiguous(knownPlan), "steps cover every point from start to target")
+check(knownPlan.gaps == 0, "the starter recipes cover skill 1-50")
+local sum = 0
+for _, step in ipairs(knownPlan.steps) do
+	sum = sum + step.cost
+	check(step.crafts >= step.to - step.from, "at least one craft per point (" .. step.recipe.name .. ")")
+	check(step.learn == nil, "known-only plans learn nothing")
+end
+check(sum == knownPlan.totalCost, "total = sum of the steps")
+-- The first step is the cheapest recipe usable at skill 1 (all orange there).
+local cheapest
+for _, candidate in ipairs(Planner:Candidates(197, { availability = "known", resale = "none" })) do
+	if candidate.recipe.learn <= 1 and not candidate.unpriced and (not cheapest or candidate.craftCost < cheapest) then
+		cheapest = candidate.craftCost
+	end
+end
+check(knownPlan.steps[1].candidate.craftCost == cheapest, "picks the cheapest craft per skill point")
+
+local knownTo100 = Planner:Plan(197, { from = 1, to = 100, availability = "known" })
+local trainerTo100 = Planner:Plan(197, { from = 1, to = 100, availability = "trainer" })
+check(knownTo100.gaps > 0, "known recipes alone can't reach 100")
+check(trainerTo100.gaps < knownTo100.gaps, "allowing trainer recipes fills the gaps")
+local learns = 0
+for _, step in ipairs(trainerTo100.steps) do
+	if step.learn then
+		learns = learns + 1
+		check(step.learn.kind == "trainer", "trainer recipes marked to learn")
+	end
+end
+check(learns > 0, "the plan says which recipes to learn")
+
+local noResale = Planner:Plan(197, { from = 1, to = 50, availability = "known", resale = "none" })
+local vendorResale = Planner:Plan(197, { from = 1, to = 50, availability = "known", resale = "vendor" })
+check(vendorResale.totalCost <= noResale.totalCost, "counting vendor resale never makes the plan dearer")
+
+M.bags[2589] = 10
+local shoppingPlan = Planner:Plan(197, { from = 1, to = 50, availability = "known", resale = "none" })
+local linen
+for _, entry in ipairs(shoppingPlan.shopping) do
+	if entry.itemID == 2589 then linen = entry end
+end
+check(linen and linen.have == 10 and linen.buy == math.max(0, linen.need - 10), "shopping list subtracts what's in the bags")
+check(linen.unitCost == 50 and linen.source == "auction" and linen.total == linen.buy * 50, "priced at the cheapest source")
+
+step("leveling guide page")
+SR.UI:OpenPage("guide")
+local guidePage
+for _, page in ipairs(SR.UI:GetPages()) do
+	if page.id == "guide" then guidePage = page end
+end
+guidePage.skillLine = nil
+SR.DB.settings.guide.profession = 197
+SR.DB.settings.guide.availability = "trainer"
+guidePage:Refresh()
+check(guidePage.SkillLabel:GetText() == "Skill 75, plan up to" and guidePage.TargetInput:GetText() == "150",
+	"plans from the character's skill to its current maximum")
+local stepRows = guidePage.Steps.rows
+check(#stepRows == #guidePage.plan.steps and #stepRows > 0, "one row per step")
+check(stepRows[1].current and stepRows[1].step.from == 75, "the current step is highlighted")
+check(guidePage.Status:GetText():find("step 1 of", 1, true) or guidePage.Status:GetText():find("no usable recipe", 1, true), "status line")
+check(#guidePage.Shopping.rows == #guidePage.plan.shopping, "shopping list shown")
+M.RunScript(guidePage.Steps.ScrollBox.__active[1], "OnEnter")
+
+guidePage.TargetInput:SetText("100")
+M.RunScript(guidePage.TargetInput, "OnEnterPressed")
+check(SR.DB.settings.guide.target == 100 and guidePage.plan.to == 100, "a new target re-plans")
+
+M.professions[1][3] = 90 -- Tailoring skill went up
+M.FireEvent("SKILL_LINES_CHANGED")
+M.RunTimers()
+check(guidePage.SkillLabel:GetText() == "Skill 90, plan up to", "re-plans when the skill goes up")
+check(guidePage.plan.from == 90, "plan starts at the new skill")
+M.professions[1][3] = 75
+SR.DB.settings.guide.target = nil
+M.bags[2589] = nil
+
 ---------------------------------------------------------------------------
 step("price database")
 SR.UI:OpenPage("prices")
@@ -479,7 +571,7 @@ SlashCmdList.SILKROAD("help")
 check(OutputContains("/silkroad minimap"), "help lists commands")
 check(OutputContains("/silkroad scan"), "help lists the scan command")
 SlashCmdList.SILKROAD("version")
-check(OutputContains("0.4.0"), "version command")
+check(OutputContains("0.5.0"), "version command")
 SlashCmdList.SILKROAD("bogus")
 check(OutputContains("Unknown command:"), "unknown commands are reported")
 SlashCmdList.SILKROAD("debug")
