@@ -1139,6 +1139,23 @@ M.localizedItemNames = { [2589] = "Tela de lino" }
 M.professionNames = { [197] = "Sastrería", [171] = "Alquimia" }
 define("C_Spell", { GetSpellName = function(spellID) return M.spellNames[spellID] end })
 C_TradeSkillUI.GetTradeSkillDisplayName = function(skillLineID) return M.professionNames[skillLineID] end
+
+-- Recipe tracking (the objective tracker). M.trackRefuse makes the game
+-- ignore new tracking, as it does for recipes the character can't craft.
+M.tracked = {}
+C_TradeSkillUI.IsRecipeTracked = function(recipeID, isRecraft)
+	assert(type(recipeID) == "number" and type(isRecraft) == "boolean", "IsRecipeTracked: recipeID, isRecraft expected")
+	return M.tracked[recipeID] == true
+end
+C_TradeSkillUI.SetRecipeTracked = function(recipeID, tracked, isRecraft)
+	assert(type(recipeID) == "number" and type(tracked) == "boolean" and type(isRecraft) == "boolean",
+		"SetRecipeTracked: recipeID, tracked, isRecraft expected")
+	if tracked and M.trackRefuse then
+		return
+	end
+	M.tracked[recipeID] = tracked or nil
+	M.FireEvent("TRACKED_RECIPE_UPDATE", recipeID, tracked)
+end
 local englishItemName = C_Item.GetItemNameByID
 C_Item.GetItemNameByID = function(itemID)
 	if M.locale ~= "enUS" then

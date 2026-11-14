@@ -231,9 +231,11 @@ function DataTableMixin:BuildRow(rowFrame)
 			local highlight = button:CreateTexture(nil, "HIGHLIGHT")
 			highlight:SetAllPoints()
 			highlight:SetColorTexture(0.4, 0.75, 1, 0.15)
-			button:RegisterForClicks("LeftButtonUp")
-			button:SetScript("OnClick", function()
-				if rowFrame.row then
+			button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+			button:SetScript("OnClick", function(_, mouseButton)
+				if mouseButton == "RightButton" then
+					self:OnRowClicked(rowFrame, mouseButton) -- the row's menu, not the cell's action
+				elseif rowFrame.row then
 					column.onClick(rowFrame.row, button)
 				end
 			end)

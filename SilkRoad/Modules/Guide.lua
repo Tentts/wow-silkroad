@@ -97,6 +97,7 @@ local function ShowStepTooltip(rowFrame, row)
 	if step.unpriced then
 		GameTooltip:AddLine(L["Some materials have no known price; the cost is incomplete."], 1, 0.25, 0.25, true)
 	end
+	GameTooltip:AddLine(L["Right-click to track it in the objectives."], 0.4, 0.75, 1)
 	GameTooltip:Show()
 end
 
@@ -221,6 +222,11 @@ function Page:OnCreate(frame)
 		emptyTitle = L["No plan"],
 		emptyBody = L.GUIDE_EMPTY_BODY,
 		onRowEnter = ShowStepTooltip,
+		onRowClick = function(row, mouseButton, rowFrame)
+			if mouseButton == "RightButton" and row.step.recipe then
+				SR.UI:ShowRecipeMenu(row.step.recipe, rowFrame)
+			end
+		end,
 	})
 	self.Steps:SetPoint("TOPLEFT", self.Status, "BOTTOMLEFT", -2, -8)
 	self.Steps:SetPoint("BOTTOMRIGHT", self.Shopping, "TOPRIGHT", 0, 12)
@@ -307,6 +313,9 @@ function Page:BuildStepRows(plan, skill)
 		elseif skill and step.to <= skill then
 			row.skillText = Util.ColorText(row.skillText, COLORS.done)
 			row.nameText = Util.ColorText(row.name, COLORS.done)
+		end
+		if step.recipe and SR.Recipes:IsTracked(step.recipe) then
+			row.nameText = row.nameText .. " " .. Util.ColorText(L["(tracked)"], COLORS.done)
 		end
 		row.learnText = LearnText(step)
 		rows[#rows + 1] = row

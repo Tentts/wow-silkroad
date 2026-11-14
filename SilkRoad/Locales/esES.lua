@@ -303,3 +303,11 @@ L["Learnable at skill %d; needed to go past %d."] = "Se aprende con habilidad %d
 L["Journeyman"] = "Oficial"
 L["Expert"] = "Experto"
 L["Artisan"] = "Artesano"
+
+-- Recipe tracking
+L["Track in objectives"] = "Seguir en los objetivos"
+L["Stop tracking"] = "Dejar de seguir"
+L["Where to get it"] = "Dónde conseguirla"
+L["(tracked)"] = "(en seguimiento)"
+L["Right-click to track it in the objectives."] = "Clic derecho para seguirla en los objetivos."
+L["The game didn't track %s; it may only track recipes this character can craft."] = "El juego no ha seguido %s; quizá solo sigue recetas que este personaje puede fabricar."

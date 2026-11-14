@@ -48,6 +48,7 @@ UI\Launcher.lua
 UI\OptionsPanel.lua
 UI\AuctionHouseTab.lua
 UI\SourcePopup.lua
+UI\RecipeMenu.lua
 UI\Tooltip.lua
 
 # Pages (menus), shown in the sidebar in their registered order

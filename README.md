@@ -62,6 +62,8 @@ your character already knows.
 - Hover a recipe for a **per-reagent cost breakdown** showing where each price comes from.
 - Click a source to set a **waypoint**, through [TomTom](https://www.curseforge.com/wow/addons/tomtom)
   if installed, otherwise the game's own map pin.
+- **Right-click** a recipe (here or in a Leveling Guide step) to **track it in the objective
+  tracker**, under your quests, where the game counts its reagents as you gather them.
 
 ### Leveling guide
 

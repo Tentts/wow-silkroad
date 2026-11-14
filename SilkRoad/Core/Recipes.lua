@@ -233,6 +233,29 @@ function Recipes:ReadSpellbook()
 	end
 end
 
+---------------------------------------------------------------------------
+-- Tracking (the game's objective tracker)
+---------------------------------------------------------------------------
+
+local TRACK_CHECK_DELAY = 1
+
+function Recipes:IsTracked(recipe)
+	return SR.Game.IsRecipeTracked(recipe.id)
+end
+
+-- Tracks or stops tracking a recipe. The game may refuse some recipes
+-- (ones the character can't craft, for instance); a moment later SilkRoad
+-- checks and says so.
+function Recipes:SetTracked(recipe, tracked)
+	SR.Game.SetRecipeTracked(recipe.id, tracked)
+	C_Timer.After(TRACK_CHECK_DELAY, function()
+		if SR.Game.IsRecipeTracked(recipe.id) ~= (tracked and true or false) then
+			SR:Print(SR.L["The game didn't track %s; it may only track recipes this character can craft."]:format(recipe.name or "?"))
+		end
+		SR:Fire("RECIPES_UPDATED")
+	end)
+end
+
 -- Forgets recipes of professions the character no longer has, so they
 -- don't count as known (or as read) after dropping a profession.
 function Recipes:ForgetDroppedProfessions()
@@ -264,6 +287,11 @@ function Recipes:OnEnable()
 	end)
 	for _, event in ipairs(SR.Game.events.professionChanged) do
 		SR:RegisterEvent(event, read)
+	end
+	for _, event in ipairs(SR.Game.events.trackedRecipesChanged) do
+		SR:RegisterEvent(event, function()
+			SR:Fire("RECIPES_UPDATED")
+		end)
 	end
 	local readSpellbook = Util.Debounce(1, function()
 		self:ReadSpellbook()

@@ -85,9 +85,14 @@ end
 local function FormatName(_, row)
 	local text = row.name
 	if row.known == false then
-		return Util.ColorText(text, COLORS.gray)
+		text = Util.ColorText(text, COLORS.gray)
+	else
+		text = Util.ColorByQuality(text, row.quality)
 	end
-	return Util.ColorByQuality(text, row.quality)
+	if SR.Recipes:IsTracked(row.recipe) then
+		text = text .. " " .. Util.ColorText(L["(tracked)"], COLORS.gray)
+	end
+	return text
 end
 
 local function ShowRecipeTooltip(rowFrame, row)
@@ -117,6 +122,7 @@ local function ShowRecipeTooltip(rowFrame, row)
 		tooltip:AddLine(" ")
 		tooltip:AddLine(L["You haven't learned this recipe."], 1, 0.25, 0.25)
 	end
+	tooltip:AddLine(L["Right-click to track it in the objectives."], 0.4, 0.75, 1)
 	tooltip:Show()
 end
 
@@ -200,6 +206,11 @@ function Page:OnCreate(frame)
 		emptyTitle = L.RECIPES_EMPTY_TITLE,
 		emptyBody = L.RECIPES_EMPTY_BODY,
 		onRowEnter = ShowRecipeTooltip,
+		onRowClick = function(row, mouseButton, rowFrame)
+			if mouseButton == "RightButton" then
+				SR.UI:ShowRecipeMenu(row.recipe, rowFrame)
+			end
+		end,
 		onRefresh = function(_, shown, total)
 			self.Count:SetText(L["%d of %d recipes"]:format(shown, total))
 		end,

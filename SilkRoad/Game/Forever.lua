@@ -13,6 +13,7 @@
 	SR.Game.ReadMerchant()                 { { itemID, price (per item) }, ... }
 	SR.Game.GetAreaName(areaID)            zone / dungeon name
 	SR.Game.GetItemCount(itemID)           how many the character has (bags and bank)
+	SR.Game.IsRecipeTracked / SetRecipeTracked(recipeID[, tracked])  the objective tracker's recipe list
 	SR.Game.GetRecipeName / GetItemName / GetProfessionName(id)  names in the client's language, or nil
 	SR.Game.SetWaypoint(uiMapID, x, y, title)  x, y in 0..1; returns true on success
 ]]
@@ -29,6 +30,7 @@ Game.events = {
 	merchantChanged = { "MERCHANT_SHOW", "MERCHANT_UPDATE" },
 	spellsChanged = { "LEARNED_SPELL_IN_SKILL_LINE", "SKILL_LINES_CHANGED" },
 	bagsChanged = { "BAG_UPDATE_DELAYED" },
+	trackedRecipesChanged = { "TRACKED_RECIPE_UPDATE" },
 }
 
 function Game.GetPlayerProfessions()
@@ -146,6 +148,17 @@ end
 -- How many the character has: bags, reagent bag and bank.
 function Game.GetItemCount(itemID)
 	return C_Item.GetItemCount(itemID, true, false, true) or 0
+end
+
+-- Recipe tracking: the game's own profession recipe tracker in the
+-- objective tracker (under the quests) lists tracked recipes with their
+-- reagent counts.
+function Game.IsRecipeTracked(recipeID)
+	return C_TradeSkillUI.IsRecipeTracked(recipeID, false) and true or false
+end
+
+function Game.SetRecipeTracked(recipeID, tracked)
+	C_TradeSkillUI.SetRecipeTracked(recipeID, tracked and true or false, false)
 end
 
 function Game.OpenMap(uiMapID)
