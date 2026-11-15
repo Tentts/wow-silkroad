@@ -395,3 +395,5 @@ L.ABOUT_FEEDBACK = "¿Tienes una sugerencia o has encontrado un problema? Abre u
 -- Stack prices in tooltips
 L["SilkRoad vendor x%d"] = "SilkRoad vendedor x%d"
 L["SilkRoad auction x%d"] = "SilkRoad subasta x%d"
+L["Show prices for the whole stack"] = "Mostrar precios de la pila entera"
+L.TOOLTIP_STACK_TOOLTIP = "En las pilas de tus bolsas, las líneas de la descripción muestran el precio de la pila entera en vez de un objeto. Mantén Mayús para ver el precio de un objeto."

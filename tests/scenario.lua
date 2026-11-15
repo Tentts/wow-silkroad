@@ -852,7 +852,11 @@ local settingsPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "settings" then settingsPage = page end
 end
-local minimapCheck, tooltipCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+local minimapCheck, tooltipCheck, stackCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+check(stackCheck:GetChecked() == false, "whole-stack tooltip prices are off by default")
+M.Click(stackCheck)
+check(SR:GetSetting("tooltipStackPrices") == true, "the whole-stack checkbox turns it on")
+M.Click(stackCheck)
 check(minimapCheck:GetChecked() == true, "minimap checkbox reflects the setting")
 M.Click(minimapCheck)
 check(SR:GetSetting("minimap.hide") == true and not SilkRoadMinimapButton:IsShown(), "minimap button hidden")
@@ -1269,13 +1273,23 @@ M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
 check(M.tooltipRebuilds == 2 and M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "releasing Shift goes back to one")
 M.FireEvent("MODIFIER_STATE_CHANGED", "LCTRL", 1)
 check(M.tooltipRebuilds == 2, "other keys don't rebuild it")
+SR:SetSetting("tooltipStackPrices", true)
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, M.tooltipData)
+check(M.tooltipLines[1] == "SilkRoad vendor x20|" .. Util.FormatMoney(linenVendor * 20), "setting on: the whole stack by default")
 M.modifiers.shift = true
+M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
+check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "and Shift shows one item")
+M.modifiers.shift = false
+SR:SetSetting("tooltipStackPrices", false)
+M.modifiers.shift = true
+local rebuildsBefore = M.tooltipRebuilds
 M.tooltipInfo = { getterName = "GetItemByID", getterArgs = { 2589, n = 1 } }
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, M.tooltipData)
 check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "items not in the bags stay single")
 M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
-check(M.tooltipRebuilds == 2, "and Shift leaves those tooltips alone")
+check(M.tooltipRebuilds == rebuildsBefore, "and Shift leaves those tooltips alone")
 M.modifiers.shift = false
 M.tooltipInfo, M.tooltipData = nil, nil
 GameTooltip:Hide()

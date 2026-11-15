@@ -116,6 +116,15 @@ function Page:BuildGeneral(parent)
 		end))
 	tooltips:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, -2)
 
+	local stackPrices = self:Track(Widgets.CreateCheckbox(parent, L["Show prices for the whole stack"], L.TOOLTIP_STACK_TOOLTIP,
+		function()
+			return SR:GetSetting("tooltipStackPrices")
+		end,
+		function(checked)
+			SR:SetSetting("tooltipStackPrices", checked)
+		end))
+	stackPrices:SetPoint("TOPLEFT", tooltips, "BOTTOMLEFT", 16, -2) -- indented: part of the tooltip prices
+
 	local scale = self:Track(Widgets.CreateSlider(parent, L["Window scale"], 0.7, 1.5, 0.05,
 		function()
 			return SR:GetSetting("window.scale")
@@ -126,7 +135,7 @@ function Page:BuildGeneral(parent)
 		function(value)
 			return ("%d%%"):format(Util.Round(value * 100))
 		end))
-	scale:SetPoint("TOPLEFT", tooltips, "BOTTOMLEFT", 4, -10)
+	scale:SetPoint("TOPLEFT", stackPrices, "BOTTOMLEFT", -12, -10)
 
 	local reset = Widgets.CreateButton(parent, L["Reset window position"], 180, function()
 		SR.UI:ResetLayout()

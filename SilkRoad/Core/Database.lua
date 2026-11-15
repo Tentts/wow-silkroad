@@ -63,6 +63,7 @@ DB.ACCOUNT_DEFAULTS = {
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
 		tooltipPrices = true, -- vendor and auction prices in item tooltips
+		tooltipStackPrices = false, -- tooltips show the whole stack's price (Shift shows one item)
 		settingsTab = "general", -- last tab shown on the Settings page
 		guide = {
 			profession = nil,         -- skillLineID last shown on the Leveling Guide page
@@ -220,7 +221,7 @@ end
 
 -- Every setting back to its default. Done in place, so code holding the
 -- settings table keeps working; listeners are told about each setting.
-local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipPrices", "debug" }
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipPrices", "tooltipStackPrices", "debug" }
 
 function DB:ResetSettings()
 	Clear(self.settings)

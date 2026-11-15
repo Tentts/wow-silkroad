@@ -3,7 +3,9 @@
 	  SilkRoad vendor    what a vendor pays for one
 	  SilkRoad auction   lowest auction buyout, for items that can be sold
 	                     (not bind-on-pickup, soulbound, account-bound or quest items)
-	Holding Shift over a stack in the bags shows both for the whole stack.
+	Holding Shift over a stack in the bags shows both for the whole stack;
+	with "Show prices for the whole stack" on, that's the default and Shift
+	shows one item.
 	Turned on and off in Settings > General.
 ]]
 local _, SR = ...
@@ -37,9 +39,10 @@ function Tooltip:AddPriceLines(tooltip, data)
 	local itemID = data.id
 	local added = false
 
-	-- Shift over a stack: prices for the whole stack.
+	-- Prices for the whole stack: with Shift held, or always (Shift then
+	-- shows one item) when the setting is on.
 	local count = 1
-	if IsShiftKeyDown() then
+	if IsShiftKeyDown() ~= (SR:GetSetting("tooltipStackPrices") and true or false) then
 		count = SR.Game.GetTooltipStackCount(tooltip) or 1
 	end
 	local vendorLabel, auctionLabel = L["SilkRoad vendor"], L["SilkRoad auction"]
