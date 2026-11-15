@@ -4,6 +4,7 @@
 ## Author: Tentts
 ## Version: 0.7.0
 ## Category: Professions
+## X-Curse-Project-ID: 1806315
 ## IconTexture: Interface\Icons\INV_Fabric_Silk_02
 ## SavedVariables: SilkRoadDB
 ## SavedVariablesPerCharacter: SilkRoadCharDB
