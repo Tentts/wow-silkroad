@@ -32,6 +32,7 @@
 	  buyLists       { nextID = n, lists = { [id] = { id, name, created = time(),
 	                   items = { { itemID, quantity }, ... } } } }
 	                 Buy lists (Core/BuyLists.lua), shared by all characters.
+	  favoriteRecipes [recipeID] = true, recipes marked as favorites (all characters)
 
 	SilkRoadCharDB (per character)
 	  schemaVersion  number
@@ -63,6 +64,7 @@ DB.ACCOUNT_DEFAULTS = {
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
 		tooltipMode = "single", -- prices in item tooltips: "off" | "single" | "stack" | "both"
+		tooltipRecipes = "learned", -- recipes using the item in its tooltip: "off" | "favorites" | "learned" | "all"
 		settingsTab = "general", -- last tab shown on the Settings page
 		guide = {
 			profession = nil,         -- skillLineID last shown on the Leveling Guide page
@@ -84,6 +86,7 @@ DB.ACCOUNT_DEFAULTS = {
 	vendorPrices = {},
 	recipes = {},
 	buyLists = {},
+	favoriteRecipes = {},
 }
 
 DB.CHARACTER_DEFAULTS = {
@@ -226,7 +229,7 @@ end
 
 -- Every setting back to its default. Done in place, so code holding the
 -- settings table keeps working; listeners are told about each setting.
-local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "debug" }
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "tooltipRecipes", "debug" }
 
 function DB:ResetSettings()
 	Clear(self.settings)

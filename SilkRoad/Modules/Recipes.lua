@@ -90,6 +90,9 @@ local function FormatName(_, row)
 	else
 		text = Util.ColorByQuality(text, row.quality)
 	end
+	if SR.Recipes:IsFavorite(row.recipe) then
+		text = SR.Recipes.FAVORITE_ICON .. " " .. text
+	end
 	if SR.Recipes:IsTracked(row.recipe) then
 		text = text .. " " .. Util.ColorText(L["(tracked)"], COLORS.gray)
 	end

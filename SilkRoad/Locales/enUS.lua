@@ -64,6 +64,7 @@ L.WIPE_MARKET_CONFIRM = "Wipe all auction and merchant prices SilkRoad has recor
 L.RESET_SETTINGS_DESC = "Puts every SilkRoad setting back to its default, including the window size and position. Your data and key binding stay."
 L.RESET_SETTINGS_CONFIRM = "Reset every SilkRoad setting to its default?"
 L.TOOLTIP_MODE_TOOLTIP = "Adds what a vendor pays and the lowest auction price to item tooltips (the auction line only for items that can be sold there). For stacks in your bags, show one item's price, the whole stack's, or both."
+L.TOOLTIP_RECIPES_TOOLTIP = "Lists the recipes that use the item as a reagent, under its prices: only your favorites (marked from a recipe's right-click menu), the recipes this character has learned plus favorites, or every recipe. Favorites are starred and come first."
 L.TOOLTIP_MODE_NOTE = "Holding Shift over a stack swaps between one item and the whole stack."
 
 L.GUIDE_DESC = "How to level a profession from your skill: the cheapest crafts at current prices, or what to gather and where."

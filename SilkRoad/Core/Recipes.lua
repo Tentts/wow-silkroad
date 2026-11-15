@@ -28,6 +28,7 @@ local Recipes = SR:NewComponent("Recipes")
 local decoded = {} -- [recipeID] = recipe
 local bySkill = {} -- [skillLine] = { recipe, ... } (generated data only)
 local producers -- [itemID] = { recipe, ... } that make it, built on first use
+local users -- [itemID] = { recipe, ... } that use it as a reagent, built on first use
 
 local function StaticData()
 	return SR.StaticData or { professions = {}, recipes = {}, items = {} }
@@ -163,7 +164,7 @@ end
 local function SaveLiveRecipe(recipeID, skillLine)
 	local schematic = SR.Game.ReadRecipeSchematic(recipeID)
 	if schematic and #schematic.reagents > 0 and skillLine then
-		producers = nil -- the new recipe may make something
+		producers, users = nil, nil -- the new recipe may make or use something
 		SR.DB.global.recipes[recipeID] = {
 			recipeID = recipeID, name = schematic.name, icon = schematic.icon,
 			skillLineID = skillLine, outputItemID = schematic.product,
@@ -325,6 +326,53 @@ end
 	bestSale     "auction" | "vendor": where the result earns more
 	reagents     { { itemID, count, unitCost, source = "vendor"|"auction"|nil }, ... }
 ]]
+---------------------------------------------------------------------------
+-- Favorites (account-wide, marked from a recipe's right-click menu)
+---------------------------------------------------------------------------
+
+Recipes.FAVORITE_ICON = "|A:auctionhouse-icon-favorite:12:12|a"
+
+function Recipes:IsFavorite(recipe)
+	return SR.DB.global.favoriteRecipes[recipe.id] == true
+end
+
+function Recipes:SetFavorite(recipe, favorite)
+	SR.DB.global.favoriteRecipes[recipe.id] = favorite and true or nil
+	SR:Fire("RECIPES_UPDATED")
+end
+
+---------------------------------------------------------------------------
+-- Recipes that use an item
+---------------------------------------------------------------------------
+
+-- Every recipe that needs the item as a reagent.
+function Recipes:GetRecipesUsing(itemID)
+	if not users then
+		users = {}
+		local function Add(recipe)
+			for _, reagent in ipairs(recipe and recipe.reagents or {}) do
+				local list = users[reagent.itemID]
+				if not list then
+					list = {}
+					users[reagent.itemID] = list
+				end
+				if list[#list] ~= recipe then -- a recipe listing the item twice counts once
+					list[#list + 1] = recipe
+				end
+			end
+		end
+		for id in pairs(StaticData().recipes) do
+			Add(self:GetRecipe(id))
+		end
+		for id in pairs(SR.DB.global.recipes) do
+			if not StaticData().recipes[id] then
+				Add(self:GetRecipe(id))
+			end
+		end
+	end
+	return users[itemID] or {}
+end
+
 ---------------------------------------------------------------------------
 -- Raw materials: crafting every step yourself
 ---------------------------------------------------------------------------

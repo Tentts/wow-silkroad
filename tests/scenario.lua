@@ -437,8 +437,8 @@ for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
 	if frame.row == boltRow then rowFrame = frame end
 end
 M.Click(rowFrame, "RightButton")
-check(M.contextMenu.items[3].text == "Add to a buy list...", "the recipe menu offers buy lists")
-M.PickContextMenu(2)
+check(M.contextMenu.items[4].text == "Add to a buy list...", "the recipe menu offers buy lists")
+M.PickContextMenu("Add to a buy list...")
 check(M.contextMenu.items[1].text == "Add to a buy list" and M.contextMenu.items[2].text == "New buy list"
 	and M.contextMenu.items[3].text == "Cloth", "pick a new or an existing list")
 M.PickContextMenu(1)
@@ -852,7 +852,11 @@ local settingsPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "settings" then settingsPage = page end
 end
-local minimapCheck, tooltipModeDropdown, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+local minimapCheck, tooltipModeDropdown, tooltipRecipesDropdown, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+check(SR:GetSetting("tooltipRecipes") == "learned", "tooltips list learned recipes and favorites by default")
+M.PickDropdown(tooltipRecipesDropdown, 4)
+check(SR:GetSetting("tooltipRecipes") == "all", "the tooltip recipes selector")
+M.PickDropdown(tooltipRecipesDropdown, 3)
 check(SR:GetSetting("tooltipMode") == "single", "tooltip prices for one item by default")
 M.PickDropdown(tooltipModeDropdown, 4)
 check(SR:GetSetting("tooltipMode") == "both", "the tooltip mode selector")
@@ -1237,6 +1241,7 @@ SR.UI:Hide()
 step("prices in item tooltips")
 local addTooltipLines = M.tooltipPostCalls[Enum.TooltipDataType.Item]
 check(addTooltipLines ~= nil, "item tooltip hook registered")
+SR:SetSetting("tooltipRecipes", "off") -- price lines alone first; recipe lines are checked below
 SR.DB:GetMarket().auction[2589] = { price = 47, quantity = 10, seen = time() }
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, { id = 2589, lines = { { leftText = "Linen Cloth" } } })
@@ -1320,6 +1325,79 @@ check(SR:GetSetting("tooltipMode") == "off" and SR.DB.settings.tooltipPrices == 
 SR.DB.settings.tooltipMode, SR.DB.settings.tooltipPrices = nil, true
 SR.DB:OnInitialize()
 check(SR:GetSetting("tooltipMode") == "single", "turned on: one item's price")
+
+---------------------------------------------------------------------------
+step("recipes in item tooltips, and favorites")
+SR:SetSetting("tooltipMode", "off") -- recipe lines alone
+local linenUsers = SR.Recipes:GetRecipesUsing(2589)
+check(#linenUsers > 8, "every recipe that uses Linen Cloth is indexed")
+local wasKnown, wasScanned = SR.DB.char.knownRecipes[2963], SR.DB.char.scannedProfessions[197]
+SR.DB.char.knownRecipes[2963] = true -- Bolt of Linen Cloth
+SR.DB.char.scannedProfessions[197] = SR.DB.char.scannedProfessions[197] or time()
+local function RecipeLines()
+	M.tooltipLines = {}
+	addTooltipLines(GameTooltip, { id = 2589, lines = { { leftText = "Linen Cloth" } } })
+	return M.tooltipLines
+end
+SR:SetSetting("tooltipRecipes", "learned")
+local lines = RecipeLines()
+local function HasLine(list, text)
+	for _, line in ipairs(list) do
+		if line == text then return true end
+	end
+	return false
+end
+check(lines[1] == "SilkRoad: used in|" and HasLine(lines, "  Bolt of Linen Cloth|Tailoring"), "learned recipes that use the item")
+local unknownUser
+for _, recipe in ipairs(linenUsers) do
+	if SR.Recipes:IsKnown(recipe) ~= true then unknownUser = unknownUser or recipe end
+end
+check(#lines == 1 + #(function()
+	local known = {}
+	for _, recipe in ipairs(linenUsers) do if SR.Recipes:IsKnown(recipe) == true then known[#known + 1] = recipe end end
+	return known
+end)(), "only learned ones")
+SR:SetSetting("tooltipRecipes", "favorites")
+check(#RecipeLines() == 0, "Favorites only: nothing without favorites")
+SR.Recipes:SetFavorite(unknownUser, true)
+lines = RecipeLines()
+check(#lines == 2 and lines[2]:find("  " .. SR.Recipes.FAVORITE_ICON .. " " .. unknownUser.name .. "|", 1, true) == 1,
+	"favorites are listed and starred, learned or not")
+SR:SetSetting("tooltipRecipes", "learned")
+lines = RecipeLines()
+check(lines[2]:find(unknownUser.name, 1, true) and HasLine(lines, "  Bolt of Linen Cloth|Tailoring"), "favorites come first")
+SR:SetSetting("tooltipRecipes", "all")
+lines = RecipeLines()
+check(#lines == 1 + 8 + 1 and lines[10] == "  and " .. (#linenUsers - 8) .. " more|", "All: at most 8 recipes, then how many more")
+SR:SetSetting("tooltipRecipes", "off")
+check(#RecipeLines() == 0, "Off: no recipe lines")
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, { id = 6948, lines = {} }) -- Hearthstone: no recipe uses it
+check(#M.tooltipLines == 0, "items no recipe uses get no lines")
+
+SR.UI:OpenPage("recipes")
+PickProfession(197)
+M.RunTimers()
+local boltFrameForMenu
+for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
+	if frame.row and frame.row.recipe.id == 2963 then boltFrameForMenu = frame end
+end
+M.Click(boltFrameForMenu, "RightButton")
+M.PickContextMenu("Add to favorites")
+check(SR.Recipes:IsFavorite(SR.Recipes:GetRecipe(2963)), "Add to favorites from the right-click menu")
+M.RunTimers()
+for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
+	if frame.row and frame.row.recipe.id == 2963 then boltFrameForMenu = frame end
+end
+check(boltFrameForMenu.cells[1].Text:GetText():find(SR.Recipes.FAVORITE_ICON, 1, true), "favorites are starred on the Recipes page")
+M.Click(boltFrameForMenu, "RightButton")
+M.PickContextMenu("Remove from favorites")
+check(not SR.Recipes:IsFavorite(SR.Recipes:GetRecipe(2963)), "and Remove from favorites")
+SR.Recipes:SetFavorite(unknownUser, false)
+SR.DB.char.knownRecipes[2963], SR.DB.char.scannedProfessions[197] = wasKnown, wasScanned
+SR:SetSetting("tooltipMode", "single")
+SR:SetSetting("tooltipRecipes", "learned")
+SR.UI:Hide()
 
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")

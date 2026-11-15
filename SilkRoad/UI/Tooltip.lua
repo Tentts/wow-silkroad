@@ -7,6 +7,10 @@
 	single and stack (one line each: "SilkRoad vendor" and "SilkRoad vendor
 	x20"). Stacks are the ones in the bags, bank and reagent bag; holding
 	Shift swaps single and stack while hovering.
+
+	Below the prices, the recipes that use the item as a reagent: favorites
+	only, learned ones, all, or none (Settings > General), at most
+	MAX_RECIPE_LINES of them, favorites and learned recipes first.
 ]]
 local _, SR = ...
 local L = SR.L
@@ -15,6 +19,7 @@ local Util = SR.Util
 local Tooltip = SR:NewComponent("Tooltip")
 
 local LABEL_R, LABEL_G, LABEL_B = 0.9, 0.76, 0.36 -- SilkRoad gold
+local MAX_RECIPE_LINES = 8
 
 -- Tooltip lines that mean the item can't go on the auction house.
 local function IsBound(data)
@@ -64,7 +69,7 @@ end
 function Tooltip:AddPriceLines(tooltip, data)
 	local mode = SR:GetSetting("tooltipMode")
 	if mode == "off" or not data or type(data.id) ~= "number" then
-		return
+		return false
 	end
 	local itemID = data.id
 	local added = false
@@ -87,7 +92,72 @@ function Tooltip:AddPriceLines(tooltip, data)
 		added = true
 	end
 
-	if added and tooltip:IsShown() then
+	return added
+end
+
+-- Recipes using the item, as the "Recipes in item tooltips" setting picks.
+function Tooltip:GetRecipesShown(itemID)
+	local mode = SR:GetSetting("tooltipRecipes")
+	if mode == "off" then
+		return {}
+	end
+	local recipes = SR.Recipes
+	local shown = {}
+	for _, recipe in ipairs(recipes:GetRecipesUsing(itemID)) do
+		local favorite = recipes:IsFavorite(recipe)
+		local known = recipes:IsKnown(recipe) == true
+		if mode == "all" or favorite or (mode == "learned" and known) then
+			shown[#shown + 1] = { recipe = recipe, favorite = favorite, known = known }
+		end
+	end
+	table.sort(shown, function(a, b)
+		if a.favorite ~= b.favorite then
+			return a.favorite
+		elseif a.known ~= b.known then
+			return a.known
+		elseif (a.recipe.learn or 0) ~= (b.recipe.learn or 0) then
+			return (a.recipe.learn or 0) < (b.recipe.learn or 0)
+		end
+		return (a.recipe.name or "") < (b.recipe.name or "")
+	end)
+	return shown
+end
+
+function Tooltip:AddRecipeLines(tooltip, data)
+	if not data or type(data.id) ~= "number" then
+		return false
+	end
+	local shown = self:GetRecipesShown(data.id)
+	if #shown == 0 then
+		return false
+	end
+	local professionNames = {}
+	for _, profession in ipairs(SR.Recipes:GetProfessions()) do
+		professionNames[profession.id] = profession.name
+	end
+	tooltip:AddDoubleLine(L["SilkRoad: used in"], "", LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
+	for index = 1, math.min(#shown, MAX_RECIPE_LINES) do
+		local entry = shown[index]
+		local name = entry.recipe.name or "?"
+		if entry.favorite then
+			name = SR.Recipes.FAVORITE_ICON .. " " .. name
+		end
+		local r, g, b = 1, 1, 1
+		if not entry.known then
+			r, g, b = 0.6, 0.6, 0.6 -- not learned
+		end
+		tooltip:AddDoubleLine("  " .. name, professionNames[entry.recipe.skillLine] or "", r, g, b, 0.6, 0.6, 0.6)
+	end
+	if #shown > MAX_RECIPE_LINES then
+		tooltip:AddDoubleLine("  " .. L["and %d more"]:format(#shown - MAX_RECIPE_LINES), "", 0.6, 0.6, 0.6, 1, 1, 1)
+	end
+	return true
+end
+
+function Tooltip:OnItemTooltip(tooltip, data)
+	local prices = self:AddPriceLines(tooltip, data)
+	local recipes = self:AddRecipeLines(tooltip, data)
+	if (prices or recipes) and tooltip:IsShown() then
 		tooltip:Show() -- resize to fit the new lines
 	end
 end
@@ -97,7 +167,7 @@ function Tooltip:OnEnable()
 		return
 	end
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)
-		self:AddPriceLines(tooltip, data)
+		self:OnItemTooltip(tooltip, data)
 	end)
 	-- Pressing or releasing Shift while hovering switches between one item and the stack.
 	for _, event in ipairs(SR.Game.events.modifiersChanged) do

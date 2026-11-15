@@ -124,6 +124,21 @@ function Page:BuildGeneral(parent)
 	local tooltipNote = Note(parent, L.TOOLTIP_MODE_NOTE, tooltipLabel)
 	tooltipNote:SetPoint("TOPLEFT", tooltipLabel, "BOTTOMLEFT", 0, -12)
 
+	local recipesLabel = Widgets.CreateLabel(parent, L["Recipes in item tooltips"], "GameFontHighlight")
+	recipesLabel:SetPoint("TOPLEFT", tooltipNote, "BOTTOMLEFT", 0, -16)
+	local tooltipRecipes = self:Track(Widgets.CreateDropdown(parent, 220, {
+		{ value = "off", label = L["Off"] },
+		{ value = "favorites", label = L["Favorites only"] },
+		{ value = "learned", label = L["Learned and favorites"] },
+		{ value = "all", label = L["All recipes"] },
+	}, function()
+		return SR:GetSetting("tooltipRecipes")
+	end, function(value)
+		SR:SetSetting("tooltipRecipes", value)
+	end))
+	tooltipRecipes:SetPoint("LEFT", recipesLabel, "RIGHT", 12, 0)
+	Widgets.AttachTooltip(tooltipRecipes, L["Recipes in item tooltips"], L.TOOLTIP_RECIPES_TOOLTIP)
+
 	local scale = self:Track(Widgets.CreateSlider(parent, L["Window scale"], 0.7, 1.5, 0.05,
 		function()
 			return SR:GetSetting("window.scale")
@@ -134,7 +149,7 @@ function Page:BuildGeneral(parent)
 		function(value)
 			return ("%d%%"):format(Util.Round(value * 100))
 		end))
-	scale:SetPoint("TOPLEFT", tooltipNote, "BOTTOMLEFT", 0, -14)
+	scale:SetPoint("TOPLEFT", recipesLabel, "BOTTOMLEFT", 0, -24)
 
 	local reset = Widgets.CreateButton(parent, L["Reset window position"], 180, function()
 		SR.UI:ResetLayout()

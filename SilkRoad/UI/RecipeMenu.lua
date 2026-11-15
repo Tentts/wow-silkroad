@@ -1,8 +1,9 @@
 --[[ SilkRoad - UI/RecipeMenu.lua
 	The right-click menu for a recipe, shared by the Recipes and Leveling
 	Guide pages: track it in the game's objective tracker (its reagents are
-	listed under the quests), add its reagents (or the raw materials, for
-	crafting every step) to a buy list, or see where to get it.
+	listed under the quests), mark it as a favorite, add its reagents (or the
+	raw materials, for crafting every step) to a buy list, or see where to
+	get it.
 ]]
 local _, SR = ...
 local L = SR.L
@@ -38,8 +39,10 @@ function SR.UI:ShowRecipeMenu(recipe, owner, crafts)
 		return
 	end
 	local tracked = SR.Recipes:IsTracked(recipe)
+	local favorite = SR.Recipes:IsFavorite(recipe)
 	local options = {
 		{ label = tracked and L["Stop tracking"] or L["Track in objectives"], action = "track" },
+		{ label = favorite and L["Remove from favorites"] or L["Add to favorites"], action = "favorite" },
 		{ label = L["Add to a buy list..."], action = "buylist" },
 	}
 	-- Only when some reagent can be crafted (see Recipes:Breakdown).
@@ -51,6 +54,8 @@ function SR.UI:ShowRecipeMenu(recipe, owner, crafts)
 	SR.Game.ShowMenu(owner, recipe.name or L["Recipe"], options, function(option)
 		if option.action == "track" then
 			SR.Recipes:SetTracked(recipe, not tracked)
+		elseif option.action == "favorite" then
+			SR.Recipes:SetFavorite(recipe, not favorite)
 		elseif option.action == "buylist" then
 			ShowBuyListMenu(recipe, owner, crafts, option.raw)
 		else

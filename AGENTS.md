@@ -30,8 +30,12 @@ In the auction house window (tabs added with LibAHTab):
   `Core/AuctionBuyer.lua`.
 
 The recipe right-click menu (`UI/RecipeMenu.lua`), shared by Recipes and Leveling Guide:
-Track in objectives / Stop tracking, Add to a buy list..., Add raw materials to a buy
-list... (only when something can be crafted), Where to get it.
+Track in objectives / Stop tracking, Add to / Remove from favorites, Add to a buy list...,
+Add raw materials to a buy list... (only when something can be crafted), Where to get it.
+
+Item tooltips (`UI/Tooltip.lua`): vendor and auction prices (mode: off, single, stack,
+both; Shift swaps single and stack) and the recipes that use the item (mode: off,
+favorites, learned, all). Favorites live in `SilkRoadDB.favoriteRecipes`.
 
 ## Layout
 

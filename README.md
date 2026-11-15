@@ -70,6 +70,7 @@ Turn any recipe into a **buy list** and buy it item by item from the auction hou
 - **Right-click** a recipe (here or in a Leveling Guide step) for its menu:
   - **Track in objectives**: the game's objective tracker lists it under your quests and
     counts its reagents as you gather them.
+  - **Add to favorites**: starred in the list and in item tooltips (see below).
   - **Add to a buy list...**: its reagents, times the crafts you ask for (a guide step
     suggests its own count). Reagents vendors sell are left out.
   - **Add raw materials to a buy list...**: the raw materials for crafting every step
@@ -139,6 +140,9 @@ worked out from current prices instead of a fixed guide.
   Settings whether they show the price of **one item**, the **whole stack**, or **both** (one
   line each), or turn the lines off. Holding **Shift** over a stack swaps between one item
   and the stack.
+- **Which recipes use an item**: tooltips list the recipes that need it as a reagent, with
+  their profession. Choose in Settings: your **favorites** only, **learned** recipes and
+  favorites (the default), **all** recipes, or off. Favorites are starred and listed first.
 - **Merchant prices are recorded** every time you open a vendor, but you never have to visit
   vendors: common reagent prices come from the game data.
 - **Price Database** page: look up any item by ID, name or shift-clicked link to see every
