@@ -175,6 +175,15 @@ function Page:BuildGeneral(parent)
 	keyButton:SetScript("OnKeyDown", function(_, key)
 		self:OnCapturedKey(key)
 	end)
+	-- Setting an OnKeyDown script turns keyboard input on; the button must
+	-- only take keys while it waits for one, or Escape (and every other key)
+	-- stops reaching the game whenever the Settings page is open.
+	keyButton:EnableKeyboard(false)
+	keyButton:HookScript("OnHide", function()
+		if self.capturingKey then
+			self:StopKeyCapture() -- page or window closed while waiting for a key
+		end
+	end)
 	Widgets.AttachTooltip(keyButton, L["Open / close SilkRoad"], L.KEY_BINDING_TOOLTIP)
 	self.KeyButton = keyButton
 
@@ -197,8 +206,7 @@ end
 
 function Page:StartKeyCapture()
 	self.capturingKey = true
-	self.KeyButton:EnableKeyboard(true)
-	self.KeyButton:SetPropagateKeyboardInput(false)
+	self.KeyButton:EnableKeyboard(true) -- keys stop at the button until one is pressed
 	self:UpdateKeyButton()
 end
 

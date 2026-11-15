@@ -1236,9 +1236,11 @@ M.Click(tabButtons[1])
 step("key binding")
 check(BINDING_NAME_SILKROAD_TOGGLE == "Open / close SilkRoad" and BINDING_HEADER_SILKROAD == "SilkRoad", "binding names for Blizzard's key binding window")
 check(settingsPage.KeyButton:GetText() == "Not Bound", "no key at first")
+check(not settingsPage.KeyButton:IsKeyboardEnabled(), "the key button doesn't take keys (Escape, movement) until clicked")
 M.bindings["CTRL-S"] = "SOME_OTHER_ACTION"
 M.Click(settingsPage.KeyButton)
 check(settingsPage.KeyButton:GetText() == "Press a key...", "waiting for a key")
+check(settingsPage.KeyButton:IsKeyboardEnabled(), "and takes the next key while waiting")
 M.modifiers.ctrl = true
 M.RunScript(settingsPage.KeyButton, "OnKeyDown", "LCTRL")
 check(settingsPage.capturingKey, "a modifier alone keeps waiting")
@@ -1253,6 +1255,11 @@ check(M.bindings["F7"] == "SILKROAD_TOGGLE" and M.bindings["CTRL-S"] == nil, "a 
 M.Click(settingsPage.KeyButton)
 M.RunScript(settingsPage.KeyButton, "OnKeyDown", "ESCAPE")
 check(not settingsPage.capturingKey and M.bindings["F7"] == "SILKROAD_TOGGLE", "Escape cancels")
+check(not settingsPage.KeyButton:IsKeyboardEnabled(), "and the keyboard goes back to the game")
+M.Click(settingsPage.KeyButton)
+settingsPage.KeyButton:Hide()
+check(not settingsPage.capturingKey and not settingsPage.KeyButton:IsKeyboardEnabled(), "closing the page while waiting stops waiting")
+settingsPage.KeyButton:Show()
 M.inCombat = true
 M.Click(settingsPage.KeyButton, "RightButton")
 check(M.bindings["F7"] == "SILKROAD_TOGGLE" and OutputContains("can't be changed in combat"), "no changes in combat")

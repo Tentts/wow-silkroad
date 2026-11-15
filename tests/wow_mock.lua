@@ -169,6 +169,18 @@ function Widget:SetScript(scriptType, handler)
 	assert(type(scriptType) == "string", "SetScript: script type must be a string")
 	assert(handler == nil or type(handler) == "function", "SetScript: handler must be a function or nil")
 	self.__scripts[scriptType] = handler
+	-- Like the client: a key script turns keyboard input on for the frame.
+	if handler and (scriptType == "OnKeyDown" or scriptType == "OnKeyUp") then
+		self.__keyboard = true
+	end
+end
+
+function Widget:EnableKeyboard(enabled)
+	self.__keyboard = enabled and true or false
+end
+
+function Widget:IsKeyboardEnabled()
+	return self.__keyboard or false
 end
 
 function Widget:GetScript(scriptType)
