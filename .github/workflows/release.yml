@@ -1,0 +1,37 @@
+# Builds the addon zip and uploads it to CurseForge and GitHub Releases
+# whenever a version tag is pushed (v0.7.1, v0.8.0-beta1, v0.8.0-alpha1).
+# The tag decides the CurseForge release type: "alpha" or "beta" in the
+# name makes it that type, anything else is a full release.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the GitHub release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_KEY }}     # CurseForge API token (repository secret)
+      GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # provided by GitHub, nothing to add
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, needed for the changelog
+
+      - name: Check that the tag matches the TOC version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          toc=$(sed -n 's/^## Version: *//p' SilkRoad/SilkRoad.toc | tr -d '\r')
+          if [ "${tag%%-*}" != "$toc" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match ## Version: $toc in SilkRoad/SilkRoad.toc"
+            exit 1
+          fi
+
+      - name: Package and upload
+        uses: BigWigsMods/packager@v2

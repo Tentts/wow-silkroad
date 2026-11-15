@@ -1,0 +1,20 @@
+# Packaging for CurseForge and GitHub releases (BigWigsMods/packager).
+# The addon lives in SilkRoad/; the zip must contain only that folder.
+
+package-as: SilkRoad
+
+# Lift the addon folder to the top of the zip (SilkRoad/SilkRoad -> SilkRoad).
+move-folders:
+  SilkRoad/SilkRoad: SilkRoad
+
+# Development files that never go into the zip (dotfiles are skipped automatically).
+ignore:
+  - AGENTS.md
+  - README.md
+  - docs
+  - media
+  - scripts
+  - tests
+  - tools
+
+# Changelog: generated from the commit messages since the previous tag.

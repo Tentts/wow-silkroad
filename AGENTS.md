@@ -47,6 +47,8 @@ tests/             wow_mock.lua (mock client), scenario.lua (the test run), smok
 scripts/           link-addon.ps1, test.ps1
 docs/              FOREVER_API_NOTES.md, TRANSLATING.md
 media/             artwork and branding (icon.png); not shipped in the addon folder
+.pkgmeta           packager config: the release zip holds only SilkRoad/
+.github/workflows/ release.yml: packages tagged versions for CurseForge and GitHub
 ```
 
 Load order is the TOC: Locales, `Core/Init.lua`, the Game and Data layers, Core services,
@@ -146,6 +148,11 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
 - **Versions:** don't bump on your own initiative. When a bump is asked for, raise only
   the last number (0.7.0 → 0.7.1) unless the maintainer says otherwise. A bump touches
   `## Version` in the TOC, the README badge and the version checks in `tests/scenario.lua`.
+- **Releases:** pushing a tag `v<version>` (matching `## Version`) on `master` builds the
+  zip and uploads it to CurseForge and GitHub Releases (`.github/workflows/release.yml`).
+  `-beta1` / `-alpha1` suffixes make beta / alpha files. Tag and push tags only when the
+  maintainer asks. New top-level development files or folders must be added to the
+  `ignore` list in `.pkgmeta` so they stay out of the zip.
 - `tools/generate_data.py` regenerates `Data/Forever/Recipes.lua` after a game patch;
   never edit that file by hand.
 

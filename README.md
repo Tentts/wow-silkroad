@@ -268,6 +268,8 @@ tests/                     smoke test: runs the addon outside the game against a
 scripts/                   link-addon.ps1, test.ps1
 docs/                      FOREVER_API_NOTES.md, TRANSLATING.md
 media/                     artwork (icon); not part of the addon
+.pkgmeta                   what goes into the release zip (only SilkRoad/)
+.github/workflows/         release.yml: packages and uploads tagged versions
 AGENTS.md                  conventions and workflow for contributors and coding agents
 ```
 
@@ -323,6 +325,30 @@ dropped isn't in the client tables; SilkRoad reads that from QuestieDB at runtim
 
 Research on the Forever client, its APIs and their quirks is collected in
 **[docs/FOREVER_API_NOTES.md](docs/FOREVER_API_NOTES.md)**.
+
+### Releasing
+
+Releases are built by the [BigWigs packager](https://github.com/BigWigsMods/packager)
+(`.github/workflows/release.yml`) whenever a version tag is pushed. It zips only the
+`SilkRoad/` folder (see `.pkgmeta`), writes a changelog from the commits since the previous
+tag, and uploads the zip to CurseForge and GitHub Releases. The game version (Forever) comes
+from the TOC's `## Interface`.
+
+1. Bump `## Version` in the TOC, the badge above and the version check in
+   `tests/scenario.lua`, run the tests and merge into `master`.
+2. Tag that commit with the same version and push the tag:
+
+   ```powershell
+   git tag v0.7.1
+   git push origin v0.7.1
+   ```
+
+The tag name sets the CurseForge release type: `v0.7.1` is a release, `v0.8.0-beta1` a beta
+and `v0.8.0-alpha1` an alpha. The workflow stops if the tag doesn't match the TOC version.
+
+One-time setup: `## X-Curse-Project-ID` in the TOC holds the CurseForge project ID, and the
+repository secret `CF_API_KEY` holds a CurseForge API token (created under *API Tokens* in
+the CurseForge author account settings).
 
 ## Roadmap
 
