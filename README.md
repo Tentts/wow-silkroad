@@ -394,3 +394,7 @@ Suggestions and bug reports are welcome: [open an issue](https://github.com/Tent
 ## License
 
 Released under the [MIT License](LICENSE). Bundled libraries keep their own licenses (see [Credits](#credits)).
+
+The MIT License covers SilkRoad's own code and artwork. Game data such as the recipe and item
+names, IDs and icons in `SilkRoad/Data/Forever/` comes from World of Warcraft and belongs to
+Blizzard Entertainment; it isn't covered by this license.
