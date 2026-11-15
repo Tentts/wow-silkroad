@@ -83,7 +83,8 @@ Turn any recipe into a **buy list** and buy it item by item from the auction hou
 Named shopping lists for the auction house, shared by all your characters.
 
 - **Manage them** on the Buy Lists page: create, rename, copy and delete lists, add items
-  (item ID, name or a shift-clicked link) and set how many of each you want.
+  and set how many of each you want. Type part of a name (`light`) and pick the item from
+  the **suggestions** (Light Leather, Light Hide...), or use an item ID or a shift-clicked link.
 - **Fill them from recipes**: right-click a recipe for its reagents, or its raw materials
   (lists named like *Medium Armor Kit x2 (raw)*).
 - Each item shows how many you **have**, how many are **left** to buy, and the cost at the

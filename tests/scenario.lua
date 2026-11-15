@@ -428,6 +428,56 @@ M.RunTimers()
 check(#buyPage.Lists.rows == 1 and buyPage:SelectedList().id == clothID, "Delete asks first, then removes the list")
 M.bags[2589] = nil
 
+step("buy lists: item suggestions while typing")
+local found = SR.ItemSearch:Find("light", 8)
+check(#found > 1 and SR.Util.GetItemDisplay(found[1]).name:lower():find("^light"), "names starting with the text come first")
+local leatherMatches = SR.ItemSearch:Find("leather", 50)
+local hasLight = false
+for _, itemID in ipairs(leatherMatches) do
+	if itemID == 2318 then hasLight = true end
+end
+check(hasLight, "a word in the name matches too (Light Leather for \"leather\")")
+check(#SR.ItemSearch:Find("l", 8) == 0, "at least two letters")
+local suggestions = buyPage.Suggestions
+M.Type(buyPage.ItemInput, "light le")
+check(suggestions:IsShown() and suggestions.items[1] == 2318, "typing shows suggestions (Light Leather)")
+check(suggestions.rows[1].Text:GetText():find("Light Leather", 1, true), "with the item's name")
+M.Type(buyPage.ItemInput, "zzzz")
+check(not suggestions:IsShown(), "nothing matches: no list")
+M.Type(buyPage.ItemInput, "light")
+M.mouseOver = suggestions.rows[1]
+buyPage.ItemInput:ClearFocus()
+check(suggestions:IsShown(), "clicking a suggestion doesn't lose it to the box losing focus")
+local firstLight = suggestions.items[1]
+M.Click(suggestions.rows[1])
+M.mouseOver = nil
+check(not suggestions:IsShown() and suggestions:GetPicked() == firstLight
+	and buyPage.ItemInput:GetText() == SR.Util.GetItemDisplay(firstLight).name, "picking fills in the name")
+check(buyPage.AmountInput:HasFocus(), "and moves on to the amount")
+buyPage.AmountInput:SetText("3")
+M.Click(buyPage.AddButton)
+M.RunTimers()
+check(SR.BuyLists:GetItem(buyPage:SelectedList(), firstLight).quantity == 3, "the picked item is added")
+M.Type(buyPage.ItemInput, "light le")
+M.PressKey(buyPage.ItemInput, "DOWN")
+check(suggestions.rows[1].Selected:IsShown(), "the arrow keys highlight a suggestion")
+M.PressKey(buyPage.ItemInput, "UP")
+check(suggestions.selected == #suggestions.items, "and wrap around")
+M.PressKey(buyPage.ItemInput, "DOWN")
+M.PressKey(buyPage.ItemInput, "ENTER")
+check(suggestions:GetPicked() == 2318 and buyPage.ItemInput:GetText() == "Light Leather", "Enter picks the highlighted one")
+M.Type(buyPage.ItemInput, "light leather")
+check(suggestions:GetPicked() == nil, "typing again forgets the pick")
+M.PressKey(buyPage.ItemInput, "ESCAPE")
+check(not suggestions:IsShown(), "Escape closes the list")
+buyPage.AmountInput:SetText("2")
+M.Click(buyPage.AddButton)
+M.RunTimers()
+check(SR.BuyLists:GetItem(buyPage:SelectedList(), 2318).quantity == 2, "a full name typed without picking is found too")
+SR.BuyLists:RemoveItem(buyPage:SelectedList().id, 2318)
+SR.BuyLists:RemoveItem(buyPage:SelectedList().id, firstLight)
+buyPage.AmountInput:SetText("1")
+
 step("buy lists: a recipe's reagents from its right-click menu")
 SR.UI:OpenPage("recipes")
 PickProfession(197)

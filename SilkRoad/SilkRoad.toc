@@ -42,6 +42,7 @@ Core\Bindings.lua
 Core\AuctionScanner.lua
 Core\AuctionBuyer.lua
 Core\BuyLists.lua
+Core\ItemSearch.lua
 
 # UI framework
 UI\Widgets.lua
@@ -52,6 +53,7 @@ UI\OptionsPanel.lua
 UI\AuctionHouseTab.lua
 UI\AuctionHouseBuyLists.lua
 UI\SourcePopup.lua
+UI\ItemSuggestions.lua
 UI\RecipeMenu.lua
 UI\Tooltip.lua
 

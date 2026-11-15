@@ -67,7 +67,15 @@ end
 
 function Page:AddFromInput()
 	local list = self:SelectedList()
-	local itemID = Util.ParseItemID(self.ItemInput:GetText())
+	local text = self.ItemInput:GetText()
+	local itemID = self.Suggestions:GetPicked() or Util.ParseItemID(text)
+	if not itemID then
+		-- A name typed in full, without picking it from the suggestions.
+		local best = SR.ItemSearch:Find(text, 1)[1]
+		if best and (Util.GetItemDisplay(best).name or ""):lower() == text:match("^%s*(.-)%s*$"):lower() then
+			itemID = best
+		end
+	end
 	if not list then
 		return
 	end
@@ -79,6 +87,7 @@ function Page:AddFromInput()
 	SR.BuyLists:AddItem(list.id, itemID, math.max(1, amount))
 	self.ItemInput:SetText("")
 	self.ItemInput:ClearFocus()
+	self.Suggestions:Hide()
 end
 
 ---------------------------------------------------------------------------
@@ -157,6 +166,11 @@ function Page:OnCreate(frame)
 		self:AddFromInput()
 	end)
 	self.ItemInput:SetPoint("LEFT", itemLabel, "RIGHT", 12, 0)
+	-- Typing part of a name lists matching items; picking one moves on to the amount.
+	self.Suggestions = Widgets.AttachItemSuggestions(self.ItemInput, function()
+		self.AmountInput:SetFocus()
+		self.AmountInput:HighlightText()
+	end)
 
 	local amountLabel = Widgets.CreateLabel(frame, L["Amount"], "GameFontNormal")
 	amountLabel:SetPoint("LEFT", self.ItemInput, "RIGHT", 12, 0)
@@ -172,7 +186,7 @@ function Page:OnCreate(frame)
 		self:AddFromInput()
 	end)
 	self.AddButton:SetPoint("LEFT", self.AmountInput, "RIGHT", 8, 0)
-	Widgets.AttachTooltip(self.ItemInput, L["Add item"], L.LOOKUP_HINT)
+	Widgets.AttachTooltip(self.ItemInput, L["Add item"], L.ITEM_SUGGEST_HINT)
 
 	-- Shift-clicking an item while the box has focus drops its link in.
 	if ChatFrameUtil and ChatFrameUtil.InsertLink then

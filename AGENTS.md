@@ -105,7 +105,9 @@ UI, then Modules. New files must be added to `SilkRoad/SilkRoad.toc`.
   `SetRows` highlights rows. Right-clicking a clickable cell goes to the row's menu.
 - **Widgets:** `CreateButton`, `CreateCheckbox`, `CreateDropdown`, `CreateInput`,
   `CreateSearchBox`, `CreateHeader` (set text with `header.Text`), `CreateTabBar`,
-  `Confirm(text, onAccept)`, `Prompt(text, default, onAccept, numeric)`.
+  `Confirm(text, onAccept)`, `Prompt(text, default, onAccept, numeric)`,
+  `AttachItemSuggestions(editBox, onPick)` (item name suggestions while typing, from
+  `SR.ItemSearch:Find(text, limit)` over the game data's items and buy list items).
 - **Menus:** `SR.Game.ShowMenu(owner, title, options, onPick)` for flat context menus.
 - **Prices:** always through `SR.Prices` (`GetAuctionPrice`, `GetVendorBuyPrice`,
   `GetVendorSellPrice`, `GetAcquireCost`). `Recipes:Evaluate(recipe)` gives cost, rawCost,

@@ -411,3 +411,6 @@ L["Favorites only"] = "Solo favoritas"
 L["Learned and favorites"] = "Aprendidas y favoritas"
 L["All recipes"] = "Todas las recetas"
 L.TOOLTIP_RECIPES_TOOLTIP = "Muestra las recetas que usan el objeto como componente, bajo sus precios: solo tus favoritas (se marcan desde el menú de clic derecho de una receta), las que este personaje ha aprendido más las favoritas, o todas. Las favoritas llevan estrella y van primero."
+
+-- Item suggestions
+L.ITEM_SUGGEST_HINT = "Escribe parte del nombre de un objeto y elígelo de la lista (también con las flechas y Intro), o escribe un ID de objeto, o haz mayús-clic en un objeto para ponerlo en la casilla."

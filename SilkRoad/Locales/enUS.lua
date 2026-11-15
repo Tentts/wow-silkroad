@@ -48,6 +48,7 @@ L.RECENT_EMPTY_BODY = "Items you look up are listed here so you can check them a
 L.NO_SCAN_DATA = "No SilkRoad scan data yet: open the auction house and SilkRoad scans it automatically (at most once every 15 minutes)."
 L.NO_MATCHES_TITLE = "Nothing matches"
 L.NO_MATCHES_BODY = "Try a different search or filter."
+L.ITEM_SUGGEST_HINT = "Type part of an item's name and pick it from the list (arrow keys and Enter work too), or type an item ID, or shift-click an item into the box."
 L.LOOKUP_HINT = "Type an item ID or name, or shift-click an item link into the box."
 L.LOOKUP_NOT_FOUND = "SilkRoad doesn't recognise that item. Names only work for items your client has already seen; item IDs and links always work."
 L.NO_AUCTION_SOURCE = "none yet"

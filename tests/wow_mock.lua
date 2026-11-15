@@ -365,8 +365,44 @@ end
 function Widget:SetChecked(checked) self.__checked = checked and true or false end
 function Widget:GetChecked() return self.__checked or false end
 function Widget:HasFocus() return self.__focus or false end
-function Widget:SetFocus() self.__focus = true end
-function Widget:ClearFocus() self.__focus = false end
+function Widget:SetFocus()
+	if not self.__focus then
+		self.__focus = true
+		if self.__scripts.OnEditFocusGained then self.__scripts.OnEditFocusGained(self) end
+	end
+end
+function Widget:ClearFocus()
+	if self.__focus then
+		self.__focus = false
+		if self.__scripts.OnEditFocusLost then self.__scripts.OnEditFocusLost(self) end
+	end
+end
+-- M.mouseOver = the frame under the mouse (IsMouseOver is true for it and its parents).
+function Widget:IsMouseOver()
+	local frame = M.mouseOver
+	while frame do
+		if frame == self then return true end
+		frame = rawget(frame, "__parent")
+	end
+	return false
+end
+
+-- Types into an edit box like the player does (OnTextChanged with userInput).
+function M.Type(box, text)
+	box:SetFocus()
+	box.__text = text
+	if box.__scripts.OnTextChanged then box.__scripts.OnTextChanged(box, true) end
+end
+-- Presses a key in an edit box: "UP" / "DOWN" (OnArrowPressed), "ENTER", "ESCAPE".
+function M.PressKey(box, key)
+	if key == "ENTER" then
+		box.__scripts.OnEnterPressed(box)
+	elseif key == "ESCAPE" then
+		box.__scripts.OnEscapePressed(box)
+	else
+		box.__scripts.OnArrowPressed(box, key)
+	end
+end
 
 function Widget:SetTexture(texture)
 	assert(texture == nil or type(texture) == "string" or type(texture) == "number", "SetTexture: path or fileID expected")
