@@ -1114,7 +1114,7 @@ define("C_TradeSkillUI", {
 	GetRecipeInfo = function(recipeID)
 		local learned = M.tradeSkill and M.tradeSkill.recipes[recipeID]
 		if learned == nil then return nil end
-		return { recipeID = recipeID, learned = learned }
+		return { recipeID = recipeID, learned = learned, favorite = M.nativeFavorites[recipeID] == true }
 	end,
 	GetProfessionInfoByRecipeID = function(recipeID)
 		local skillLine = M.recipeProfessions[recipeID]
@@ -1291,6 +1291,18 @@ C_TradeSkillUI.GetTradeSkillDisplayName = function(skillLineID) return M.profess
 -- Recipe tracking (the objective tracker). M.trackRefuse makes the game
 -- ignore new tracking, as it does for recipes the character can't craft.
 M.tracked = {}
+-- The professions window's favorites: M.nativeFavorites[recipeID] = true.
+-- (Blizzard's UI only offers the star for learned recipes; SilkRoad checks that itself.)
+M.nativeFavorites = {}
+C_TradeSkillUI.IsRecipeFavorite = function(recipeID)
+	assert(type(recipeID) == "number", "IsRecipeFavorite: recipeID expected")
+	return M.nativeFavorites[recipeID] == true
+end
+C_TradeSkillUI.SetRecipeFavorite = function(recipeID, favorite)
+	assert(type(recipeID) == "number" and type(favorite) == "boolean", "SetRecipeFavorite: recipeID, favorite expected")
+	M.nativeFavorites[recipeID] = favorite or nil
+	M.FireEvent("TRADE_SKILL_FAVORITES_CHANGED", favorite, recipeID)
+end
 C_TradeSkillUI.IsRecipeTracked = function(recipeID, isRecraft)
 	assert(type(recipeID) == "number" and type(isRecraft) == "boolean", "IsRecipeTracked: recipeID, isRecraft expected")
 	return M.tracked[recipeID] == true

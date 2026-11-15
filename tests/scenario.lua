@@ -1390,9 +1390,26 @@ for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
 	if frame.row and frame.row.recipe.id == 2963 then boltFrameForMenu = frame end
 end
 check(boltFrameForMenu.cells[1].Text:GetText():find(SR.Recipes.FAVORITE_ICON, 1, true), "favorites are starred on the Recipes page")
+check(M.nativeFavorites[2963] == true, "a learned recipe is starred in the game's professions window too")
 M.Click(boltFrameForMenu, "RightButton")
 M.PickContextMenu("Remove from favorites")
-check(not SR.Recipes:IsFavorite(SR.Recipes:GetRecipe(2963)), "and Remove from favorites")
+check(not SR.Recipes:IsFavorite(SR.Recipes:GetRecipe(2963)) and not M.nativeFavorites[2963], "and Remove from favorites, in both")
+check(M.nativeFavorites[unknownUser.id] == nil, "recipes not learned stay SilkRoad's own favorites")
+-- Stars set in Blizzard's professions window show in SilkRoad.
+C_TradeSkillUI.SetRecipeFavorite(2963, true)
+check(SR.Recipes:IsFavorite(SR.Recipes:GetRecipe(2963)), "a star set in the professions window is a SilkRoad favorite")
+C_TradeSkillUI.SetRecipeFavorite(2963, false)
+check(not SR.Recipes:IsFavorite(SR.Recipes:GetRecipe(2963)), "and clearing it there clears it here")
+M.nativeFavorites[2963] = true -- starred before SilkRoad was installed
+M.tradeSkill = { professionID = 197, name = "Tailoring", recipes = { [2963] = true } }
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+check(SR.DB.global.favoriteRecipes[2963] == true, "the professions window's existing favorites are read")
+M.nativeFavorites[2963] = nil
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+check(SR.DB.global.favoriteRecipes[2963] == nil, "and so are removals")
+M.tradeSkill = nil
 SR.Recipes:SetFavorite(unknownUser, false)
 SR.DB.char.knownRecipes[2963], SR.DB.char.scannedProfessions[197] = wasKnown, wasScanned
 SR:SetSetting("tooltipMode", "single")

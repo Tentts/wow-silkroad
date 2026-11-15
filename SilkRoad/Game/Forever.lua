@@ -6,7 +6,9 @@
 
 	SR.Game.events                         event names, by purpose
 	SR.Game.GetPlayerProfessions()         { { skillLine, name, icon, rank, maxRank }, ... }
-	SR.Game.ReadOpenProfession()           { [recipeID] = learned } for the open window, or nil, reason
+	SR.Game.ReadOpenProfession()           { [recipeID] = learned }, { [recipeID] = true } (favorites)
+	                                       for the open window, or nil, reason
+	SR.Game.IsRecipeFavorite / SetRecipeFavorite(recipeID[, favorite])  the professions window's favorites
 	SR.Game.GetRecipeProfession(recipeID)  { id, name } for recipes missing from the game data
 	SR.Game.IsRecipeKnown(recipeID)        true / false from the spellbook, nil if unknown
 	SR.Game.ReadRecipeSchematic(recipeID)  { name, icon, product, quantityMin, quantityMax, reagents }
@@ -32,6 +34,7 @@ Game.events = {
 	spellsChanged = { "LEARNED_SPELL_IN_SKILL_LINE", "SKILL_LINES_CHANGED" },
 	bagsChanged = { "BAG_UPDATE_DELAYED" },
 	trackedRecipesChanged = { "TRACKED_RECIPE_UPDATE" },
+	favoritesChanged = { "TRADE_SKILL_FAVORITES_CHANGED" }, -- (isFavorite, recipeID)
 	modifiersChanged = { "MODIFIER_STATE_CHANGED" },
 }
 
@@ -51,25 +54,40 @@ function Game.GetPlayerProfessions()
 end
 
 -- Recipes listed in the open profession window, learned or not:
--- { [recipeID] = learned }. Which profession the window shows doesn't
--- matter (and Forever doesn't always say): every recipe ID belongs to one
--- profession. Returns nil plus the reason when there's nothing to read.
+-- { [recipeID] = learned }, plus { [recipeID] = true } for the window's
+-- favorites. Which profession the window shows doesn't matter (and Forever
+-- doesn't always say): every recipe ID belongs to one profession. Returns
+-- nil plus the reason when there's nothing to read.
 function Game.ReadOpenProfession()
 	if C_TradeSkillUI.IsTradeSkillLinked() or C_TradeSkillUI.IsTradeSkillGuild() then
 		return nil, "another player's profession is shown"
 	end
-	local learned, count = {}, 0
+	local learned, favorites, count = {}, {}, 0
 	for _, recipeID in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
 		local recipe = C_TradeSkillUI.GetRecipeInfo(recipeID)
 		if recipe then
 			learned[recipeID] = recipe.learned and true or false
+			favorites[recipeID] = recipe.favorite and true or nil
 			count = count + 1
 		end
 	end
 	if count == 0 then
 		return nil, "the profession window has no recipes yet"
 	end
-	return learned
+	return learned, favorites
+end
+
+-- The professions window's own favorites. Blizzard only lets learned
+-- recipes be favorites; nil when the game can't say.
+function Game.IsRecipeFavorite(recipeID)
+	local ok, favorite = pcall(C_TradeSkillUI.IsRecipeFavorite, recipeID)
+	if ok and favorite ~= nil then
+		return favorite and true or false
+	end
+end
+
+function Game.SetRecipeFavorite(recipeID, favorite)
+	pcall(C_TradeSkillUI.SetRecipeFavorite, recipeID, favorite and true or false)
 end
 
 -- Profession of a recipe the game data doesn't have: { id, name } or nil.

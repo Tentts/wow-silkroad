@@ -35,7 +35,9 @@ Add raw materials to a buy list... (only when something can be crafted), Where t
 
 Item tooltips (`UI/Tooltip.lua`): vendor and auction prices (mode: off, single, stack,
 both; Shift swaps single and stack) and the recipes that use the item (mode: off,
-favorites, learned, all). Favorites live in `SilkRoadDB.favoriteRecipes`.
+favorites, learned, all). Favorites are the game's own profession favorites
+(`C_TradeSkillUI.IsRecipeFavorite`, learned recipes only), kept in step both ways, plus
+SilkRoad's own for unlearned recipes, in `SilkRoadDB.favoriteRecipes`.
 
 ## Layout
 

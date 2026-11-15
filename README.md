@@ -70,7 +70,8 @@ Turn any recipe into a **buy list** and buy it item by item from the auction hou
 - **Right-click** a recipe (here or in a Leveling Guide step) for its menu:
   - **Track in objectives**: the game's objective tracker lists it under your quests and
     counts its reagents as you gather them.
-  - **Add to favorites**: starred in the list and in item tooltips (see below).
+  - **Add to favorites**: starred in the list and in item tooltips (see below). For learned
+    recipes these are the same favorites as the star in the game's professions window.
   - **Add to a buy list...**: its reagents, times the crafts you ask for (a guide step
     suggests its own count). Reagents vendors sell are left out.
   - **Add raw materials to a buy list...**: the raw materials for crafting every step

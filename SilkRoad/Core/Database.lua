@@ -32,7 +32,8 @@
 	  buyLists       { nextID = n, lists = { [id] = { id, name, created = time(),
 	                   items = { { itemID, quantity }, ... } } } }
 	                 Buy lists (Core/BuyLists.lua), shared by all characters.
-	  favoriteRecipes [recipeID] = true, recipes marked as favorites (all characters)
+	  favoriteRecipes [recipeID] = true, favorite recipes: the game's own favorites of
+	                 learned recipes, mirrored, plus favorites of recipes not learned yet
 
 	SilkRoadCharDB (per character)
 	  schemaVersion  number

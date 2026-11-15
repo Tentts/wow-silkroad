@@ -180,10 +180,15 @@ end
 -- profession the window shows doesn't matter: each recipe ID belongs to one
 -- profession, and every profession seen this way counts as read.
 function Recipes:ReadProfessionWindow()
-	local learned, reason = SR.Game.ReadOpenProfession()
+	local learned, favoritesOrReason = SR.Game.ReadOpenProfession()
 	if not learned then
-		SR:Debug("Profession window not read:", reason)
+		SR:Debug("Profession window not read:", favoritesOrReason)
 		return
+	end
+	-- The window's favorites (stars set in Blizzard's professions window).
+	local favorites = SR.DB.global.favoriteRecipes
+	for recipeID in pairs(learned) do
+		favorites[recipeID] = favoritesOrReason[recipeID] or (not learned[recipeID] and favorites[recipeID]) or nil
 	end
 	local known, read = SR.DB.char.knownRecipes, SR.DB.char.scannedProfessions
 	local professions, added, now = {}, 0, time()
@@ -300,6 +305,15 @@ function Recipes:OnEnable()
 			SR:Fire("RECIPES_UPDATED")
 		end)
 	end
+	-- A star set or cleared in Blizzard's professions window.
+	for _, event in ipairs(SR.Game.events.favoritesChanged) do
+		SR:RegisterEvent(event, function(_, isFavorite, recipeID)
+			if type(recipeID) == "number" then
+				SR.DB.global.favoriteRecipes[recipeID] = isFavorite and true or nil
+				SR:Fire("RECIPES_UPDATED")
+			end
+		end)
+	end
 	local readSpellbook = Util.Debounce(1, function()
 		self:ReadSpellbook()
 		SR:Fire("SKILL_CHANGED") -- profession skill may have gone up
@@ -327,17 +341,30 @@ end
 	reagents     { { itemID, count, unitCost, source = "vendor"|"auction"|nil }, ... }
 ]]
 ---------------------------------------------------------------------------
--- Favorites (account-wide, marked from a recipe's right-click menu)
+-- Favorites
+--
+-- The game's own profession favorites (the star in Blizzard's professions
+-- window) for learned recipes, kept in step both ways: starring a recipe in
+-- SilkRoad stars it in the game, and stars set in the game show in
+-- SilkRoad. Blizzard only allows learned recipes, so SilkRoad remembers
+-- favorites of recipes not learned yet itself (SilkRoadDB.favoriteRecipes,
+-- which also mirrors the game's, for when it can't be asked).
 ---------------------------------------------------------------------------
 
 Recipes.FAVORITE_ICON = "|A:auctionhouse-icon-favorite:12:12|a"
 
 function Recipes:IsFavorite(recipe)
-	return SR.DB.global.favoriteRecipes[recipe.id] == true
+	if SR.DB.global.favoriteRecipes[recipe.id] then
+		return true
+	end
+	return self:IsKnown(recipe) == true and SR.Game.IsRecipeFavorite(recipe.id) == true
 end
 
 function Recipes:SetFavorite(recipe, favorite)
 	SR.DB.global.favoriteRecipes[recipe.id] = favorite and true or nil
+	if self:IsKnown(recipe) == true then
+		SR.Game.SetRecipeFavorite(recipe.id, favorite)
+	end
 	SR:Fire("RECIPES_UPDATED")
 end
 
