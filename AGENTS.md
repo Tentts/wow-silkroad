@@ -1,8 +1,9 @@
 # AGENTS.md
 
 Guidance for anyone, human or coding agent, working on SilkRoad. The
-[README](README.md) describes what the addon does; this file covers how the
-code is organised, the rules it follows and how to work on it.
+[README](README.md) is for players: what the addon does and how to use it.
+[DEV.md](DEV.md) is for developers: running from source, layout, architecture,
+tests and game data. This file covers the rules the code follows and how to work on it.
 
 ## The project
 
@@ -144,8 +145,9 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
   (`git merge --ff-only`). **Push only when asked.**
 - Commit messages: a short summary line, a body explaining the change, and the
   attribution trailer the maintainer uses for agent-made commits.
-- Keep the README (features, commands, layout, roadmap) and this file current when
-  features change.
+- Keep the README (features, commands, roadmap), DEV.md (layout, architecture, testing)
+  and this file current when features change. The README is for players: keep code
+  details, tooling and release mechanics out of it.
 - **Versions:** don't bump on your own initiative. When a bump is asked for, raise only
   the last number (0.7.0 → 0.7.1) unless the maintainer says otherwise. A bump touches
   `## Version` in the TOC, the README badge and the version checks in `tests/scenario.lua`.

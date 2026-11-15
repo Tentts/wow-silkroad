@@ -10,6 +10,7 @@ move-folders:
 # Development files that never go into the zip (dotfiles are skipped automatically).
 ignore:
   - AGENTS.md
+  - DEV.md
   - README.md
   - docs
   - media
