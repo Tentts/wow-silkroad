@@ -163,8 +163,22 @@ SilkRoad works on its own; the optional addons only add information.
 
 ## Installation
 
-1. Download this repository (**Code > Download ZIP**) or clone it.
-2. Copy the **`SilkRoad`** folder (the one containing `SilkRoad.toc`) into:
+### With the CurseForge app (recommended)
+
+1. In the [CurseForge app](https://www.curseforge.com/download/app), open
+   **World of Warcraft** and choose your **Forever** installation.
+2. Search for **SilkRoad** and click **Install**. Or open the
+   [SilkRoad project page](https://www.curseforge.com/projects/1806315) and click **Install**.
+3. Start the game, or type `/reload` if it's already running.
+
+The app keeps SilkRoad up to date; there's nothing to copy by hand.
+
+### Manual download
+
+1. Download the latest zip from the
+   [SilkRoad project page](https://www.curseforge.com/projects/1806315) (**Files**) or from
+   [GitHub Releases](https://github.com/Tentts/wow-silkroad/releases).
+2. Extract it into the AddOns folder, so you end up with `AddOns\SilkRoad\SilkRoad.toc`:
 
    ```
    World of Warcraft\_forever_\Interface\AddOns\
@@ -172,6 +186,12 @@ SilkRoad works on its own; the optional addons only add information.
 
 3. Start the game, or type `/reload` if it's already running, and check that SilkRoad is
    enabled in the AddOns list on the character screen.
+
+### From the source code
+
+For trying unreleased changes. Download this repository (**Code > Download ZIP**) or clone
+it, and copy only the **`SilkRoad`** folder (the one containing `SilkRoad.toc`) into the
+AddOns folder above. The rest of the repository is development files.
 
 > [!TIP]
 > Working on the code? Link the folder instead of copying it, so the game always loads
