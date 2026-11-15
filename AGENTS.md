@@ -9,7 +9,7 @@ tests and game data. This file covers the rules the code follows and how to work
 
 SilkRoad is a crafting and trading addon for **World of Warcraft: Forever**
 (game type "camelot", interface `16001`, Midnight 12.x UI APIs with Classic
-content). Current version: **0.7.0** (`SilkRoad/SilkRoad.toc`).
+content). Current version: **0.7.1** (`SilkRoad/SilkRoad.toc`).
 
 Pages in the SilkRoad window, in sidebar order:
 
@@ -140,9 +140,13 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
 
 ## Workflow
 
-- One **feature branch** per change (`feature/...`, `fix/...`, `docs/...`) from `master`.
-- Merge into `master` **only when the maintainer asks**, as a fast-forward
-  (`git merge --ff-only`). **Push only when asked.**
+- **Branches:** `dev` is the development branch; `master` holds released code.
+  - One **feature branch** per change (`feature/...`, `fix/...`, `docs/...`), created from `dev`.
+  - Feature branches merge into **`dev`**, only when the maintainer asks, as a fast-forward
+    (`git merge --ff-only`; rebase the branch on `dev` first if needed).
+  - `master` only receives `dev`, from time to time, when the maintainer asks. Never merge a
+    feature branch straight into `master`.
+  - **Push only when asked.**
 - Commit messages: a short summary line and a body explaining the change. No
   co-author or "generated with" lines for coding agents, in commits, tags, pull
   requests or release notes: the changelog on CurseForge is built from commit messages.
@@ -152,7 +156,8 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
 - **Versions:** don't bump on your own initiative. When a bump is asked for, raise only
   the last number (0.7.0 → 0.7.1) unless the maintainer says otherwise. A bump touches
   `## Version` in the TOC, the README badge and the version checks in `tests/scenario.lua`.
-- **Releases:** pushing a tag `v<version>` (matching `## Version`) on `master` builds the
+- **Releases:** after `dev` is merged into `master`, pushing a tag `v<version>` (matching
+  `## Version`) on `master` builds the
   zip and uploads it to CurseForge and GitHub Releases (`.github/workflows/release.yml`).
   `-beta1` / `-alpha1` suffixes make beta / alpha files. Tag and push tags only when the
   maintainer asks. Before tagging, rewrite `CHANGELOG.md` with the notes for that version

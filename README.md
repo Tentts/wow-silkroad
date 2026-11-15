@@ -9,7 +9,7 @@
 Find out which recipes make gold, where to sell what you craft, where to get the recipes you're missing, the cheapest way to level a profession, and buy everything a craft needs in a few clicks.
 
 ![Game](https://img.shields.io/badge/WoW-Forever-c79c6e)
-![Version](https://img.shields.io/badge/version-0.7.0-informational)
+![Version](https://img.shields.io/badge/version-0.7.1-informational)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Espa%C3%B1ol-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 

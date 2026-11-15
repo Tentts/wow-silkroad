@@ -129,5 +129,6 @@ creates a file to fill in, and `tools/locales.py` checks it.
 
 1. Read [AGENTS.md](AGENTS.md) for the rules (version-agnostic core, translated strings,
    purchases only from clicks) and the code patterns.
-2. Work on a branch, add scenario steps for what you change, and run the tests.
-3. Open a pull request describing the change and how you tested it in game.
+2. Work on a branch from `dev` (`master` only gets releases), add scenario steps for what
+   you change, and run the tests.
+3. Open a pull request against `dev` describing the change and how you tested it in game.
