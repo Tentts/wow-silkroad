@@ -172,12 +172,19 @@ end
 ---------------------------------------------------------------------------
 
 -- Reagents a recipe needs for `crafts` crafts, without the ones a vendor
--- sells (those are cheaper and simpler to buy from the vendor).
+-- sells (those are cheaper and simpler to buy from the vendor). raw = true
+-- lists the raw materials instead, for crafting every intermediate step
+-- yourself (see Recipes:Breakdown).
 -- Returns { { itemID, quantity }, ... }, skippedCount.
-function BuyLists:RecipeReagents(recipe, crafts)
+function BuyLists:RecipeReagents(recipe, crafts, raw)
 	crafts = math.max(1, math.floor(tonumber(crafts) or 1))
+	local list = recipe.reagents or {}
+	if raw then
+		list = SR.Recipes:Breakdown(recipe, crafts)
+		crafts = 1 -- Breakdown's counts are for every craft already
+	end
 	local reagents, skipped = {}, 0
-	for _, reagent in ipairs(recipe.reagents or {}) do
+	for _, reagent in ipairs(list) do
 		if SR.Prices:GetVendorBuyPrice(reagent.itemID) then
 			skipped = skipped + 1
 		else
@@ -187,14 +194,19 @@ function BuyLists:RecipeReagents(recipe, crafts)
 	return reagents, skipped
 end
 
--- Adds a recipe's reagents to a list; listID nil creates a new list named
--- after the recipe. Returns the list, how many reagents were added and how
--- many were left out because a vendor sells them.
-function BuyLists:AddRecipe(listID, recipe, crafts)
-	local reagents, skipped = self:RecipeReagents(recipe, crafts)
+-- Adds a recipe's reagents (raw = true: its raw materials) to a list;
+-- listID nil creates a new list named after the recipe. Returns the list,
+-- how many reagents were added and how many were left out because a vendor
+-- sells them.
+function BuyLists:AddRecipe(listID, recipe, crafts, raw)
+	local reagents, skipped = self:RecipeReagents(recipe, crafts, raw)
 	local list = self:GetList(listID)
 	if not list then
-		list = self:Create(L["%s x%d"]:format(recipe.name or L["Recipe"], math.max(1, math.floor(tonumber(crafts) or 1))))
+		local name = L["%s x%d"]:format(recipe.name or L["Recipe"], math.max(1, math.floor(tonumber(crafts) or 1)))
+		if raw then
+			name = name .. " " .. L["(raw)"]
+		end
+		list = self:Create(name)
 	end
 	for _, reagent in ipairs(reagents) do
 		self:AddItem(list.id, reagent.itemID, reagent.quantity, true)

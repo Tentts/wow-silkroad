@@ -371,3 +371,11 @@ L.BUYLISTS_EMPTY_BODY = "Pulsa Nueva para crear una lista, o haz clic derecho en
 L.BUYLIST_ITEMS_EMPTY_BODY = "Añade objetos con la casilla de arriba (ID o nombre de objeto, o mayús-clic en un objeto), o haz clic derecho en una receta para añadir sus componentes."
 L.AH_BUYLISTS_EMPTY_BODY = "Crea una lista de compra en SilkRoad (Gestionar listas), o haz clic derecho allí en una receta para añadir sus componentes a una."
 L.AH_BUYLISTS_HINT = "Haz clic en un objeto de la izquierda para buscarlo. Comprar lleva dos clics: Comprar, y después Confirmar al precio que da la casa de subastas."
+
+-- Raw materials
+L["Raw cost"] = "Coste en bruto"
+L["Crafting every step yourself"] = "Fabricando cada paso tú mismo"
+L["Craft %s x%s"] = "Fabricar %s x%s"
+L["(raw)"] = "(en bruto)"
+L["Add raw materials to a buy list"] = "Añadir materiales en bruto a una lista de compra"
+L["Add raw materials to a buy list..."] = "Añadir materiales en bruto a una lista de compra..."

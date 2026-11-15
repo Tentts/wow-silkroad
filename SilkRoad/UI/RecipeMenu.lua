@@ -1,18 +1,19 @@
 --[[ SilkRoad - UI/RecipeMenu.lua
 	The right-click menu for a recipe, shared by the Recipes and Leveling
 	Guide pages: track it in the game's objective tracker (its reagents are
-	listed under the quests), add its reagents to a buy list, or see where
-	to get it.
+	listed under the quests), add its reagents (or the raw materials, for
+	crafting every step) to a buy list, or see where to get it.
 ]]
 local _, SR = ...
 local L = SR.L
 local Widgets = SR.Widgets
 
--- Asks how many crafts, then adds the reagents to the list (nil = a new one).
-local function AddToBuyList(recipe, listID, crafts)
+-- Asks how many crafts, then adds the reagents (raw: the raw materials)
+-- to the list (nil = a new one).
+local function AddToBuyList(recipe, listID, crafts, raw)
 	Widgets.Prompt(L["How many times will you craft %s?"]:format(recipe.name or L["Recipe"]), crafts or 1, function(text)
 		local count = math.max(1, math.floor(tonumber(text) or 1))
-		local list, added, skipped = SR.BuyLists:AddRecipe(listID, recipe, count)
+		local list, added, skipped = SR.BuyLists:AddRecipe(listID, recipe, count, raw)
 		local message = L["Added %d reagents to the buy list %s."]:format(added, list.name)
 		if skipped > 0 then
 			message = message .. " " .. L["%d sold by vendors left out."]:format(skipped)
@@ -21,13 +22,13 @@ local function AddToBuyList(recipe, listID, crafts)
 	end, true)
 end
 
-local function ShowBuyListMenu(recipe, owner, crafts)
+local function ShowBuyListMenu(recipe, owner, crafts, raw)
 	local options = { { label = L["New buy list"], listID = nil } }
 	for _, list in ipairs(SR.BuyLists:GetLists()) do
 		options[#options + 1] = { label = list.name, listID = list.id }
 	end
-	SR.Game.ShowMenu(owner, L["Add to a buy list"], options, function(option)
-		AddToBuyList(recipe, option.listID, crafts)
+	SR.Game.ShowMenu(owner, raw and L["Add raw materials to a buy list"] or L["Add to a buy list"], options, function(option)
+		AddToBuyList(recipe, option.listID, crafts, raw)
 	end)
 end
 
@@ -40,13 +41,18 @@ function SR.UI:ShowRecipeMenu(recipe, owner, crafts)
 	local options = {
 		{ label = tracked and L["Stop tracking"] or L["Track in objectives"], action = "track" },
 		{ label = L["Add to a buy list..."], action = "buylist" },
-		{ label = L["Where to get it"], action = "sources" },
 	}
+	-- Only when some reagent can be crafted (see Recipes:Breakdown).
+	local _, steps = SR.Recipes:Breakdown(recipe, 1, true)
+	if #steps > 0 then
+		options[#options + 1] = { label = L["Add raw materials to a buy list..."], action = "buylist", raw = true }
+	end
+	options[#options + 1] = { label = L["Where to get it"], action = "sources" }
 	SR.Game.ShowMenu(owner, recipe.name or L["Recipe"], options, function(option)
 		if option.action == "track" then
 			SR.Recipes:SetTracked(recipe, not tracked)
 		elseif option.action == "buylist" then
-			ShowBuyListMenu(recipe, owner, crafts)
+			ShowBuyListMenu(recipe, owner, crafts, option.raw)
 		else
 			SR.SourcePopup:Show(recipe)
 		end

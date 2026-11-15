@@ -345,7 +345,7 @@ M.RunTimers()
 check(OutputContains("didn't track"), "says so when the game refuses to track a recipe")
 M.trackRefuse = nil
 M.Click(rowFrame, "RightButton")
-M.PickContextMenu(3)
+M.PickContextMenu("Where to get it")
 check(popup:IsShown(), "'Where to get it' opens the sources window")
 popup:Hide()
 rawset(_G, "LibQuestieDB", nil)
@@ -439,6 +439,81 @@ local threadList, added, skipped = SR.BuyLists:AddRecipe(clothID, threadRecipe, 
 check(threadList.id == clothID and skipped >= 1 and added == #threadRecipe.reagents - skipped, "vendor-sold reagents (thread) are left out")
 check(not SR.BuyLists:GetItem(threadList, 2320), "no thread in the list")
 SR.BuyLists:Delete(clothID)
+
+step("raw materials: crafting every step")
+local forceful = SR.Recipes:GetRecipe(1255123) -- Forceful Medium Armor Kit: Medium Armor Kit, 2 Strange Dust, 2 Elixir of Lion's Strength
+market.auction[2318] = { price = 10, quantity = 100, seen = time() }   -- Light Leather
+market.auction[2319] = { price = 100, quantity = 100, seen = time() }  -- Medium Leather
+market.auction[10940] = { price = 30, quantity = 100, seen = time() }  -- Strange Dust
+market.auction[2454] = { price = 25, quantity = 100, seen = time() }   -- Elixir of Lion's Strength
+local raw, steps = SR.Recipes:Breakdown(forceful, 1)
+local function RawCount(list, itemID)
+	for _, entry in ipairs(list) do
+		if entry.itemID == itemID then return entry.count end
+	end
+end
+check(#steps == 2 and steps[1].recipe.id == 20648 and steps[1].crafts == 4 and steps[2].recipe.id == 2165 and steps[2].crafts == 1,
+	"intermediates, deepest first: 4 Medium Leather, then the Medium Armor Kit")
+check(RawCount(raw, 2318) == 16 and RawCount(raw, 2320) == 1 and RawCount(raw, 10940) == 2 and RawCount(raw, 2454) == 2
+	and not RawCount(raw, 2313) and not RawCount(raw, 2319), "down to 16 Light Leather, thread, dust and elixirs")
+check(SR.Recipes:GetBreakdownProducer(2454, 165) == nil, "another profession's recipe isn't used unless the character knows it")
+market.auction[2318] = nil
+raw = SR.Recipes:Breakdown(forceful, 1)
+check(RawCount(raw, 2319) == 4 and not RawCount(raw, 2934), "without a price for Light Leather, Medium Leather is bought instead")
+market.auction[2318] = { price = 10, quantity = 100, seen = time() }
+SR.DB.char.knownRecipes[2329] = true -- this character brews Elixir of Lion's Strength
+for _, herb in ipairs({ 2449, 765, 3371 }) do market.auction[herb] = { price = 5, quantity = 100, seen = time() } end
+raw = SR.Recipes:Breakdown(forceful, 1)
+check(not RawCount(raw, 2454) and RawCount(raw, 2449) == 2, "known recipes of other professions are crafted too")
+SR.DB.char.knownRecipes[2329] = nil
+raw = SR.Recipes:Breakdown(forceful, 3)
+check(RawCount(raw, 2318) == 48, "times the crafts")
+local exactRaw = SR.Recipes:Breakdown(SR.Recipes:GetRecipe(2165), 0.5, true)
+check(RawCount(exactRaw, 2318) == 8, "fractional amounts for prices")
+
+local kitEval = SR.Recipes:Evaluate(SR.Recipes:GetRecipe(2165))
+check(kitEval.cost == 4 * 100 + 10 and kitEval.rawCost == 16 * 10 + 10, "Raw cost: Medium Leather made from Light Leather")
+check(#kitEval.steps == 1 and #kitEval.raw == 2, "with the steps and raw materials for the tooltip")
+local boltEval = SR.Recipes:Evaluate(SR.Recipes:GetRecipe(2963))
+check(boltEval.steps == nil and boltEval.rawCost == boltEval.cost, "nothing to break down: same as Cost")
+local forcefulEval = SR.Recipes:Evaluate(forceful)
+check(forcefulEval.rawCost == 16 * 10 + 10 + 2 * 30 + 2 * 25, "every step priced")
+
+PickProfession(165) -- Leatherworking
+M.RunTimers()
+local kitRow = RowFor(2165)
+check(kitRow.rawCost == kitEval.rawCost and kitRow.hasSteps, "Raw cost column on the Recipes page")
+for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
+	if frame.row == kitRow then rowFrame = frame end
+end
+M.tooltipLines = {}
+M.RunScript(rowFrame, "OnEnter")
+local tooltipText = table.concat(M.tooltipLines, "\n")
+check(tooltipText:find("16 x Light Leather|", 1, true) and tooltipText:find("Raw cost|", 1, true),
+	"the tooltip shows the raw materials and their cost")
+M.Click(rowFrame, "RightButton")
+M.PickContextMenu("Add raw materials to a buy list...")
+check(M.contextMenu.items[1].text == "Add raw materials to a buy list", "raw materials go to a buy list too")
+M.PickContextMenu("New buy list")
+M.AcceptPopup("2")
+M.RunTimers()
+local rawList = SR.BuyLists:FindByName("Medium Armor Kit x2 (raw)")
+check(rawList and #rawList.items == 1 and rawList.items[1].itemID == 2318 and rawList.items[1].quantity == 32,
+	"a list of raw materials (thread left out: vendors sell it)")
+local boltFrame
+for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
+	if frame.row and frame.row.hasSteps == false then boltFrame = frame end
+end
+M.Click(boltFrame, "RightButton")
+local hasRawOption = false
+for _, item in ipairs(M.contextMenu.items) do
+	if item.text == "Add raw materials to a buy list..." then hasRawOption = true end
+end
+check(not hasRawOption, "no raw option when nothing can be crafted")
+SR.BuyLists:Delete(rawList.id)
+for _, id in ipairs({ 2318, 2319, 10940, 2454, 2449, 765, 3371 }) do market.auction[id] = nil end
+PickProfession(197)
+M.RunTimers()
 
 ---------------------------------------------------------------------------
 step("leveling planner")

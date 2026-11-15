@@ -66,7 +66,8 @@ function Page:BuildRow(recipe, profession)
 		learn = recipe.learn or 0,
 		levelText = color and Util.ColorText(levelText, color) or levelText,
 		source = SR.Sources:Summarize(recipe),
-		cost = evaluation.cost, auctionPrice = evaluation.auctionPrice,
+		cost = evaluation.cost, rawCost = evaluation.rawCost, hasSteps = evaluation.steps ~= nil,
+		auctionPrice = evaluation.auctionPrice,
 		vendorPrice = evaluation.vendorPrice, profit = evaluation.profit,
 		auctionProfit = evaluation.auctionProfit, vendorProfit = evaluation.vendorProfit,
 		bestSale = evaluation.bestSale,
@@ -114,6 +115,20 @@ local function ShowRecipeTooltip(rowFrame, row)
 	end
 	tooltip:AddDoubleLine(L["Total"], evaluation.cost and Util.FormatMoney(evaluation.cost)
 		or (Util.FormatMoney(evaluation.partialCost) .. " +?"), 1, 0.82, 0, 1, 1, 1)
+	if evaluation.steps then
+		tooltip:AddLine(" ")
+		tooltip:AddLine(L["Crafting every step yourself"], 1, 0.82, 0)
+		for _, step in ipairs(evaluation.steps) do
+			tooltip:AddLine(L["Craft %s x%s"]:format(step.recipe.name, Util.Round(step.crafts, 2)), 0.4, 0.75, 1)
+		end
+		for _, entry in ipairs(evaluation.raw) do
+			local entryName = Util.GetItemDisplay(entry.itemID).name
+			local price = entry.unitCost and (Util.FormatMoney(entry.unitCost * entry.count)
+				.. " |cff808080" .. (SOURCE_TAGS[entry.source] or "") .. "|r") or Util.ColorText(L["no price"], COLORS.red)
+			tooltip:AddDoubleLine(("%s x %s"):format(Util.Round(entry.count, 2), entryName), price, 1, 1, 1, 1, 1, 1)
+		end
+		tooltip:AddDoubleLine(L["Raw cost"], evaluation.rawCost and Util.FormatMoney(evaluation.rawCost) or "?", 1, 0.82, 0, 1, 1, 1)
+	end
 	if evaluation.auctionNet then
 		tooltip:AddDoubleLine(L["Auction house, after the %d%% cut"]:format(SR:GetSetting("auctionCutPercent")),
 			Util.FormatMoney(evaluation.auctionNet), 1, 0.82, 0, 1, 1, 1)
@@ -193,6 +208,16 @@ function Page:OnCreate(frame)
 				tooltip = ShowSourceTooltip,
 			},
 			{ key = "cost", title = L["Cost"], width = 88, kind = "money", align = "RIGHT", sortDescFirst = true },
+			-- Crafting every intermediate yourself; "-" when nothing can be crafted.
+			{
+				key = "rawCost", title = L["Raw cost"], width = 88, align = "RIGHT", sortDescFirst = true,
+				format = function(value, row)
+					if not row.hasSteps then
+						return Util.ColorText("-", COLORS.gray)
+					end
+					return Util.FormatMoney(value)
+				end,
+			},
 			{ key = "auctionPrice", title = L["AH price"], width = 88, kind = "money", align = "RIGHT", sortDescFirst = true },
 			{ key = "vendorPrice", title = L["Vendor price"], width = 82, kind = "money", align = "RIGHT", sortDescFirst = true },
 			{ key = "auctionProfit", title = L["AH profit"], width = 92, kind = "profit", align = "RIGHT", sortDescFirst = true },

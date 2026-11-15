@@ -14,6 +14,10 @@
 	  profession), recipeItem (itemID that teaches it, if any),
 	  reagents = { { itemID, count }, ... }
 
+	Evaluate(recipe) prices one craft: cost (buying the reagents), rawCost
+	(crafting every intermediate yourself from raw materials, see
+	Breakdown), sale prices and profits.
+
 	Fires RECIPES_UPDATED when a profession window has been read.
 ]]
 local _, SR = ...
@@ -23,6 +27,7 @@ local Recipes = SR:NewComponent("Recipes")
 
 local decoded = {} -- [recipeID] = recipe
 local bySkill = {} -- [skillLine] = { recipe, ... } (generated data only)
+local producers -- [itemID] = { recipe, ... } that make it, built on first use
 
 local function StaticData()
 	return SR.StaticData or { professions = {}, recipes = {}, items = {} }
@@ -158,6 +163,7 @@ end
 local function SaveLiveRecipe(recipeID, skillLine)
 	local schematic = SR.Game.ReadRecipeSchematic(recipeID)
 	if schematic and #schematic.reagents > 0 and skillLine then
+		producers = nil -- the new recipe may make something
 		SR.DB.global.recipes[recipeID] = {
 			recipeID = recipeID, name = schematic.name, icon = schematic.icon,
 			skillLineID = skillLine, outputItemID = schematic.product,
@@ -319,6 +325,123 @@ end
 	bestSale     "auction" | "vendor": where the result earns more
 	reagents     { { itemID, count, unitCost, source = "vendor"|"auction"|nil }, ... }
 ]]
+---------------------------------------------------------------------------
+-- Raw materials: crafting every step yourself
+---------------------------------------------------------------------------
+
+local MAX_BREAKDOWN_DEPTH = 6
+
+-- Recipes that make an item.
+function Recipes:GetProducers(itemID)
+	if not producers then
+		producers = {}
+		local function Add(recipe)
+			if recipe and recipe.product then
+				producers[recipe.product] = producers[recipe.product] or {}
+				table.insert(producers[recipe.product], recipe)
+			end
+		end
+		for id in pairs(StaticData().recipes) do
+			Add(self:GetRecipe(id))
+		end
+		for id in pairs(SR.DB.global.recipes) do
+			if not StaticData().recipes[id] then
+				Add(self:GetRecipe(id))
+			end
+		end
+	end
+	return producers[itemID] or {}
+end
+
+-- The recipe to make a reagent with when crafting every step of a recipe
+-- of `skillLine`: one of the same profession, or one of another profession
+-- this character knows (an alchemist leatherworker brews their own
+-- elixirs). Known recipes first, then the lowest skill. nil = buy it.
+function Recipes:GetBreakdownProducer(itemID, skillLine)
+	local best, bestKnown
+	for _, recipe in ipairs(self:GetProducers(itemID)) do
+		local known = self:IsKnown(recipe) and true or false
+		if recipe.skillLine == skillLine or known then
+			if not best or (known and not bestKnown)
+				or (known == bestKnown and (recipe.learn or 0) < (best.learn or 0)) then
+				best, bestKnown = recipe, known
+			end
+		end
+	end
+	return best
+end
+
+-- Whether everything a producer needs can be bought or crafted, so that
+-- crafting the item is possible from priced materials.
+function Recipes:CanSourceMaterials(producer, skillLine, depth, visiting)
+	for _, reagent in ipairs(producer.reagents) do
+		if not SR.Prices:GetAcquireCost(reagent.itemID) then
+			local deeper = depth < MAX_BREAKDOWN_DEPTH and self:GetBreakdownProducer(reagent.itemID, skillLine)
+			if not deeper or visiting[deeper.id] then
+				return false
+			end
+			visiting[deeper.id] = true
+			local ok = self:CanSourceMaterials(deeper, skillLine, depth + 1, visiting)
+			visiting[deeper.id] = nil
+			if not ok then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+-- Breaks a recipe down to raw materials: every reagent another recipe
+-- makes (see GetBreakdownProducer) is crafted instead of bought. A reagent
+-- that has a price itself is bought when its own materials can't be (Light
+-- Leather from Ruined Leather Scraps nobody sells).
+--   crafts  how many times the recipe is made (default 1)
+--   exact   true: fractional amounts, for prices; otherwise whole crafts
+-- Returns raw = { { itemID, count }, ... } and steps = { { recipe, crafts }, ... }
+-- (the intermediate crafts, deepest first). steps is empty when nothing
+-- can be broken down.
+function Recipes:Breakdown(recipe, crafts, exact)
+	local raw, rawIndex, steps, stepIndex = {}, {}, {}, {}
+	local visiting = { [recipe.id] = true }
+	local function AddRaw(itemID, count)
+		local entry = rawIndex[itemID]
+		if not entry then
+			entry = { itemID = itemID, count = 0 }
+			rawIndex[itemID] = entry
+			raw[#raw + 1] = entry
+		end
+		entry.count = entry.count + count
+	end
+	local function Expand(current, times, depth)
+		for _, reagent in ipairs(current.reagents) do
+			local need = reagent.count * times
+			local producer = depth < MAX_BREAKDOWN_DEPTH and self:GetBreakdownProducer(reagent.itemID, recipe.skillLine)
+			if producer and (visiting[producer.id] or (SR.Prices:GetAcquireCost(reagent.itemID)
+				and not self:CanSourceMaterials(producer, recipe.skillLine, depth + 1, visiting))) then
+				producer = nil
+			end
+			if producer then
+				local made = math.max(1, producer.quantity or 1)
+				local subCrafts = exact and need / made or math.ceil(need / made - 1e-9)
+				visiting[producer.id] = true
+				Expand(producer, subCrafts, depth + 1)
+				visiting[producer.id] = nil
+				local step = stepIndex[producer.id]
+				if not step then
+					step = { recipe = producer, crafts = 0 }
+					stepIndex[producer.id] = step
+					steps[#steps + 1] = step
+				end
+				step.crafts = step.crafts + subCrafts
+			else
+				AddRaw(reagent.itemID, need)
+			end
+		end
+	end
+	Expand(recipe, crafts or 1, 0)
+	return raw, steps
+end
+
 function Recipes:Evaluate(recipe)
 	local prices = SR.Prices
 	local cost, complete, reagents = 0, true, {}
@@ -333,6 +456,25 @@ function Recipes:Evaluate(recipe)
 	end
 
 	local result = { cost = complete and cost or nil, partialCost = cost, reagents = reagents }
+
+	-- Crafting every step: the raw materials at their cheapest price.
+	local raw, steps = self:Breakdown(recipe, 1, true)
+	if #steps == 0 then
+		result.rawCost = result.cost
+	else
+		local rawCost, rawComplete = 0, true
+		result.raw, result.steps = {}, steps
+		for _, entry in ipairs(raw) do
+			local unitCost, source = prices:GetAcquireCost(entry.itemID)
+			result.raw[#result.raw + 1] = { itemID = entry.itemID, count = entry.count, unitCost = unitCost, source = source }
+			if unitCost then
+				rawCost = rawCost + unitCost * entry.count
+			else
+				rawComplete = false
+			end
+		end
+		result.rawCost = rawComplete and rawCost or nil
+	end
 	local product = recipe.product
 	if product then
 		local quantity = recipe.quantity or 1

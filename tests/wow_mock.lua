@@ -1322,12 +1322,16 @@ define("MenuUtil", {
 		return root
 	end,
 })
--- Clicks the n-th button of the last context menu (titles don't count).
+-- Clicks the n-th button of the last context menu (titles don't count),
+-- or the button with that text.
 function M.PickContextMenu(index)
 	local buttons = {}
 	for _, item in ipairs(M.contextMenu.items) do
-		if item.kind == "button" then buttons[#buttons + 1] = item end
+		if item.kind == "button" then
+			buttons[#buttons + 1] = item
+			if item.text == index then index = #buttons end
+		end
 	end
-	assert(buttons[index], "PickContextMenu: no button " .. index)
+	assert(buttons[index], "PickContextMenu: no button " .. tostring(index))
 	buttons[index].a(buttons[index].data)
 end
