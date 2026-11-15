@@ -19,7 +19,8 @@ Pages in the SilkRoad window, in sidebar order:
 | Leveling Guide | `Modules/Guide.lua` | Dynamic crafting planner, gathering guides with map waypoints, training milestones, shopping list |
 | Buy Lists | `Modules/BuyLists.lua` | Create, rename, copy and delete buy lists and their items (managing only, no buying) |
 | Price Database | `Modules/PriceDatabase.lua` | Item price lookups and recent lookups |
-| Settings | `Modules/Settings.lua` | General, Prices and Data tabs |
+| Settings | `Modules/Settings.lua` | General, Prices and Data tabs (pinned to the bottom) |
+| About | `Modules/About.lua` | Version, project links (copyable boxes), how to open an issue; pinned under Settings |
 
 In the auction house window (tabs added with LibAHTab):
 

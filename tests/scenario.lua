@@ -60,7 +60,27 @@ check(SR.UI.currentPageID == "overview", "opens on the overview page")
 check(SilkRoadMainFrame.PageTitle:GetText() == "Overview", "page title shown")
 check(UISpecialFrames[1] == "SilkRoadMainFrame", "window closes with Escape")
 local nav = SR.UI.navButtons
-check(#nav == 6, "six pages in the sidebar")
+check(#nav == 7, "seven pages in the sidebar")
+local bottomPages = {}
+for _, page in ipairs(SR.UI:GetPages()) do
+	if page.placement == "bottom" then bottomPages[#bottomPages + 1] = page.id end
+end
+check(bottomPages[1] == "about" and bottomPages[2] == "settings", "About is pinned at the very bottom, under Settings")
+
+---------------------------------------------------------------------------
+step("about page")
+SR.UI:OpenPage("about")
+local aboutPage
+for _, page in ipairs(SR.UI:GetPages()) do
+	if page.id == "about" then aboutPage = page end
+end
+check(aboutPage.Version:GetText() == "Version " .. SR.version, "shows the version")
+check(#aboutPage.LinkBoxes == 3 and aboutPage.LinkBoxes[1]:GetText() == "https://github.com/Tentts/wow-silkroad"
+	and aboutPage.LinkBoxes[3]:GetText() == "https://github.com/Tentts", "links to the project and the author")
+check(aboutPage.IssuesBox:GetText() == "https://github.com/Tentts/wow-silkroad/issues", "where to open an issue")
+aboutPage.LinkBoxes[2]:SetText("typed over")
+check(aboutPage.LinkBoxes[2]:GetText():find("curseforge", 1, true), "links can't be edited, only copied")
+SR.UI:OpenPage("overview")
 
 ---------------------------------------------------------------------------
 step("overview")

@@ -76,3 +76,6 @@ L.BUYLISTS_EMPTY_BODY = "Click New to make a list, or right-click a recipe and c
 L.BUYLIST_ITEMS_EMPTY_BODY = "Add items with the box above (an item ID or name, or shift-click an item), or right-click a recipe to add its reagents."
 L.AH_BUYLISTS_EMPTY_BODY = "Make a buy list in SilkRoad (Manage lists), or right-click a recipe there to add its reagents to one."
 L.AH_BUYLISTS_HINT = "Click an item on the left to search it. Buying takes two clicks: Buy, then Confirm at the price the auction house quotes."
+
+L.ABOUT_DESC = "Version, links to the project, and where to send suggestions and problems."
+L.ABOUT_FEEDBACK = "Have a suggestion, or found a problem? Open an issue on SilkRoad's GitHub page; every report helps."

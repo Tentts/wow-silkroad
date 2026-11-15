@@ -36,6 +36,7 @@ Turn any recipe into a **buy list** and buy it item by item from the auction hou
 - [For developers](#for-developers)
 - [Roadmap](#roadmap)
 - [Credits](#credits)
+- [Feedback](#feedback)
 - [License](#license)
 
 ## Features
@@ -147,6 +148,8 @@ worked out from current prices instead of a fixed guide.
 - Movable, resizable and scalable window that closes with **Escape**.
 - **Settings** in three tabs (General, Prices, Data), including a market data wipe and a
   settings reset.
+- An **About** page with the version, links to SilkRoad on GitHub and CurseForge, and where
+  to report problems or suggest ideas (click a link, then Ctrl+C to copy it).
 
 ## Requirements
 
@@ -215,7 +218,7 @@ All prices are per item, in copper, shown in gold, silver and copper.
 | Command | Does |
 |---|---|
 | `/silkroad` or `/silk` | Opens or closes the window |
-| `/silkroad recipes` · `guide` · `buylists` · `overview` · `prices` · `settings` | Opens a page directly |
+| `/silkroad recipes` · `guide` · `buylists` · `overview` · `prices` · `settings` · `about` | Opens a page directly |
 | `/silkroad scan` | Scans the auction house (it must be open) |
 | `/silkroad minimap` | Shows or hides the minimap button |
 | `/silkroad reset` | Resets the window position and size |
@@ -258,7 +261,7 @@ SilkRoad/                  the addon (this folder goes into Interface\AddOns)
 │                          recipe tracking, auction search and purchase)
 ├─ Data/Forever/           game data: recipes and items (generated), gathering facts (hand-kept)
 ├─ UI/                     window, sidebar, data table, widgets, tooltips, AH tab, launchers
-├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Buy Lists, Price Database, Settings
+├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Buy Lists, Price Database, Settings, About
 ├─ Locales/                enUS (base) and translations
 └─ Libs/                   LibStub, LibAHTab
 tools/
@@ -383,6 +386,10 @@ the CurseForge author account settings).
 
 World of Warcraft is a trademark of Blizzard Entertainment, Inc. SilkRoad is a fan-made addon
 and isn't affiliated with or endorsed by Blizzard.
+
+## Feedback
+
+Suggestions and bug reports are welcome: [open an issue](https://github.com/Tentts/wow-silkroad/issues).
 
 ## License
 

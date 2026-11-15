@@ -62,3 +62,4 @@ Modules\Guide.lua
 Modules\BuyLists.lua
 Modules\PriceDatabase.lua
 Modules\Settings.lua
+Modules\About.lua

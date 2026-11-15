@@ -1,7 +1,7 @@
 --[[ SilkRoad - Modules/Settings.lua
 	SilkRoad's settings page, pinned to the bottom of the sidebar, split into
 	tabs by purpose:
-	  General  minimap button, window, the open/close key binding, about
+	  General  minimap button, window, the open/close key binding
 	  Prices   auction house cut, preferred price source, automatic scans
 	  Data     wiping market data, resetting settings
 ]]
@@ -162,16 +162,6 @@ function Page:BuildGeneral(parent)
 
 	local bindingNote = Note(parent, L.KEY_BINDING_NOTE, bindingLabel)
 	bindingNote:SetPoint("TOPLEFT", bindingLabel, "BOTTOMLEFT", 0, -14)
-
-	-- About
-	local about = Section(parent, L["About"], bindingNote, -24)
-	local aboutText = Widgets.CreateLabel(parent, "", "GameFontHighlight")
-	aboutText:SetPoint("TOPLEFT", about, "BOTTOMLEFT", 0, -8)
-	aboutText:SetSpacing(3)
-	aboutText:SetText(table.concat({
-		L["%s version %s"]:format(SR.title, SR.version),
-		L["Type |cffffd100/silkroad help|r in chat for every command."],
-	}, "\n"))
 end
 
 function Page:UpdateKeyButton()
