@@ -143,8 +143,9 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
 - One **feature branch** per change (`feature/...`, `fix/...`, `docs/...`) from `master`.
 - Merge into `master` **only when the maintainer asks**, as a fast-forward
   (`git merge --ff-only`). **Push only when asked.**
-- Commit messages: a short summary line, a body explaining the change, and the
-  attribution trailer the maintainer uses for agent-made commits.
+- Commit messages: a short summary line and a body explaining the change. No
+  co-author or "generated with" lines for coding agents, in commits, tags, pull
+  requests or release notes: the changelog on CurseForge is built from commit messages.
 - Keep the README (features, commands, roadmap), DEV.md (layout, architecture, testing)
   and this file current when features change. The README is for players: keep code
   details, tooling and release mechanics out of it.
