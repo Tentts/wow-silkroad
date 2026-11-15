@@ -134,6 +134,11 @@ function Tab:CreateCard(panel)
 	card.Quantity:SetNumeric(true)
 	card.Quantity:SetPoint("LEFT", quantityLabel, "RIGHT", 12, 0)
 	card.Quantity:HookScript("OnTextChanged", function()
+		-- A quote is only good for the quantity it was asked for.
+		local quote = SR.AuctionBuyer.quote
+		if quote and not quote.auctionID and quote.quantity ~= self:GetQuantity() then
+			SR.AuctionBuyer:Cancel()
+		end
 		self:UpdateCard()
 	end)
 
@@ -225,7 +230,7 @@ end
 function Tab:OnBuyClicked()
 	local buyer = SR.AuctionBuyer
 	if buyer.state == "confirm" then
-		buyer:Confirm()
+		buyer:Confirm(self:GetQuantity())
 	elseif buyer.state == "ready" then
 		buyer:Buy(self:GetQuantity())
 	end

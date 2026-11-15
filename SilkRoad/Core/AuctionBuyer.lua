@@ -4,7 +4,8 @@
 	  Select(itemID)     searches the item (cheapest first)
 	  Buy(quantity)      asks for the price: commodities get a quote from the
 	                     server; other items take the cheapest whole auction
-	  Confirm()          buys at the quoted price
+	  Confirm(quantity)  buys at the quoted price; refused (and the quote
+	                     dropped) if quantity isn't what was quoted
 	  Cancel()           drops the quote
 
 	The game only allows buying from a click, so Buy and Confirm must be
@@ -166,9 +167,13 @@ function Buyer:OnQuote(unitPrice, totalPrice)
 	Update()
 end
 
-function Buyer:Confirm()
+function Buyer:Confirm(quantity)
 	local quote = self.quote
 	if self.state ~= "confirm" or not quote then
+		return
+	end
+	if not quote.auctionID and quantity and quantity ~= quote.quantity then
+		self:Cancel() -- the quantity changed after the quote: ask again
 		return
 	end
 	self.state = "buying"
