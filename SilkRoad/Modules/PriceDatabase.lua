@@ -40,9 +40,15 @@ function Page:OnCreate(frame)
 	end)
 	self.Input:SetPoint("LEFT", inputLabel, "RIGHT", 14, 0)
 
+	-- Typing part of a name lists matching items; picking one looks it up.
+	self.Suggestions = Widgets.AttachItemSuggestions(self.Input, function(itemID)
+		self:Lookup(itemID)
+	end)
+	Widgets.AttachTooltip(self.Input, L["Item"], L.ITEM_SUGGEST_HINT)
+
 	local lookupButton = Widgets.CreateButton(frame, L["Look up"], 100, function()
 		self.Input:ClearFocus()
-		self:Lookup(self.Input:GetText())
+		self:Lookup(self.Suggestions:GetPicked() or self.Input:GetText())
 	end)
 	lookupButton:SetPoint("LEFT", self.Input, "RIGHT", 8, 0)
 
@@ -143,7 +149,8 @@ local function RememberLookup(itemID)
 end
 
 function Page:Lookup(input)
-	self.itemID = Util.ParseItemID(input)
+	self.itemID = Util.ParseItemID(input) or SR.ItemSearch:FindByName(type(input) == "string" and input or nil)
+	self.Suggestions:Hide()
 	self.lookupFailed = input ~= nil and input ~= "" and self.itemID == nil
 	if self.itemID and C_Item.DoesItemExistByID(self.itemID) then
 		RememberLookup(self.itemID)

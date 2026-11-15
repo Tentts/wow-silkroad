@@ -815,6 +815,12 @@ check(pricesPage.lines["provider:auctionator"].Value:GetText():find("Not install
 pricesPage:Lookup("Hearthstone")
 check(pricesPage.itemID == 6948, "lookup by cached item name")
 check(pricesPage.lines.vendorSell.Value:GetText():find("Can't be sold", 1, true), "unsellable items say so")
+M.Type(pricesPage.Input, "light le")
+check(pricesPage.Suggestions:IsShown() and pricesPage.Suggestions.items[1] == 2318, "suggestions while typing here too")
+M.Click(pricesPage.Suggestions.rows[1])
+check(pricesPage.itemID == 2318 and not pricesPage.Suggestions:IsShown(), "picking a suggestion looks it up")
+pricesPage:Lookup("light leather")
+check(pricesPage.itemID == 2318, "a full name from the game data is found, cached or not")
 pricesPage:Lookup("Not A Real Item")
 check(pricesPage.lookupFailed and pricesPage.Panel.Hint:IsShown(), "unknown names explain the failure")
 

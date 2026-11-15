@@ -9,6 +9,7 @@
 	SR.ItemSearch:Find(text, limit) -> { itemID, ... }, best matches first:
 	names starting with the text, then a word starting with it, then names
 	containing it; shorter names first within each group.
+	SR.ItemSearch:FindByName(text) -> itemID of an item with exactly that name.
 ]]
 local _, SR = ...
 local Util = SR.Util
@@ -87,6 +88,15 @@ function ItemSearch:Find(text, limit)
 		result[i] = matches[i].itemID
 	end
 	return result
+end
+
+-- A name typed in full, without picking it from the suggestions.
+function ItemSearch:FindByName(text)
+	text = (text or ""):match("^%s*(.-)%s*$"):lower()
+	local best = self:Find(text, 1)[1]
+	if best and (Util.GetItemDisplay(best).name or ""):lower() == text then
+		return best
+	end
 end
 
 function ItemSearch:OnEnable()

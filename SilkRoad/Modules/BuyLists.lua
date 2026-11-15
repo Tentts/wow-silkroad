@@ -68,14 +68,7 @@ end
 function Page:AddFromInput()
 	local list = self:SelectedList()
 	local text = self.ItemInput:GetText()
-	local itemID = self.Suggestions:GetPicked() or Util.ParseItemID(text)
-	if not itemID then
-		-- A name typed in full, without picking it from the suggestions.
-		local best = SR.ItemSearch:Find(text, 1)[1]
-		if best and (Util.GetItemDisplay(best).name or ""):lower() == text:match("^%s*(.-)%s*$"):lower() then
-			itemID = best
-		end
-	end
+	local itemID = self.Suggestions:GetPicked() or Util.ParseItemID(text) or SR.ItemSearch:FindByName(text)
 	if not list then
 		return
 	end

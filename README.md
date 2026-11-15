@@ -148,7 +148,8 @@ worked out from current prices instead of a fixed guide.
 - **Merchant prices are recorded** every time you open a vendor, but you never have to visit
   vendors: common reagent prices come from the game data.
 - **Price Database** page: look up any item by ID, name or shift-clicked link to see every
-  known price side by side. Your last 20 lookups stay one click away.
+  known price side by side. Typing part of a name suggests matching items. Your last 20
+  lookups stay one click away.
 
 ### Comfort
 
