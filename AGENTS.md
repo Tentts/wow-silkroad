@@ -142,8 +142,10 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
 - Commit messages: a short summary line, a body explaining the change, and the
   attribution trailer the maintainer uses for agent-made commits.
 - Keep the README (features, commands, layout, roadmap) and this file current when
-  features change. Bump `## Version` in the TOC (and the README badge and the version
-  checks in `tests/scenario.lua`) for releases.
+  features change.
+- **Versions:** don't bump on your own initiative. When a bump is asked for, raise only
+  the last number (0.7.0 → 0.7.1) unless the maintainer says otherwise. A bump touches
+  `## Version` in the TOC, the README badge and the version checks in `tests/scenario.lua`.
 - `tools/generate_data.py` regenerates `Data/Forever/Recipes.lua` after a game patch;
   never edit that file by hand.
 
