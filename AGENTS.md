@@ -9,7 +9,7 @@ tests and game data. This file covers the rules the code follows and how to work
 
 SilkRoad is a crafting and trading addon for **World of Warcraft: Forever**
 (game type "camelot", interface `16001`, Midnight 12.x UI APIs with Classic
-content). Current version: **0.7.1** (`SilkRoad/SilkRoad.toc`).
+content). Current version: **0.7.2** (`SilkRoad/SilkRoad.toc`).
 
 Pages in the SilkRoad window, in sidebar order:
 
