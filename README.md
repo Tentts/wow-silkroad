@@ -4,11 +4,11 @@
 
 **A crafting and trading companion for World of Warcraft: Forever.**
 
-Find out which recipes make gold, where to sell what you craft, where to get the recipes you're missing, and the cheapest way to level a profession.
+Find out which recipes make gold, where to sell what you craft, where to get the recipes you're missing, the cheapest way to level a profession, and buy everything a craft needs in a few clicks.
 
 ![Game](https://img.shields.io/badge/WoW-Forever-c79c6e)
 ![Interface](https://img.shields.io/badge/interface-16001-blue)
-![Version](https://img.shields.io/badge/version-0.6.0-informational)
+![Version](https://img.shields.io/badge/version-0.7.0-informational)
 ![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Espa%C3%B1ol-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -19,9 +19,10 @@ Find out which recipes make gold, where to sell what you craft, where to get the
 
 SilkRoad lists **every recipe of every profession** and works out, for each one,
 what its materials cost and what the result sells for, on the auction house and to
-a vendor. It scans the auction house on its own, knows which reagents vendors sell
-and for how much, tells you where each recipe is obtained, and marks the recipes
-your character already knows.
+a vendor, whether you buy the reagents or craft every step yourself. It scans the
+auction house on its own, knows which reagents vendors sell and for how much, tells
+you where each recipe is obtained, and marks the recipes your character already knows.
+Turn any recipe into a **buy list** and buy it item by item from the auction house.
 
 ## Contents
 
@@ -55,17 +56,24 @@ your character already knows.
   | **Level** | Skill needed to learn it, coloured like the profession window for your character (red: not yet, orange, yellow, green, grey). |
   | **Obtained at** | Trainer, learned with the profession, or the vendor, drop, quest or container that gives the recipe. **Click** for every source with zone and coordinates. |
   | **Cost** | Materials at the cheapest price per reagent, vendor or auction house. |
+  | **Raw cost** | The same craft made from raw materials, crafting every intermediate yourself (a Medium Armor Kit for a Forceful one, Medium Leather from Light Leather). `-` when nothing in the recipe can be crafted. |
   | **AH price** / **Vendor price** | What the result sells for. |
   | **AH profit** / **Vendor profit** | Earnings after the material cost (the AH one after the auction house cut). |
   | **Sell to** | *Auction* or *Vendor*, whichever earns more. Sorting by it sorts by the better profit. |
 
-- Hover a recipe for a **per-reagent cost breakdown** showing where each price comes from.
+- Hover a recipe for a **per-reagent cost breakdown** showing where each price comes from,
+  and, when reagents can be crafted, the **intermediate crafts and raw materials** behind
+  the Raw cost.
 - Click a source to set a **waypoint**, through [TomTom](https://www.curseforge.com/wow/addons/tomtom)
   if installed, otherwise the game's own map pin.
-- **Right-click** a recipe (here or in a Leveling Guide step) to **track it in the objective
-  tracker**, under your quests, where the game counts its reagents as you gather them,
-  or to **add its reagents to a buy list** (you choose how many crafts; reagents vendors
-  sell are left out).
+- **Right-click** a recipe (here or in a Leveling Guide step) for its menu:
+  - **Track in objectives**: the game's objective tracker lists it under your quests and
+    counts its reagents as you gather them.
+  - **Add to a buy list...**: its reagents, times the crafts you ask for (a guide step
+    suggests its own count). Reagents vendors sell are left out.
+  - **Add raw materials to a buy list...**: the raw materials for crafting every step
+    yourself, shown when something in the recipe can be crafted.
+  - **Where to get it**: every source of the recipe.
 
 ### Buy lists
 
@@ -73,12 +81,17 @@ Named shopping lists for the auction house, shared by all your characters.
 
 - **Manage them** on the Buy Lists page: create, rename, copy and delete lists, add items
   (item ID, name or a shift-clicked link) and set how many of each you want.
+- **Fill them from recipes**: right-click a recipe for its reagents, or its raw materials
+  (lists named like *Medium Armor Kit x2 (raw)*).
 - Each item shows how many you **have**, how many are **left** to buy, and the cost at the
   latest scan prices. Items you have enough of are marked done, and so are finished lists.
 - **Buy them** from the **Buy Lists tab** in the auction house: pick a list, click an item
   to search it, set the quantity (what's left, by default), then **Buy** and **Confirm** at
   the price the auction house quotes. **Next item** moves on to the next thing to buy.
   The game needs a click for every purchase, so nothing is ever bought automatically.
+- Stackable reagents are bought by **quantity**; other items one **whole auction** at a time,
+  cheapest per item first. Your own auctions are skipped, and changing the quantity after
+  **Buy** drops the quote, so you always confirm the amount you see.
 
 ### Leveling guide
 
@@ -174,7 +187,9 @@ SilkRoad works on its own; the optional addons only add information.
 3. Go to **Recipes**, pick a profession and sort by **Sell to** to see the most profitable
    crafts first.
 4. Want to level up? Open **Leveling Guide**, pick the profession and follow the steps.
-5. Optional: set a key in **Settings > General > Key binding** to open SilkRoad instantly.
+5. Right-click a recipe and choose **Add to a buy list...**, then buy the list from the
+   **Buy Lists** tab of the auction house.
+6. Optional: set a key in **Settings > General > Key binding** to open SilkRoad instantly.
 
 ## How prices are worked out
 
@@ -186,6 +201,7 @@ All prices are per item, in copper, shown in gold, silver and copper.
 | **Vendor sell price** (what a vendor pays you) | The game's item data. |
 | **Vendor buy price** (what a merchant charges) | In order: a price SilkRoad recorded at a merchant, one Auctionator recorded, or the game's item data for items vendors are known to sell (via QuestieDB). |
 | **Material cost** | Per reagent, the cheaper of its vendor buy price and auction price. Left empty when a reagent has no price at all. |
+| **Raw cost** | Material cost with every craftable reagent crafted instead: by a recipe of the same profession, or of another profession your character knows. A reagent that has a price is bought when its own materials can't be priced (Light Leather rather than Ruined Leather Scraps nobody sells). |
 | **AH profit** | Auction price × quantity made, minus the auction house cut (5% by default, adjustable), minus material cost. |
 | **Vendor profit** | Vendor sell price × quantity made, minus material cost. |
 
@@ -199,7 +215,7 @@ All prices are per item, in copper, shown in gold, silver and copper.
 | Command | Does |
 |---|---|
 | `/silkroad` or `/silk` | Opens or closes the window |
-| `/silkroad recipes` · `guide` · `overview` · `prices` · `settings` | Opens a page directly |
+| `/silkroad recipes` · `guide` · `buylists` · `overview` · `prices` · `settings` | Opens a page directly |
 | `/silkroad scan` | Scans the auction house (it must be open) |
 | `/silkroad minimap` | Shows or hides the minimap button |
 | `/silkroad reset` | Resets the window position and size |
@@ -238,7 +254,8 @@ SilkRoad/                  the addon (this folder goes into Interface\AddOns)
 │  ├─ Merchants.lua        records merchant prices
 │  ├─ Bindings.lua         key binding helpers
 │  └─ Util.lua             formatting and item helpers
-├─ Game/Forever.lua        SR.Game: Forever's own APIs (professions, merchants, maps, names)
+├─ Game/Forever.lua        SR.Game: Forever's own APIs (professions, merchants, maps, names,
+│                          recipe tracking, auction search and purchase)
 ├─ Data/Forever/           game data: recipes and items (generated), gathering facts (hand-kept)
 ├─ UI/                     window, sidebar, data table, widgets, tooltips, AH tab, launchers
 ├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Buy Lists, Price Database, Settings
@@ -250,6 +267,8 @@ tools/
 tests/                     smoke test: runs the addon outside the game against a mock client
 scripts/                   link-addon.ps1, test.ps1
 docs/                      FOREVER_API_NOTES.md, TRANSLATING.md
+media/                     artwork (icon); not part of the addon
+AGENTS.md                  conventions and workflow for contributors and coding agents
 ```
 
 ### Architecture
@@ -266,9 +285,11 @@ docs/                      FOREVER_API_NOTES.md, TRANSLATING.md
 - **Prices.** Everything reads through `SR.Prices`. New auction price sources plug in with
   `SR.Prices:RegisterProvider{ id, label, IsAvailable, GetPrice }`.
 - **Messages.** Components talk through `SR:Fire` / `SR:RegisterCallback`:
-  `SETTING_CHANGED`, `PRICES_UPDATED`, `RECIPES_UPDATED`, `SCAN_STATUS`, `ITEM_INFO_RECEIVED`.
-- **Saved data.** `SilkRoadDB` (account: settings, auction data per realm, merchant prices)
-  and `SilkRoadCharDB` (per character: known recipes). Documented in `Core/Database.lua`.
+  `SETTING_CHANGED`, `PRICES_UPDATED`, `RECIPES_UPDATED`, `SKILL_CHANGED`, `SCAN_STATUS`,
+  `ITEM_INFO_RECEIVED`, `BUYLISTS_UPDATED`, `AUCTION_BUYER_UPDATED`.
+- **Saved data.** `SilkRoadDB` (account: settings, auction data per realm, merchant prices,
+  buy lists) and `SilkRoadCharDB` (per character: known recipes). Documented in
+  `Core/Database.lua`.
 
 ### Testing
 
@@ -278,7 +299,9 @@ powershell -ExecutionPolicy Bypass -File scripts/test.ps1
 
 The smoke test compiles the addon with real **Lua 5.1** (the game's version) and drives it
 through `tests/scenario.lua` against a mock game client: every page, the auction scanner,
-recipes, tooltips, settings and key binding, plus a second pass as a Spanish client. The mock
+recipes and their right-click menu, raw-material breakdowns, buy lists and auction house
+purchases, tooltips, settings and key binding, plus a second pass as a Spanish client
+(about 400 checks). The mock
 checks every widget method, frame template and game function the addon uses against the
 API lists generated from the Forever client, and rejects layout and global-variable mistakes.
 The first run sets up `tests/.venv` (with [lupa](https://pypi.org/project/lupa/)) and downloads
@@ -312,6 +335,7 @@ Research on the Forever client, its APIs and their quirks is collected in
 - [x] Simple levelling guides for gathering professions
 - [x] Recipe tracking in the objective tracker
 - [x] Buy lists, bought from the auction house
+- [x] Raw materials: Raw cost and raw buy lists for crafting every step
 - [ ] Crafting queue
 - [ ] Price history and trends
 - [ ] More languages
