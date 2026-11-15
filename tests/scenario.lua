@@ -852,11 +852,11 @@ local settingsPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "settings" then settingsPage = page end
 end
-local minimapCheck, tooltipCheck, stackCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
-check(stackCheck:GetChecked() == false, "whole-stack tooltip prices are off by default")
-M.Click(stackCheck)
-check(SR:GetSetting("tooltipStackPrices") == true, "the whole-stack checkbox turns it on")
-M.Click(stackCheck)
+local minimapCheck, tooltipModeDropdown, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+check(SR:GetSetting("tooltipMode") == "single", "tooltip prices for one item by default")
+M.PickDropdown(tooltipModeDropdown, 4)
+check(SR:GetSetting("tooltipMode") == "both", "the tooltip mode selector")
+M.PickDropdown(tooltipModeDropdown, 2)
 check(minimapCheck:GetChecked() == true, "minimap checkbox reflects the setting")
 M.Click(minimapCheck)
 check(SR:GetSetting("minimap.hide") == true and not SilkRoadMinimapButton:IsShown(), "minimap button hidden")
@@ -1248,13 +1248,14 @@ check(#M.tooltipLines == 1 and M.tooltipLines[1]:find("^SilkRoad vendor"), "no a
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, { id = 60001, lines = {} })
 check(M.tooltipLines[#M.tooltipLines] == "SilkRoad auction|" .. "|cff808080no data|r", "items without an auction price say so")
-SR:SetSetting("tooltipPrices", false)
+SR:SetSetting("tooltipMode", "off")
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, { id = 2589, lines = {} })
 check(#M.tooltipLines == 0, "turned off in settings")
-SR:SetSetting("tooltipPrices", true)
+SR:SetSetting("tooltipMode", "single")
 
--- Shift over a stack in the bags: prices for the whole stack.
+-- Stacks in the bags: Shift, and the tooltip modes.
+local rebuildsBefore
 local linenVendor = SR.StaticData.items[2589][4]
 M.containerItems[0] = { [3] = { 2589, 20 } }
 M.tooltipInfo = { getterName = "GetBagItem", getterArgs = { 0, 3, n = 2 } }
@@ -1273,17 +1274,33 @@ M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
 check(M.tooltipRebuilds == 2 and M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "releasing Shift goes back to one")
 M.FireEvent("MODIFIER_STATE_CHANGED", "LCTRL", 1)
 check(M.tooltipRebuilds == 2, "other keys don't rebuild it")
-SR:SetSetting("tooltipStackPrices", true)
+SR:SetSetting("tooltipMode", "stack")
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, M.tooltipData)
-check(M.tooltipLines[1] == "SilkRoad vendor x20|" .. Util.FormatMoney(linenVendor * 20), "setting on: the whole stack by default")
+check(M.tooltipLines[1] == "SilkRoad vendor x20|" .. Util.FormatMoney(linenVendor * 20), "Whole stack mode: the stack by default")
 M.modifiers.shift = true
 M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
 check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "and Shift shows one item")
 M.modifiers.shift = false
-SR:SetSetting("tooltipStackPrices", false)
+SR:SetSetting("tooltipMode", "both")
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, M.tooltipData)
+check(M.tooltipLines[1] == "SilkRoad vendor 1 / 20|" .. Util.FormatMoney(linenVendor) .. " / " .. Util.FormatMoney(linenVendor * 20)
+	and M.tooltipLines[2] == "SilkRoad auction 1 / 20|" .. Util.FormatMoney(47) .. " / " .. Util.FormatMoney(47 * 20),
+	"Single and stack mode: both, slash separated")
+rebuildsBefore = M.tooltipRebuilds
 M.modifiers.shift = true
-local rebuildsBefore = M.tooltipRebuilds
+M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
+check(M.tooltipRebuilds == rebuildsBefore, "Shift has nothing to swap when both are shown")
+M.modifiers.shift = false
+M.containerItems[0][3] = { 2589, 1 }
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, M.tooltipData)
+check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "a single item shows one price in any mode")
+M.containerItems[0][3] = { 2589, 20 }
+SR:SetSetting("tooltipMode", "single")
+M.modifiers.shift = true
+rebuildsBefore = M.tooltipRebuilds
 M.tooltipInfo = { getterName = "GetItemByID", getterArgs = { 2589, n = 1 } }
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, M.tooltipData)
@@ -1293,6 +1310,13 @@ check(M.tooltipRebuilds == rebuildsBefore, "and Shift leaves those tooltips alon
 M.modifiers.shift = false
 M.tooltipInfo, M.tooltipData = nil, nil
 GameTooltip:Hide()
+-- 0.7.0's on/off switch becomes a mode.
+SR.DB.settings.tooltipMode, SR.DB.settings.tooltipPrices = nil, false
+SR.DB:OnInitialize()
+check(SR:GetSetting("tooltipMode") == "off" and SR.DB.settings.tooltipPrices == nil, "tooltip prices turned off in 0.7.0 stay off")
+SR.DB.settings.tooltipMode, SR.DB.settings.tooltipPrices = nil, true
+SR.DB:OnInitialize()
+check(SR:GetSetting("tooltipMode") == "single", "turned on: one item's price")
 
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")

@@ -62,8 +62,7 @@ DB.ACCOUNT_DEFAULTS = {
 		auctionCutPercent = 5,
 		priceSource = "auto", -- "auto" or a price provider id (see Core/Prices.lua)
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
-		tooltipPrices = true, -- vendor and auction prices in item tooltips
-		tooltipStackPrices = false, -- tooltips show the whole stack's price (Shift shows one item)
+		tooltipMode = "single", -- prices in item tooltips: "off" | "single" | "stack" | "both"
 		settingsTab = "general", -- last tab shown on the Settings page
 		guide = {
 			profession = nil,         -- skillLineID last shown on the Leveling Guide page
@@ -116,6 +115,12 @@ function DB:OnInitialize()
 	end
 
 	Migrate(SilkRoadDB, accountMigrations)
+	-- 0.7.0 had an on/off switch for tooltip prices; it became a mode.
+	local settings = SilkRoadDB.settings
+	if type(settings) == "table" and settings.tooltipPrices ~= nil then
+		settings.tooltipMode = settings.tooltipMode or (settings.tooltipPrices == false and "off" or "single")
+		settings.tooltipPrices = nil
+	end
 	Migrate(SilkRoadCharDB, characterMigrations)
 	Util.CopyDefaults(SilkRoadDB, self.ACCOUNT_DEFAULTS)
 	Util.CopyDefaults(SilkRoadCharDB, self.CHARACTER_DEFAULTS)
@@ -221,7 +226,7 @@ end
 
 -- Every setting back to its default. Done in place, so code holding the
 -- settings table keeps working; listeners are told about each setting.
-local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipPrices", "tooltipStackPrices", "debug" }
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "debug" }
 
 function DB:ResetSettings()
 	Clear(self.settings)

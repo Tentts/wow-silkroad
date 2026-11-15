@@ -53,7 +53,6 @@ L.WIPE_MARKET_DESC = "Los precios de subasta de todos los escaneos, en todos los
 L.WIPE_MARKET_CONFIRM = "¿Borrar todos los precios de subasta y de vendedor que ha registrado SilkRoad? No se puede deshacer."
 L.RESET_SETTINGS_DESC = "Devuelve todos los ajustes de SilkRoad a sus valores por defecto, incluidos el tamaño y la posición de la ventana. Tus datos y la asignación de tecla se mantienen."
 L.RESET_SETTINGS_CONFIRM = "¿Restablecer todos los ajustes de SilkRoad a sus valores por defecto?"
-L.TOOLTIP_PRICES_TOOLTIP = "Añade a las descripciones de objetos lo que paga un vendedor y el precio de subasta más bajo. La línea de subasta solo aparece en objetos que se pueden vender allí. Mantén Mayús sobre una pila de tus bolsas para ver la pila entera."
 
 L["%d days ago"] = "hace %d días"
 L["%d h ago"] = "hace %d h"
@@ -395,5 +394,11 @@ L.ABOUT_FEEDBACK = "¿Tienes una sugerencia o has encontrado un problema? Abre u
 -- Stack prices in tooltips
 L["SilkRoad vendor x%d"] = "SilkRoad vendedor x%d"
 L["SilkRoad auction x%d"] = "SilkRoad subasta x%d"
-L["Show prices for the whole stack"] = "Mostrar precios de la pila entera"
-L.TOOLTIP_STACK_TOOLTIP = "En las pilas de tus bolsas, las líneas de la descripción muestran el precio de la pila entera en vez de un objeto. Mantén Mayús para ver el precio de un objeto."
+L["Off"] = "Desactivado"
+L["Single item"] = "Un objeto"
+L["Whole stack"] = "Pila entera"
+L["Single and stack"] = "Objeto y pila"
+L["SilkRoad vendor 1 / %d"] = "SilkRoad vendedor 1 / %d"
+L["SilkRoad auction 1 / %d"] = "SilkRoad subasta 1 / %d"
+L.TOOLTIP_MODE_TOOLTIP = "Añade a las descripciones de objetos lo que paga un vendedor y el precio de subasta más bajo (la línea de subasta solo en objetos que se pueden vender allí). En las pilas de tus bolsas, muestra el precio de un objeto, el de la pila entera o ambos."
+L.TOOLTIP_MODE_NOTE = "Mantener Mayús sobre una pila cambia entre un objeto y la pila entera."

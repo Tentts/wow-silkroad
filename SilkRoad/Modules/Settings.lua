@@ -107,23 +107,22 @@ function Page:BuildGeneral(parent)
 		end))
 	minimap:SetPoint("TOPLEFT", general, "BOTTOMLEFT", -2, -8)
 
-	local tooltips = self:Track(Widgets.CreateCheckbox(parent, L["Prices in item tooltips"], L.TOOLTIP_PRICES_TOOLTIP,
-		function()
-			return SR:GetSetting("tooltipPrices")
-		end,
-		function(checked)
-			SR:SetSetting("tooltipPrices", checked)
-		end))
-	tooltips:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 0, -2)
-
-	local stackPrices = self:Track(Widgets.CreateCheckbox(parent, L["Show prices for the whole stack"], L.TOOLTIP_STACK_TOOLTIP,
-		function()
-			return SR:GetSetting("tooltipStackPrices")
-		end,
-		function(checked)
-			SR:SetSetting("tooltipStackPrices", checked)
-		end))
-	stackPrices:SetPoint("TOPLEFT", tooltips, "BOTTOMLEFT", 16, -2) -- indented: part of the tooltip prices
+	local tooltipLabel = Widgets.CreateLabel(parent, L["Prices in item tooltips"], "GameFontHighlight")
+	tooltipLabel:SetPoint("TOPLEFT", minimap, "BOTTOMLEFT", 4, -8)
+	local tooltipMode = self:Track(Widgets.CreateDropdown(parent, 220, {
+		{ value = "off", label = L["Off"] },
+		{ value = "single", label = L["Single item"] },
+		{ value = "stack", label = L["Whole stack"] },
+		{ value = "both", label = L["Single and stack"] },
+	}, function()
+		return SR:GetSetting("tooltipMode")
+	end, function(value)
+		SR:SetSetting("tooltipMode", value)
+	end))
+	tooltipMode:SetPoint("LEFT", tooltipLabel, "RIGHT", 12, 0)
+	Widgets.AttachTooltip(tooltipMode, L["Prices in item tooltips"], L.TOOLTIP_MODE_TOOLTIP)
+	local tooltipNote = Note(parent, L.TOOLTIP_MODE_NOTE, tooltipLabel)
+	tooltipNote:SetPoint("TOPLEFT", tooltipLabel, "BOTTOMLEFT", 0, -12)
 
 	local scale = self:Track(Widgets.CreateSlider(parent, L["Window scale"], 0.7, 1.5, 0.05,
 		function()
@@ -135,7 +134,7 @@ function Page:BuildGeneral(parent)
 		function(value)
 			return ("%d%%"):format(Util.Round(value * 100))
 		end))
-	scale:SetPoint("TOPLEFT", stackPrices, "BOTTOMLEFT", -12, -10)
+	scale:SetPoint("TOPLEFT", tooltipNote, "BOTTOMLEFT", 0, -14)
 
 	local reset = Widgets.CreateButton(parent, L["Reset window position"], 180, function()
 		SR.UI:ResetLayout()
