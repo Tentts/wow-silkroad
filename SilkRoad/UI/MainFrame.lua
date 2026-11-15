@@ -74,6 +74,7 @@ function UI:OnInitialize()
 		refresh()
 	end)
 	SR:RegisterCallback("RECIPES_UPDATED", refresh)
+	SR:RegisterCallback("BUYLISTS_UPDATED", refresh)
 	SR:RegisterCallback("ITEM_INFO_RECEIVED", function()
 		if self:IsShown() then
 			refresh()

@@ -304,3 +304,41 @@ function Widgets.Confirm(text, onAccept)
 	end
 	StaticPopup_Show(CONFIRM_DIALOG, text, nil, onAccept)
 end
+
+-- A dialog asking for a line of text (a name, an amount). onAccept(text)
+-- runs on OK or Enter; numeric = true only accepts digits.
+local PROMPT_DIALOG = "SILKROAD_PROMPT"
+
+function Widgets.Prompt(text, default, onAccept, numeric)
+	if not StaticPopupDialogs[PROMPT_DIALOG] then
+		local function Accept(dialog, data)
+			local box = dialog:GetEditBox()
+			data.onAccept(box and box:GetText() or "")
+		end
+		StaticPopupDialogs[PROMPT_DIALOG] = {
+			text = "%s",
+			button1 = OKAY,
+			button2 = CANCEL,
+			hasEditBox = true,
+			OnShow = function(dialog, data)
+				local box = dialog:GetEditBox()
+				box:SetNumeric(data.numeric and true or false)
+				box:SetText(data.default or "")
+				box:HighlightText()
+			end,
+			OnAccept = Accept,
+			EditBoxOnEnterPressed = function(box, data)
+				local dialog = box:GetParent()
+				Accept(dialog, data)
+				dialog:Hide()
+			end,
+			EditBoxOnEscapePressed = function(box)
+				box:GetParent():Hide()
+			end,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+		}
+	end
+	StaticPopup_Show(PROMPT_DIALOG, text, nil, { default = default and tostring(default) or "", onAccept = onAccept, numeric = numeric })
+end

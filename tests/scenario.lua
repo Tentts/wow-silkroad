@@ -60,7 +60,7 @@ check(SR.UI.currentPageID == "overview", "opens on the overview page")
 check(SilkRoadMainFrame.PageTitle:GetText() == "Overview", "page title shown")
 check(UISpecialFrames[1] == "SilkRoadMainFrame", "window closes with Escape")
 local nav = SR.UI.navButtons
-check(#nav == 5, "five pages in the sidebar")
+check(#nav == 6, "six pages in the sidebar")
 
 ---------------------------------------------------------------------------
 step("overview")
@@ -345,12 +345,100 @@ M.RunTimers()
 check(OutputContains("didn't track"), "says so when the game refuses to track a recipe")
 M.trackRefuse = nil
 M.Click(rowFrame, "RightButton")
-M.PickContextMenu(2)
+M.PickContextMenu(3)
 check(popup:IsShown(), "'Where to get it' opens the sources window")
 popup:Hide()
 rawset(_G, "LibQuestieDB", nil)
 rawset(_G, "QuestieLoader", nil)
 SR.Sources:ResetCache()
+
+---------------------------------------------------------------------------
+step("buy lists: managing them")
+SR.UI:OpenPage("buylists")
+local buyPage
+for _, page in ipairs(SR.UI:GetPages()) do
+	if page.id == "buylists" then buyPage = page end
+end
+check(#buyPage.Lists.rows == 0, "no lists at first")
+check(not buyPage.ItemInput:IsEnabled(), "nothing to add to without a list")
+M.Click(buyPage.ListButtons[1]) -- New
+M.AcceptPopup("Cloth")
+M.RunTimers()
+check(#buyPage.Lists.rows == 1 and buyPage:SelectedList().name == "Cloth", "New asks for a name and selects the list")
+local clothID = buyPage:SelectedList().id
+buyPage.ItemInput:SetText("2589")
+buyPage.AmountInput:SetText("20")
+M.Click(buyPage.AddButton)
+M.RunTimers()
+check(#buyPage.Items.rows == 1 and buyPage.Items.rows[1].quantity == 20, "items are added with an amount")
+M.bags[2589] = 5
+buyPage.ItemInput:SetText("item:2589")
+buyPage.AmountInput:SetText("10")
+M.Click(buyPage.AddButton)
+M.RunTimers()
+local linenRow = buyPage.Items.rows[1]
+check(linenRow.quantity == 30 and linenRow.have == 5 and linenRow.remaining == 25, "adding again adds to the amount; have and left")
+check(linenRow.unitPrice == 50 and linenRow.cost == 25 * 50, "priced from the auction scan")
+check(buyPage.Summary:GetText():find("0 of 1 items done", 1, true), "progress summary")
+M.Click(buyPage.Items.ScrollBox.__active[1])
+M.AcceptPopup("8")
+M.RunTimers()
+check(buyPage.Items.rows[1].quantity == 8, "clicking an item changes its amount")
+M.Click(buyPage.Items.ScrollBox.__active[1], "RightButton")
+M.PickContextMenu(1)
+M.AcceptPopup("4")
+M.RunTimers()
+check(buyPage.Items.rows[1].remaining == 0 and buyPage.Items.rows[1].quality == 0, "items you have enough of are done (grey)")
+check(buyPage.Lists.rows[1].name:find("(complete)", 1, true), "a list with everything is complete")
+M.Click(buyPage.ListButtons[3]) -- Copy
+M.RunTimers()
+check(#buyPage.Lists.rows == 2 and buyPage:SelectedList().name == "Cloth (2)" and #buyPage:SelectedList().items == 1,
+	"Copy duplicates the list with a free name")
+M.Click(buyPage.ListButtons[2]) -- Rename
+M.AcceptPopup("Spare")
+M.RunTimers()
+check(buyPage:SelectedList().name == "Spare", "Rename")
+M.Click(buyPage.Items.ScrollBox.__active[1], "RightButton")
+M.PickContextMenu(2)
+M.RunTimers()
+check(#buyPage.Items.rows == 0, "Remove takes an item out")
+M.Click(buyPage.ListButtons[4]) -- Delete
+M.AcceptPopup()
+M.RunTimers()
+check(#buyPage.Lists.rows == 1 and buyPage:SelectedList().id == clothID, "Delete asks first, then removes the list")
+M.bags[2589] = nil
+
+step("buy lists: a recipe's reagents from its right-click menu")
+SR.UI:OpenPage("recipes")
+PickProfession(197)
+M.RunTimers()
+local boltRow = RowFor(2963)
+for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
+	if frame.row == boltRow then rowFrame = frame end
+end
+M.Click(rowFrame, "RightButton")
+check(M.contextMenu.items[3].text == "Add to a buy list...", "the recipe menu offers buy lists")
+M.PickContextMenu(2)
+check(M.contextMenu.items[1].text == "Add to a buy list" and M.contextMenu.items[2].text == "New buy list"
+	and M.contextMenu.items[3].text == "Cloth", "pick a new or an existing list")
+M.PickContextMenu(1)
+check(M.lastPopup and M.lastPopup.text:find("How many times", 1, true), "asks how many crafts")
+M.AcceptPopup("10")
+M.RunTimers()
+local boltList = SR.BuyLists:FindByName("Bolt of Linen Cloth x10")
+check(boltList and #boltList.items == 1 and boltList.items[1].itemID == 2589 and boltList.items[1].quantity == 20,
+	"a new list named after the recipe, with reagents x crafts")
+check(OutputContains("Added 1 reagents to the buy list Bolt of Linen Cloth x10"), "confirmed in chat")
+local threadRecipe
+for _, recipe in ipairs(SR.Recipes:GetRecipes(197)) do
+	for _, reagent in ipairs(recipe.reagents) do
+		if reagent.itemID == 2320 and #recipe.reagents > 1 then threadRecipe = threadRecipe or recipe end
+	end
+end
+local threadList, added, skipped = SR.BuyLists:AddRecipe(clothID, threadRecipe, 2)
+check(threadList.id == clothID and skipped >= 1 and added == #threadRecipe.reagents - skipped, "vendor-sold reagents (thread) are left out")
+check(not SR.BuyLists:GetItem(threadList, 2320), "no thread in the list")
+SR.BuyLists:Delete(clothID)
 
 ---------------------------------------------------------------------------
 step("leveling planner")
@@ -881,6 +969,76 @@ check(M.replicateRequests == 6, "SilkRoad doesn't send a second request")
 rawset(_G, "Auctionator", { SavedState = "unexpected" })
 check(SR.Scanner:GetCooldownRemaining() == 0, "unexpected Auctionator data is ignored")
 rawset(_G, "Auctionator", nil)
+
+step("buy lists in the auction house")
+check(LibAHTab:DoesIDExist("SilkRoadBuyLists"), "a Buy Lists tab in the auction house")
+M.OpenAuctionHouse()
+M.RunTimers()
+SR.DB.settings.buyLists.selected = boltList.id
+LibAHTab:SetSelected("SilkRoadBuyLists")
+local buyTab = SR.BuyListsTab
+check(SilkRoadBuyListsPanel:IsVisible() and #buyTab.Items.rows == 1, "the selected list's items")
+check(buyTab.Card.Hint:IsShown(), "hint until an item is picked")
+M.ahListings[2589] = { { 5, 40, own = 5 }, { 12, 45 }, { 100, 60 } }
+M.Click(buyTab.Items.ScrollBox.__active[1])
+check(SR.AuctionBuyer.state == "searching" and M.ahSearches[#M.ahSearches] == 2589, "clicking an item searches it")
+M.RunTimers()
+check(SR.AuctionBuyer.state == "ready" and SR.AuctionBuyer:GetAvailable() == 112, "results without the player's own auctions")
+check(buyTab.Card.Quantity:GetText() == "20", "quantity defaults to what's left")
+check(buyTab.Card.Cost:GetText():find("20 cost about", 1, true), "estimated cost")
+check(buyTab.Card.BuyButton:GetText() == "Buy 20" and buyTab.Card.BuyButton:IsEnabled(), "Buy button")
+M.Click(buyTab.Card.BuyButton)
+check(M.ahPending and M.ahPending.quantity == 20 and SR.AuctionBuyer.state == "quoting", "Buy asks the server for the price")
+M.RunTimers()
+local expected = 12 * 45 + 8 * 60
+check(SR.AuctionBuyer.state == "confirm" and buyTab.Card.BuyButton:GetText():find("Confirm: 20 for", 1, true),
+	"then Confirm at the quoted price")
+M.Click(buyTab.Card.CancelButton)
+check(M.ahCancelled == 1 and SR.AuctionBuyer.state == "ready", "Cancel drops the quote")
+M.Click(buyTab.Card.BuyButton)
+M.RunTimers()
+M.Click(buyTab.Card.BuyButton)
+check(SR.AuctionBuyer.state == "buying", "Confirm buys")
+M.RunTimers()
+check(M.bags[2589] == 20 and OutputContains("Bought 20 x Linen Cloth for " .. SR.Util.FormatMoney(expected)), "bought and reported")
+M.RunTimers()
+check(buyTab.Items.rows[1].remaining == 0 and buyTab.Card.Need:GetText():find("Done", 1, true), "the list updates from the bags")
+SR.BuyLists:AddItem(boltList.id, 2996, 2)
+SR.BuyLists:AddItem(boltList.id, 4306, 3)
+M.ahNotCommodity[2996] = true
+M.ahListings[2996] = { { 1, 500 }, { 2, 400 } }
+M.ahListings[4306] = { { 50, 420 } }
+M.RunTimers()
+M.Click(buyTab.Card.NextButton)
+M.RunTimers()
+check(buyTab.itemID ~= 2589 and buyTab.itemID ~= nil, "Next item picks one still to buy")
+buyTab:SelectItem(2996)
+M.RunTimers()
+check(SR.AuctionBuyer.commodity == false and SR.AuctionBuyer.listings[1].unitPrice == 200, "separate auctions, cheapest per item first")
+M.Click(buyTab.Card.BuyButton)
+check(buyTab.Card.BuyButton:GetText():find("Confirm: 2 for", 1, true), "whole auction at its buyout")
+M.Click(buyTab.Card.BuyButton)
+M.RunTimers()
+check(M.ahBids[1].auctionID == 102 and M.ahBids[1].amount == 400 and M.bags[2996] == 2, "buys the auction")
+buyTab:SelectItem(4306)
+M.RunTimers()
+M.ahPurchaseFails = true
+M.Click(buyTab.Card.BuyButton)
+M.RunTimers()
+M.Click(buyTab.Card.BuyButton)
+M.RunTimers()
+check(OutputContains("purchase of Silk Cloth failed") and SR.AuctionBuyer.state == "ready", "failed purchases are reported, then searched again")
+M.ahSearchThrottled = true
+SR.AuctionBuyer:Search()
+check(SR.AuctionBuyer.state == "throttled", "waits when the auction house is busy")
+M.ahSearchThrottled = false
+M.FireEvent("AUCTION_HOUSE_THROTTLED_SYSTEM_READY")
+M.RunTimers()
+check(SR.AuctionBuyer.state == "ready", "and searches once it's ready")
+M.CloseAuctionHouse()
+check(SR.AuctionBuyer.state == "idle", "closing the auction house resets the buyer")
+M.OpenAuctionHouse()
+M.RunTimers()
 
 step("Blizzard's tabs take over again")
 LibAHTab:SetSelected("SilkRoad")

@@ -39,6 +39,8 @@ Core\Gathering.lua
 Core\Merchants.lua
 Core\Bindings.lua
 Core\AuctionScanner.lua
+Core\AuctionBuyer.lua
+Core\BuyLists.lua
 
 # UI framework
 UI\Widgets.lua
@@ -47,6 +49,7 @@ UI\MainFrame.lua
 UI\Launcher.lua
 UI\OptionsPanel.lua
 UI\AuctionHouseTab.lua
+UI\AuctionHouseBuyLists.lua
 UI\SourcePopup.lua
 UI\RecipeMenu.lua
 UI\Tooltip.lua
@@ -55,5 +58,6 @@ UI\Tooltip.lua
 Modules\Overview.lua
 Modules\Recipes.lua
 Modules\Guide.lua
+Modules\BuyLists.lua
 Modules\PriceDatabase.lua
 Modules\Settings.lua

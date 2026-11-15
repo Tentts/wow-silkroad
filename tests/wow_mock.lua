@@ -844,6 +844,117 @@ define("C_AuctionHouse", {
 	end,
 })
 
+-- Searching and buying single items. M.ahListings[itemID] = { { quantity,
+-- unitPrice, own = n of them the player's } } for commodities, or
+-- { { quantity, buyout } } for items in M.ahNotCommodity. Purchases put the
+-- items in M.bags. M.ahPurchaseFails makes the next purchase fail.
+M.ahListings = {}
+M.ahNotCommodity = {}
+M.ahSearches = {}
+M.ahSearchThrottled = false
+local function ItemKeyFor(itemID)
+	return { itemID = itemID, itemLevel = 0, itemSuffix = 0, battlePetSpeciesID = 0 }
+end
+local function ActiveListings(itemID)
+	local list = {}
+	for _, listing in ipairs(M.ahListings[itemID] or {}) do
+		if listing[1] > 0 then list[#list + 1] = listing end
+	end
+	return list
+end
+local function TakeFromListings(itemID, quantity)
+	local left = quantity
+	for _, listing in ipairs(ActiveListings(itemID)) do
+		local take = math.min(left, listing[1] - (listing.own or 0))
+		listing[1] = listing[1] - take
+		left = left - take
+	end
+	M.bags[itemID] = (M.bags[itemID] or 0) + quantity - left
+end
+C_AuctionHouse.IsThrottledMessageSystemReady = function() return not M.ahSearchThrottled end
+C_AuctionHouse.MakeItemKey = function(itemID)
+	assert(type(itemID) == "number", "MakeItemKey: item ID expected")
+	return ItemKeyFor(itemID)
+end
+C_AuctionHouse.GetItemKeyInfo = function(itemKey)
+	assert(type(itemKey) == "table" and itemKey.itemID, "GetItemKeyInfo: item key expected")
+	return { itemID = itemKey.itemID, isCommodity = not M.ahNotCommodity[itemKey.itemID] }
+end
+C_AuctionHouse.SendSearchQuery = function(itemKey, sorts, separateOwnerItems)
+	assert(type(itemKey) == "table" and type(sorts) == "table" and type(separateOwnerItems) == "boolean",
+		"SendSearchQuery: itemKey, sorts, separateOwnerItems expected")
+	assert(not M.ahSearchThrottled, "SendSearchQuery while throttled")
+	table.insert(M.ahSearches, itemKey.itemID)
+	M.Schedule(0.2, function()
+		if M.ahNotCommodity[itemKey.itemID] then
+			M.FireEvent("ITEM_SEARCH_RESULTS_UPDATED", ItemKeyFor(itemKey.itemID))
+		else
+			M.FireEvent("COMMODITY_SEARCH_RESULTS_UPDATED", itemKey.itemID)
+		end
+	end)
+end
+C_AuctionHouse.GetNumCommoditySearchResults = function(itemID) return #ActiveListings(itemID) end
+C_AuctionHouse.GetCommoditySearchResultInfo = function(itemID, index)
+	local listing = ActiveListings(itemID)[index]
+	return listing and { itemID = itemID, quantity = listing[1], unitPrice = listing[2], auctionID = index,
+		numOwnerItems = listing.own or 0, owners = {}, totalNumberOfOwners = 1, containsOwnerItem = (listing.own or 0) > 0,
+		containsAccountItem = false }
+end
+C_AuctionHouse.GetNumItemSearchResults = function(itemKey) return #ActiveListings(itemKey.itemID) end
+C_AuctionHouse.GetItemSearchResultInfo = function(itemKey, index)
+	local listing = ActiveListings(itemKey.itemID)[index]
+	return listing and { itemKey = itemKey, auctionID = 100 + index, quantity = listing[1], buyoutAmount = listing[2],
+		owners = {}, totalNumberOfOwners = 1, timeLeft = 0, containsOwnerItem = false, containsAccountItem = false,
+		containsSocketedItem = false }
+end
+C_AuctionHouse.StartCommoditiesPurchase = function(itemID, quantity)
+	assert(type(itemID) == "number" and type(quantity) == "number", "StartCommoditiesPurchase: itemID, quantity expected")
+	M.ahPending = { itemID = itemID, quantity = quantity }
+	local total, left = 0, quantity
+	for _, listing in ipairs(ActiveListings(itemID)) do
+		local take = math.min(left, listing[1] - (listing.own or 0))
+		total, left = total + take * listing[2], left - take
+	end
+	M.Schedule(0.2, function()
+		M.FireEvent("COMMODITY_PRICE_UPDATED", math.floor(total / quantity), total)
+	end)
+end
+C_AuctionHouse.ConfirmCommoditiesPurchase = function(itemID, quantity)
+	assert(M.ahPending and M.ahPending.itemID == itemID and M.ahPending.quantity == quantity,
+		"ConfirmCommoditiesPurchase: not the started purchase")
+	M.ahPending = nil
+	M.Schedule(0.2, function()
+		if M.ahPurchaseFails then
+			M.ahPurchaseFails = nil
+			M.FireEvent("COMMODITY_PURCHASE_FAILED")
+			return
+		end
+		TakeFromListings(itemID, quantity)
+		M.FireEvent("COMMODITY_PURCHASE_SUCCEEDED")
+		M.FireEvent("BAG_UPDATE_DELAYED")
+	end)
+end
+C_AuctionHouse.CancelCommoditiesPurchase = function()
+	M.ahPending = nil
+	M.ahCancelled = (M.ahCancelled or 0) + 1
+end
+C_AuctionHouse.PlaceBid = function(auctionID, bidAmount)
+	assert(type(auctionID) == "number" and type(bidAmount) == "number", "PlaceBid: auctionID, bidAmount expected")
+	M.ahBids = M.ahBids or {}
+	table.insert(M.ahBids, { auctionID = auctionID, amount = bidAmount })
+	M.Schedule(0.2, function()
+		for itemID in pairs(M.ahNotCommodity) do
+			local listing = ActiveListings(itemID)[auctionID - 100]
+			if listing then
+				M.bags[itemID] = (M.bags[itemID] or 0) + listing[1]
+				listing[1] = 0
+			end
+		end
+		M.FireEvent("AUCTION_HOUSE_PURCHASE_COMPLETED", auctionID)
+		M.FireEvent("BAG_UPDATE_DELAYED")
+	end)
+end
+
 -- Simulates Blizzard_AuctionHouseUI loading the first time an auctioneer is visited.
 function M.LoadAuctionHouseUI()
 	local frame = NewWidget("Frame", "AuctionHouseFrame", UIParent)
@@ -1097,6 +1208,8 @@ define("IsControlKeyDown", function() return M.modifiers.ctrl or false end)
 define("IsShiftKeyDown", function() return M.modifiers.shift or false end)
 define("NOT_BOUND", "Not Bound")
 define("YES", "Yes")
+define("OKAY", "Okay")
+define("CANCEL", "Cancel")
 define("NO", "No")
 
 -- Popups: M.lastPopup holds the shown dialog; M.AcceptPopup() clicks Yes.
@@ -1106,10 +1219,24 @@ define("StaticPopup_Show", function(which, text1, text2, data)
 	M.lastPopup = { dialog = dialog, text = dialog.text:format(text1, text2), data = data }
 	return {}
 end)
-function M.AcceptPopup()
+-- M.AcceptPopup(text) types `text` into a dialog's edit box first (else
+-- the box keeps the text OnShow put there).
+function M.AcceptPopup(text)
 	local popup = assert(M.lastPopup, "no popup shown")
 	M.lastPopup = nil
-	popup.dialog.OnAccept({}, popup.data)
+	local box = { text = "" }
+	function box:SetText(value) self.text = value end
+	function box:GetText() return self.text end
+	function box:SetNumeric() end
+	function box:HighlightText() end
+	local dialog = { GetEditBox = function() return box end, Hide = function() end }
+	if popup.dialog.hasEditBox and popup.dialog.OnShow then
+		popup.dialog.OnShow(dialog, popup.data)
+	end
+	if text then
+		box.text = text
+	end
+	popup.dialog.OnAccept(dialog, popup.data)
 end
 
 -- Item tooltips: post-call hooks, and lines added to GameTooltip ("left|right").

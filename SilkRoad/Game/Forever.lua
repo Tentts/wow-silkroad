@@ -16,6 +16,7 @@
 	SR.Game.IsRecipeTracked / SetRecipeTracked(recipeID[, tracked])  the objective tracker's recipe list
 	SR.Game.GetRecipeName / GetItemName / GetProfessionName(id)  names in the client's language, or nil
 	SR.Game.SetWaypoint(uiMapID, x, y, title)  x, y in 0..1; returns true on success
+	SR.Game.Auction*                       searching and buying one item at the auction house
 ]]
 local _, SR = ...
 if SR.flavor ~= "forever" then
@@ -214,4 +215,85 @@ function Game.SetWaypoint(uiMapID, x, y, title)
 		return true
 	end
 	return false
+end
+
+---------------------------------------------------------------------------
+-- Auction house: searching and buying one item (Buy Lists tab)
+---------------------------------------------------------------------------
+
+local PRICE_SORT = { { sortOrder = 0, reverseSort = false } } -- Enum.AuctionHouseSortOrder.Price
+
+-- Events the buyer listens to, by purpose.
+Game.auctionEvents = {
+	results = { "COMMODITY_SEARCH_RESULTS_UPDATED", "ITEM_SEARCH_RESULTS_UPDATED" },
+	price = "COMMODITY_PRICE_UPDATED",
+	purchased = { "COMMODITY_PURCHASE_SUCCEEDED", "AUCTION_HOUSE_PURCHASE_COMPLETED" },
+	failed = { "COMMODITY_PURCHASE_FAILED" },
+	ready = "AUCTION_HOUSE_THROTTLED_SYSTEM_READY",
+	closed = "AUCTION_HOUSE_CLOSED",
+}
+
+function Game.AuctionCanSearch()
+	return C_AuctionHouse.IsThrottledMessageSystemReady()
+end
+
+function Game.AuctionSearch(itemID)
+	C_AuctionHouse.SendSearchQuery(C_AuctionHouse.MakeItemKey(itemID), PRICE_SORT, false)
+end
+
+-- Whether stacks of the item are sold by quantity (commodities) rather than
+-- as separate auctions. nil while the game doesn't know yet.
+function Game.AuctionIsCommodity(itemID)
+	local info = C_AuctionHouse.GetItemKeyInfo(C_AuctionHouse.MakeItemKey(itemID))
+	if info then
+		return info.isCommodity
+	end
+end
+
+-- Listings of the last search, cheapest first:
+-- { { auctionID, quantity, unitPrice, buyout (whole auction, items only) }, ... }
+-- The character's own auctions are left out: they can't be bought.
+function Game.AuctionReadResults(itemID)
+	local listings = {}
+	if Game.AuctionIsCommodity(itemID) then
+		for index = 1, C_AuctionHouse.GetNumCommoditySearchResults(itemID) do
+			local result = C_AuctionHouse.GetCommoditySearchResultInfo(itemID, index)
+			local buyable = result and result.quantity - (result.numOwnerItems or 0) or 0
+			if buyable > 0 then
+				listings[#listings + 1] = { auctionID = result.auctionID, quantity = buyable, unitPrice = result.unitPrice }
+			end
+		end
+	else
+		local itemKey = C_AuctionHouse.MakeItemKey(itemID)
+		for index = 1, C_AuctionHouse.GetNumItemSearchResults(itemKey) do
+			local result = C_AuctionHouse.GetItemSearchResultInfo(itemKey, index)
+			if result and result.buyoutAmount and not result.containsOwnerItem then
+				listings[#listings + 1] = {
+					auctionID = result.auctionID, quantity = result.quantity, buyout = result.buyoutAmount,
+					unitPrice = math.floor(result.buyoutAmount / math.max(1, result.quantity)),
+				}
+			end
+		end
+		table.sort(listings, function(a, b) return a.unitPrice < b.unitPrice end)
+	end
+	return listings
+end
+
+-- Commodities: the game quotes the final price (COMMODITY_PRICE_UPDATED),
+-- then the purchase is confirmed. Both need a click by the player.
+function Game.AuctionStartCommodityPurchase(itemID, quantity)
+	C_AuctionHouse.StartCommoditiesPurchase(itemID, quantity)
+end
+
+function Game.AuctionConfirmCommodityPurchase(itemID, quantity)
+	C_AuctionHouse.ConfirmCommoditiesPurchase(itemID, quantity)
+end
+
+function Game.AuctionCancelCommodityPurchase()
+	C_AuctionHouse.CancelCommoditiesPurchase()
+end
+
+-- Other items: buys one whole auction at its buyout price (needs a click).
+function Game.AuctionBuyout(auctionID, buyout)
+	C_AuctionHouse.PlaceBid(auctionID, buyout)
 end

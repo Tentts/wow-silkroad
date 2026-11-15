@@ -29,6 +29,9 @@
 	                 Recipes read from a profession window that the generated
 	                 game data (Data/<Flavor>/Recipes.lua) doesn't have.
 	                 Shared by all characters.
+	  buyLists       { nextID = n, lists = { [id] = { id, name, created = time(),
+	                   items = { { itemID, quantity }, ... } } } }
+	                 Buy lists (Core/BuyLists.lua), shared by all characters.
 
 	SilkRoadCharDB (per character)
 	  schemaVersion  number
@@ -71,12 +74,16 @@ DB.ACCOUNT_DEFAULTS = {
 			profession = nil,  -- skillLineID last shown on the Recipes page
 			knownOnly = false,
 		},
+		buyLists = {
+			selected = nil,    -- id of the list last shown (Buy Lists page and auction house tab)
+		},
 	},
 	markets = {},
 	scanner = {},
 	recentLookups = {},
 	vendorPrices = {},
 	recipes = {},
+	buyLists = {},
 }
 
 DB.CHARACTER_DEFAULTS = {

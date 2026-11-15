@@ -63,7 +63,22 @@ your character already knows.
 - Click a source to set a **waypoint**, through [TomTom](https://www.curseforge.com/wow/addons/tomtom)
   if installed, otherwise the game's own map pin.
 - **Right-click** a recipe (here or in a Leveling Guide step) to **track it in the objective
-  tracker**, under your quests, where the game counts its reagents as you gather them.
+  tracker**, under your quests, where the game counts its reagents as you gather them,
+  or to **add its reagents to a buy list** (you choose how many crafts; reagents vendors
+  sell are left out).
+
+### Buy lists
+
+Named shopping lists for the auction house, shared by all your characters.
+
+- **Manage them** on the Buy Lists page: create, rename, copy and delete lists, add items
+  (item ID, name or a shift-clicked link) and set how many of each you want.
+- Each item shows how many you **have**, how many are **left** to buy, and the cost at the
+  latest scan prices. Items you have enough of are marked done, and so are finished lists.
+- **Buy them** from the **Buy Lists tab** in the auction house: pick a list, click an item
+  to search it, set the quantity (what's left, by default), then **Buy** and **Confirm** at
+  the price the auction house quotes. **Next item** moves on to the next thing to buy.
+  The game needs a click for every purchase, so nothing is ever bought automatically.
 
 ### Leveling guide
 
@@ -101,6 +116,7 @@ worked out from current prices instead of a fixed guide.
   SilkRoad records the results too, without a request of its own.
 - A small **SilkRoad tab** in the auction house window shows the last scan and a countdown,
   and has a **Scan now** button, the auto-scan toggle and shortcuts into SilkRoad.
+- A **Buy Lists tab** buys your [buy lists](#buy-lists) item by item.
 
 ### Prices everywhere
 
@@ -217,13 +233,15 @@ SilkRoad/                  the addon (this folder goes into Interface\AddOns)
 │  ├─ Gathering.lua        gathering guides: nodes, creature levels and zones per skill
 │  ├─ Sources.lua          where recipes come from, which reagents vendors sell (QuestieDB)
 │  ├─ AuctionScanner.lua   full auction house scans within the 15-minute limit
+│  ├─ AuctionBuyer.lua     searches and buys one item at a time (Buy Lists tab)
+│  ├─ BuyLists.lua         buy lists: items, amounts, what's left to buy
 │  ├─ Merchants.lua        records merchant prices
 │  ├─ Bindings.lua         key binding helpers
 │  └─ Util.lua             formatting and item helpers
 ├─ Game/Forever.lua        SR.Game: Forever's own APIs (professions, merchants, maps, names)
 ├─ Data/Forever/           game data: recipes and items (generated), gathering facts (hand-kept)
 ├─ UI/                     window, sidebar, data table, widgets, tooltips, AH tab, launchers
-├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Price Database, Settings
+├─ Modules/                one file per page: Overview, Recipes, Leveling Guide, Buy Lists, Price Database, Settings
 ├─ Locales/                enUS (base) and translations
 └─ Libs/                   LibStub, LibAHTab
 tools/
@@ -292,6 +310,8 @@ Research on the Forever client, its APIs and their quirks is collected in
 - [x] Tooltip prices, key binding, translations
 - [x] Dynamic levelling planner with progress tracking and a shopping list
 - [x] Simple levelling guides for gathering professions
+- [x] Recipe tracking in the objective tracker
+- [x] Buy lists, bought from the auction house
 - [ ] Crafting queue
 - [ ] Price history and trends
 - [ ] More languages

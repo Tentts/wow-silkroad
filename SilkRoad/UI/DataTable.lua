@@ -26,6 +26,7 @@
 	})
 	tbl:SetRows(rows)        -- array of plain tables
 	tbl:SetFilter(function(row) return true end)
+	tbl:SetSelected(function(row) return isSelected end) -- highlights rows; call before SetRows
 
 	"item" columns show row.icon and colour the text by row.quality.
 	Modified clicks on rows with row.itemID (shift-click to link, ctrl-click to
@@ -211,6 +212,11 @@ function DataTableMixin:BuildRow(rowFrame)
 	rowFrame.Stripe:SetAllPoints()
 	rowFrame.Stripe:SetColorTexture(1, 1, 1, 0.03)
 
+	rowFrame.Selected = rowFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
+	rowFrame.Selected:SetAllPoints()
+	rowFrame.Selected:SetColorTexture(1, 0.82, 0, 0.12)
+	rowFrame.Selected:Hide()
+
 	local highlight = rowFrame:CreateTexture(nil, "HIGHLIGHT")
 	highlight:SetAllPoints()
 	highlight:SetColorTexture(1, 0.82, 0, 0.1)
@@ -311,6 +317,7 @@ function DataTableMixin:InitRow(rowFrame, row)
 	end
 	rowFrame.row = row
 	rowFrame.Stripe:SetShown(row._index ~= nil and row._index % 2 == 0)
+	rowFrame.Selected:SetShown(self.isSelected ~= nil and self.isSelected(row) and true or false)
 	self:LayoutRow(rowFrame)
 
 	for index, column in ipairs(self.columns) do
@@ -379,6 +386,10 @@ end
 function DataTableMixin:SetRows(rows)
 	self.rows = rows or {}
 	self:Refresh(true)
+end
+
+function DataTableMixin:SetSelected(predicate)
+	self.isSelected = predicate
 end
 
 function DataTableMixin:SetFilter(predicate)

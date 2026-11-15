@@ -70,3 +70,9 @@ L.GUIDE_GAP_HINT = "No recipe this plan may use gives skill-ups here. Allow more
 L.GUIDE_EMPTY_BODY = "There is nothing to plan for this profession and target."
 L.GATHER_NO_NODE_DATA = "Enable GatherMate2 and GatherMate2_Data for node counts per zone and waypoints to nodes."
 L.TRAINER_STARTING_ZONE_NOTE = "Starting-zone trainers only teach up to 75: find a trainer in a capital or a larger town."
+
+L.BUYLISTS_DESC = "Lists of items to buy at the auction house: make and edit them here, then buy them from the Buy Lists tab of the auction house."
+L.BUYLISTS_EMPTY_BODY = "Click New to make a list, or right-click a recipe and choose \"Add to a buy list\" to fill one with its reagents."
+L.BUYLIST_ITEMS_EMPTY_BODY = "Add items with the box above (an item ID or name, or shift-click an item), or right-click a recipe to add its reagents."
+L.AH_BUYLISTS_EMPTY_BODY = "Make a buy list in SilkRoad (Manage lists), or right-click a recipe there to add its reagents to one."
+L.AH_BUYLISTS_HINT = "Click an item on the left to search it. Buying takes two clicks: Buy, then Confirm at the price the auction house quotes."

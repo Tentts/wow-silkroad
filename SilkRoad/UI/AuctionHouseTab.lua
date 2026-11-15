@@ -77,6 +77,7 @@ function AuctionHouseTab:CreateTab()
 	end)
 
 	LibAHTab:CreateTab(TAB_ID, panel, SR.title, SR.title)
+	SR.BuyListsTab:Create(LibAHTab)
 end
 
 function AuctionHouseTab:CreateScanCard(panel)
@@ -151,6 +152,7 @@ function AuctionHouseTab:CreateInfoCard(panel)
 	local shortcuts = {
 		{ label = L["Open SilkRoad"], page = nil },
 		{ label = L["Recipes"], page = "recipes" },
+		{ label = L["Buy Lists"], page = "buylists" },
 		{ label = L["Price Database"], page = "prices" },
 	}
 	local previous

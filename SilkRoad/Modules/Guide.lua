@@ -224,7 +224,7 @@ function Page:OnCreate(frame)
 		onRowEnter = ShowStepTooltip,
 		onRowClick = function(row, mouseButton, rowFrame)
 			if mouseButton == "RightButton" and row.step.recipe then
-				SR.UI:ShowRecipeMenu(row.step.recipe, rowFrame)
+				SR.UI:ShowRecipeMenu(row.step.recipe, rowFrame, row.step.crafts)
 			end
 		end,
 	})
