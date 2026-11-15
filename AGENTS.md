@@ -155,7 +155,9 @@ Prefer picking menu entries by label. Visual layout still needs a `/reload` in g
 - **Releases:** pushing a tag `v<version>` (matching `## Version`) on `master` builds the
   zip and uploads it to CurseForge and GitHub Releases (`.github/workflows/release.yml`).
   `-beta1` / `-alpha1` suffixes make beta / alpha files. Tag and push tags only when the
-  maintainer asks. New top-level development files or folders must be added to the
+  maintainer asks. Before tagging, rewrite `CHANGELOG.md` with the notes for that version
+  only: the packager uploads the whole file as the release notes. Write it for players
+  (what's new, what's fixed), never commit hashes or internal details. New top-level development files or folders must be added to the
   `ignore` list in `.pkgmeta` so they stay out of the zip.
 - `tools/generate_data.py` regenerates `Data/Forever/Recipes.lua` after a game patch;
   never edit that file by hand.

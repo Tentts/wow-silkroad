@@ -10,6 +10,7 @@ move-folders:
 # Development files that never go into the zip (dotfiles are skipped automatically).
 ignore:
   - AGENTS.md
+  - CHANGELOG.md
   - DEV.md
   - README.md
   - docs
@@ -18,4 +19,8 @@ ignore:
   - tests
   - tools
 
-# Changelog: generated from the commit messages since the previous tag.
+# Release notes: the whole of CHANGELOG.md, written by hand for each release
+# (only the version being released). Commit messages are never used.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
