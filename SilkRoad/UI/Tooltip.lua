@@ -4,9 +4,9 @@
 	  SilkRoad auction   lowest auction buyout, for items that can be sold
 	                     (not bind-on-pickup, soulbound, account-bound or quest items)
 	Settings > General picks the mode: off, single item, whole stack, or
-	single and stack ("SilkRoad vendor 1 / 20   5c / 1s"). Stacks are the
-	ones in the bags, bank and reagent bag; holding Shift swaps single and
-	stack while hovering.
+	single and stack (one line each: "SilkRoad vendor" and "SilkRoad vendor
+	x20"). Stacks are the ones in the bags, bank and reagent bag; holding
+	Shift swaps single and stack while hovering.
 ]]
 local _, SR = ...
 local L = SR.L
@@ -47,14 +47,18 @@ local function ShownAs(mode, count)
 	return stack and "stack" or "single"
 end
 
--- The label and value of one price line.
-local function PriceLine(singleLabel, stackLabel, bothLabel, price, count, shownAs)
-	if shownAs == "stack" then
-		return stackLabel:format(count), Util.FormatMoney(price * count)
-	elseif shownAs == "both" then
-		return bothLabel:format(count), Util.FormatMoney(price) .. " / " .. Util.FormatMoney(price * count)
+local function AddLine(tooltip, label, value)
+	tooltip:AddDoubleLine(label, value, LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
+end
+
+-- One price as shown: the single line, the stack line, or both lines.
+local function AddPrice(tooltip, singleLabel, stackLabel, price, count, shownAs)
+	if shownAs ~= "stack" then
+		AddLine(tooltip, singleLabel, Util.FormatMoney(price))
 	end
-	return singleLabel, Util.FormatMoney(price)
+	if shownAs ~= "single" then
+		AddLine(tooltip, stackLabel:format(count), Util.FormatMoney(price * count))
+	end
 end
 
 function Tooltip:AddPriceLines(tooltip, data)
@@ -69,20 +73,16 @@ function Tooltip:AddPriceLines(tooltip, data)
 
 	local vendor = SR.Prices:GetVendorSellPrice(itemID)
 	if vendor and vendor > 0 then
-		local label, value = PriceLine(L["SilkRoad vendor"], L["SilkRoad vendor x%d"], L["SilkRoad vendor 1 / %d"],
-			vendor, count, shownAs)
-		tooltip:AddDoubleLine(label, value, LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
+		AddPrice(tooltip, L["SilkRoad vendor"], L["SilkRoad vendor x%d"], vendor, count, shownAs)
 		added = true
 	end
 
 	if not IsBound(data) then
 		local auction = SR.Prices:GetAuctionPrice(itemID)
 		if auction then
-			local label, value = PriceLine(L["SilkRoad auction"], L["SilkRoad auction x%d"], L["SilkRoad auction 1 / %d"],
-				auction, count, shownAs)
-			tooltip:AddDoubleLine(label, value, LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
+			AddPrice(tooltip, L["SilkRoad auction"], L["SilkRoad auction x%d"], auction, count, shownAs)
 		else
-			tooltip:AddDoubleLine(L["SilkRoad auction"], Util.ColorText(L["no data"], "ff808080"), LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
+			AddLine(tooltip, L["SilkRoad auction"], Util.ColorText(L["no data"], "ff808080"))
 		end
 		added = true
 	end

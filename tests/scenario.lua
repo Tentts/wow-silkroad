@@ -1285,9 +1285,12 @@ M.modifiers.shift = false
 SR:SetSetting("tooltipMode", "both")
 M.tooltipLines = {}
 addTooltipLines(GameTooltip, M.tooltipData)
-check(M.tooltipLines[1] == "SilkRoad vendor 1 / 20|" .. Util.FormatMoney(linenVendor) .. " / " .. Util.FormatMoney(linenVendor * 20)
-	and M.tooltipLines[2] == "SilkRoad auction 1 / 20|" .. Util.FormatMoney(47) .. " / " .. Util.FormatMoney(47 * 20),
-	"Single and stack mode: both, slash separated")
+check(#M.tooltipLines == 4
+	and M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor)
+	and M.tooltipLines[2] == "SilkRoad vendor x20|" .. Util.FormatMoney(linenVendor * 20)
+	and M.tooltipLines[3] == "SilkRoad auction|" .. Util.FormatMoney(47)
+	and M.tooltipLines[4] == "SilkRoad auction x20|" .. Util.FormatMoney(47 * 20),
+	"Single and stack mode: a line for one item and a line for the stack")
 rebuildsBefore = M.tooltipRebuilds
 M.modifiers.shift = true
 M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
