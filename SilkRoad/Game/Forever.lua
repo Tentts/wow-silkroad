@@ -32,6 +32,7 @@ Game.events = {
 	spellsChanged = { "LEARNED_SPELL_IN_SKILL_LINE", "SKILL_LINES_CHANGED" },
 	bagsChanged = { "BAG_UPDATE_DELAYED" },
 	trackedRecipesChanged = { "TRACKED_RECIPE_UPDATE" },
+	modifiersChanged = { "MODIFIER_STATE_CHANGED" },
 }
 
 function Game.GetPlayerProfessions()
@@ -160,6 +161,24 @@ end
 
 function Game.SetRecipeTracked(recipeID, tracked)
 	C_TradeSkillUI.SetRecipeTracked(recipeID, tracked and true or false, false)
+end
+
+-- How many items are in the stack an item tooltip shows: for items in the
+-- bags, bank or reagent bag. nil when the tooltip isn't about a bag slot.
+function Game.GetTooltipStackCount(tooltip)
+	local info = tooltip.GetPrimaryTooltipInfo and tooltip:GetPrimaryTooltipInfo()
+	local args = info and info.getterName == "GetBagItem" and info.getterArgs
+	if args and args[1] and args[2] then
+		local item = C_Container.GetContainerItemInfo(args[1], args[2])
+		return item and item.stackCount or nil
+	end
+end
+
+-- Builds a shown tooltip again, so post-call hooks add their lines anew.
+function Game.RefreshTooltip(tooltip)
+	if tooltip:IsShown() and tooltip.RebuildFromTooltipInfo and tooltip:GetPrimaryTooltipInfo() then
+		tooltip:RebuildFromTooltipInfo()
+	end
 end
 
 function Game.OpenMap(uiMapID)

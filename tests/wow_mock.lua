@@ -1252,6 +1252,27 @@ define("TooltipDataProcessor", {
 GameTooltip.AddDoubleLine = function(self, left, right)
 	table.insert(M.tooltipLines, tostring(left) .. "|" .. tostring(right))
 end
+-- The tooltip's data source (TooltipDataHandlerMixin): M.tooltipInfo = { getterName,
+-- getterArgs }. Rebuilding runs the item post-call again with M.tooltipData.
+M.tooltipInfo = nil
+M.tooltipRebuilds = 0
+GameTooltip.GetPrimaryTooltipInfo = function(self)
+	return M.tooltipInfo
+end
+GameTooltip.RebuildFromTooltipInfo = function(self)
+	M.tooltipRebuilds = M.tooltipRebuilds + 1
+	M.tooltipLines = {}
+	M.tooltipPostCalls[Enum.TooltipDataType.Item](self, M.tooltipData)
+end
+-- Bag contents for tooltips: M.containerItems[bag][slot] = { itemID, stackCount }.
+M.containerItems = {}
+define("C_Container", {
+	GetContainerItemInfo = function(bag, slot)
+		assert(type(bag) == "number" and type(slot) == "number", "GetContainerItemInfo: bag, slot expected")
+		local item = M.containerItems[bag] and M.containerItems[bag][slot]
+		return item and { itemID = item[1], stackCount = item[2] }
+	end,
+})
 define("ITEM_SOULBOUND", "Soulbound")
 define("ITEM_BIND_ON_PICKUP", "Binds when picked up")
 define("ITEM_BIND_QUEST", "Quest Item")

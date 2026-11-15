@@ -63,7 +63,7 @@ L.WIPE_MARKET_DESC = "Auction prices from every scan, on every realm, and the me
 L.WIPE_MARKET_CONFIRM = "Wipe all auction and merchant prices SilkRoad has recorded? This can't be undone."
 L.RESET_SETTINGS_DESC = "Puts every SilkRoad setting back to its default, including the window size and position. Your data and key binding stay."
 L.RESET_SETTINGS_CONFIRM = "Reset every SilkRoad setting to its default?"
-L.TOOLTIP_PRICES_TOOLTIP = "Adds what a vendor pays and the lowest auction price to item tooltips. The auction line only shows for items that can be sold there."
+L.TOOLTIP_PRICES_TOOLTIP = "Adds what a vendor pays and the lowest auction price to item tooltips. The auction line only shows for items that can be sold there. Hold Shift over a stack in your bags for the whole stack."
 
 L.GUIDE_DESC = "How to level a profession from your skill: the cheapest crafts at current prices, or what to gather and where."
 L.GUIDE_GAP_HINT = "No recipe this plan may use gives skill-ups here. Allow more recipe sources (trainer, vendor, auction house, drops) in the second dropdown."

@@ -53,7 +53,7 @@ L.WIPE_MARKET_DESC = "Los precios de subasta de todos los escaneos, en todos los
 L.WIPE_MARKET_CONFIRM = "¿Borrar todos los precios de subasta y de vendedor que ha registrado SilkRoad? No se puede deshacer."
 L.RESET_SETTINGS_DESC = "Devuelve todos los ajustes de SilkRoad a sus valores por defecto, incluidos el tamaño y la posición de la ventana. Tus datos y la asignación de tecla se mantienen."
 L.RESET_SETTINGS_CONFIRM = "¿Restablecer todos los ajustes de SilkRoad a sus valores por defecto?"
-L.TOOLTIP_PRICES_TOOLTIP = "Añade a las descripciones de objetos lo que paga un vendedor y el precio de subasta más bajo. La línea de subasta solo aparece en objetos que se pueden vender allí."
+L.TOOLTIP_PRICES_TOOLTIP = "Añade a las descripciones de objetos lo que paga un vendedor y el precio de subasta más bajo. La línea de subasta solo aparece en objetos que se pueden vender allí. Mantén Mayús sobre una pila de tus bolsas para ver la pila entera."
 
 L["%d days ago"] = "hace %d días"
 L["%d h ago"] = "hace %d h"
@@ -391,3 +391,7 @@ L["Suggestions and problems"] = "Sugerencias y problemas"
 L["Open an issue"] = "Abrir una incidencia"
 L.ABOUT_DESC = "Versión, enlaces al proyecto y dónde enviar sugerencias y problemas."
 L.ABOUT_FEEDBACK = "¿Tienes una sugerencia o has encontrado un problema? Abre una incidencia (issue) en la página de GitHub de SilkRoad; cada aviso ayuda."
+
+-- Stack prices in tooltips
+L["SilkRoad vendor x%d"] = "SilkRoad vendedor x%d"
+L["SilkRoad auction x%d"] = "SilkRoad subasta x%d"

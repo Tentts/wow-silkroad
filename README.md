@@ -135,7 +135,8 @@ worked out from current prices instead of a fixed guide.
 ### Prices everywhere
 
 - **Item tooltips** get two lines, like Auctionator's: what a vendor pays, and the lowest
-  auction price (only for items that can be sold there).
+  auction price (only for items that can be sold there). Hold **Shift** over a stack in your
+  bags to see both for the whole stack.
 - **Merchant prices are recorded** every time you open a vendor, but you never have to visit
   vendors: common reagent prices come from the game data.
 - **Price Database** page: look up any item by ID, name or shift-clicked link to see every

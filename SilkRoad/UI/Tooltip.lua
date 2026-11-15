@@ -3,6 +3,7 @@
 	  SilkRoad vendor    what a vendor pays for one
 	  SilkRoad auction   lowest auction buyout, for items that can be sold
 	                     (not bind-on-pickup, soulbound, account-bound or quest items)
+	Holding Shift over a stack in the bags shows both for the whole stack.
 	Turned on and off in Settings > General.
 ]]
 local _, SR = ...
@@ -36,15 +37,26 @@ function Tooltip:AddPriceLines(tooltip, data)
 	local itemID = data.id
 	local added = false
 
+	-- Shift over a stack: prices for the whole stack.
+	local count = 1
+	if IsShiftKeyDown() then
+		count = SR.Game.GetTooltipStackCount(tooltip) or 1
+	end
+	local vendorLabel, auctionLabel = L["SilkRoad vendor"], L["SilkRoad auction"]
+	if count > 1 then
+		vendorLabel = L["SilkRoad vendor x%d"]:format(count)
+		auctionLabel = L["SilkRoad auction x%d"]:format(count)
+	end
+
 	local vendor = SR.Prices:GetVendorSellPrice(itemID)
 	if vendor and vendor > 0 then
-		tooltip:AddDoubleLine(L["SilkRoad vendor"], Util.FormatMoney(vendor), LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
+		tooltip:AddDoubleLine(vendorLabel, Util.FormatMoney(vendor * count), LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
 		added = true
 	end
 
 	if not IsBound(data) then
 		local auction = SR.Prices:GetAuctionPrice(itemID)
-		tooltip:AddDoubleLine(L["SilkRoad auction"], auction and Util.FormatMoney(auction) or Util.ColorText(L["no data"], "ff808080"),
+		tooltip:AddDoubleLine(auctionLabel, auction and Util.FormatMoney(auction * count) or Util.ColorText(L["no data"], "ff808080"),
 			LABEL_R, LABEL_G, LABEL_B, 1, 1, 1)
 		added = true
 	end
@@ -61,4 +73,13 @@ function Tooltip:OnEnable()
 	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, data)
 		self:AddPriceLines(tooltip, data)
 	end)
+	-- Pressing or releasing Shift while hovering switches between one item and the stack.
+	for _, event in ipairs(SR.Game.events.modifiersChanged) do
+		SR:RegisterEvent(event, function(_, key)
+			if (key == "LSHIFT" or key == "RSHIFT") and SR:GetSetting("tooltipPrices")
+				and GameTooltip:IsShown() and SR.Game.GetTooltipStackCount(GameTooltip) then
+				SR.Game.RefreshTooltip(GameTooltip)
+			end
+		end)
+	end
 end

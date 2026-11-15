@@ -1250,6 +1250,36 @@ addTooltipLines(GameTooltip, { id = 2589, lines = {} })
 check(#M.tooltipLines == 0, "turned off in settings")
 SR:SetSetting("tooltipPrices", true)
 
+-- Shift over a stack in the bags: prices for the whole stack.
+local linenVendor = SR.StaticData.items[2589][4]
+M.containerItems[0] = { [3] = { 2589, 20 } }
+M.tooltipInfo = { getterName = "GetBagItem", getterArgs = { 0, 3, n = 2 } }
+M.tooltipData = { id = 2589, lines = { { leftText = "Linen Cloth" } } }
+GameTooltip:Show()
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, M.tooltipData)
+check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "one item's price without Shift")
+M.modifiers.shift = true
+M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
+check(M.tooltipRebuilds == 1, "pressing Shift rebuilds the tooltip")
+check(M.tooltipLines[1] == "SilkRoad vendor x20|" .. Util.FormatMoney(linenVendor * 20)
+	and M.tooltipLines[2] == "SilkRoad auction x20|" .. Util.FormatMoney(47 * 20), "Shift: prices for the whole stack")
+M.modifiers.shift = false
+M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 0)
+check(M.tooltipRebuilds == 2 and M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "releasing Shift goes back to one")
+M.FireEvent("MODIFIER_STATE_CHANGED", "LCTRL", 1)
+check(M.tooltipRebuilds == 2, "other keys don't rebuild it")
+M.modifiers.shift = true
+M.tooltipInfo = { getterName = "GetItemByID", getterArgs = { 2589, n = 1 } }
+M.tooltipLines = {}
+addTooltipLines(GameTooltip, M.tooltipData)
+check(M.tooltipLines[1] == "SilkRoad vendor|" .. Util.FormatMoney(linenVendor), "items not in the bags stay single")
+M.FireEvent("MODIFIER_STATE_CHANGED", "LSHIFT", 1)
+check(M.tooltipRebuilds == 2, "and Shift leaves those tooltips alone")
+M.modifiers.shift = false
+M.tooltipInfo, M.tooltipData = nil, nil
+GameTooltip:Hide()
+
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")
 M.merchant = {
