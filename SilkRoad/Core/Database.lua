@@ -66,6 +66,7 @@ DB.ACCOUNT_DEFAULTS = {
 		autoScan = true,      -- full auction scan when the AH opens (at most every 15 minutes)
 		tooltipMode = "single", -- prices in item tooltips: "off" | "single" | "stack" | "both"
 		tooltipRecipes = "learned", -- recipes using the item in its tooltip: "off" | "favorites" | "learned" | "all"
+		professionPrices = true, -- costs, prices and profits under the reagents in the professions window
 		settingsTab = "general", -- last tab shown on the Settings page
 		guide = {
 			profession = nil,         -- skillLineID last shown on the Leveling Guide page
@@ -230,7 +231,7 @@ end
 
 -- Every setting back to its default. Done in place, so code holding the
 -- settings table keeps working; listeners are told about each setting.
-local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "tooltipRecipes", "debug" }
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "tooltipRecipes", "professionPrices", "debug" }
 
 function DB:ResetSettings()
 	Clear(self.settings)

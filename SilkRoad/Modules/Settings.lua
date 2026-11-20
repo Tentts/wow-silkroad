@@ -139,6 +139,16 @@ function Page:BuildGeneral(parent)
 	tooltipRecipes:SetPoint("LEFT", recipesLabel, "RIGHT", 12, 0)
 	Widgets.AttachTooltip(tooltipRecipes, L["Recipes in item tooltips"], L.TOOLTIP_RECIPES_TOOLTIP)
 
+	local professionPrices = self:Track(Widgets.CreateCheckbox(parent, L["Prices in the professions window"],
+		L.PROFESSION_PRICES_TOOLTIP,
+		function()
+			return SR:GetSetting("professionPrices")
+		end,
+		function(checked)
+			SR:SetSetting("professionPrices", checked)
+		end))
+	professionPrices:SetPoint("TOPLEFT", recipesLabel, "BOTTOMLEFT", -6, -14)
+
 	local scale = self:Track(Widgets.CreateSlider(parent, L["Window scale"], 0.7, 1.5, 0.05,
 		function()
 			return SR:GetSetting("window.scale")
@@ -149,7 +159,7 @@ function Page:BuildGeneral(parent)
 		function(value)
 			return ("%d%%"):format(Util.Round(value * 100))
 		end))
-	scale:SetPoint("TOPLEFT", recipesLabel, "BOTTOMLEFT", 0, -24)
+	scale:SetPoint("TOPLEFT", professionPrices, "BOTTOMLEFT", 6, -12)
 
 	local reset = Widgets.CreateButton(parent, L["Reset window position"], 180, function()
 		SR.UI:ResetLayout()

@@ -908,7 +908,8 @@ local settingsPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "settings" then settingsPage = page end
 end
-local minimapCheck, tooltipModeDropdown, tooltipRecipesDropdown, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+local minimapCheck, tooltipModeDropdown, tooltipRecipesDropdown, professionPricesCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+check(professionPricesCheck:GetChecked() == true, "prices in the professions window are on by default")
 check(SR:GetSetting("tooltipRecipes") == "learned", "tooltips list learned recipes and favorites by default")
 M.PickDropdown(tooltipRecipesDropdown, 4)
 check(SR:GetSetting("tooltipRecipes") == "all", "the tooltip recipes selector")
@@ -1478,6 +1479,49 @@ SR.DB.char.knownRecipes[2963], SR.DB.char.scannedProfessions[197] = wasKnown, wa
 SR:SetSetting("tooltipMode", "single")
 SR:SetSetting("tooltipRecipes", "learned")
 SR.UI:Hide()
+
+---------------------------------------------------------------------------
+step("prices in the professions window")
+M.LoadProfessionsUI()
+local form = ProfessionsFrame.CraftingPage.SchematicForm
+check(form.silkRoadHooked, "hooked into the professions window when it loads")
+local kit = SR.Recipes:GetRecipe(2165) -- Medium Armor Kit: 4 Medium Leather, 1 Coarse Thread
+local market = SR.DB:GetMarket() -- the market table was replaced when data was wiped
+market.auction[2319] = { price = 100, quantity = 10, seen = time() } -- Medium Leather
+market.auction[2318] = { price = 10, quantity = 10, seen = time() }  -- Light Leather
+market.auction[2313] = { price = 900, quantity = 10, seen = time() } -- Medium Armor Kit
+SR.DB.global.vendorPrices[2320] = { price = 10, seen = time() }     -- Coarse Thread
+form:Init({ recipeID = 2165 })
+local panel = SR.ProfessionPrices.panel
+local kitEval = SR.Recipes:Evaluate(kit)
+check(panel and panel:IsShown() and panel:GetParent() == form, "a SilkRoad panel in the recipe view")
+check(select(2, panel:GetPoint(1)) == form.Reagents, "under the reagent list")
+check(kitEval.cost and panel.lines.materials.Value:GetText() == SR.Util.FormatMoney(kitEval.cost), "materials at the cheapest price")
+check(panel.lines.raw.Value:IsShown() and panel.lines.raw.Value:GetText() == SR.Util.FormatMoney(kitEval.rawCost),
+	"raw cost when a reagent can be crafted")
+check(panel.lines.auction.Value:GetText() == SR.Util.FormatMoney(kitEval.auctionNet), "auction house price after the cut")
+check(panel.lines.auctionProfit.Value:GetText() == SR.Util.FormatProfit(kitEval.auctionProfit), "auction profit")
+check(panel.lines.vendor.Value:GetText() == SR.Util.FormatMoney(kitEval.vendorPrice), "vendor price")
+check(panel.lines.vendorProfit.Value:GetText() == SR.Util.FormatProfit(kitEval.vendorProfit), "vendor profit")
+market.auction[2313] = { price = 1200, quantity = 10, seen = time() }
+SR:Fire("PRICES_UPDATED")
+check(panel.lines.auction.Value:GetText() == SR.Util.FormatMoney(SR.Recipes:Evaluate(kit).auctionNet), "follows new prices")
+form.OptionalReagents:Show()
+form:Init({ recipeID = 2963 }) -- Bolt of Linen Cloth: nothing to craft first
+check(select(2, panel:GetPoint(1)) == form.OptionalReagents, "under the optional reagents when there are some")
+check(not panel.lines.raw.Value:IsShown(), "no raw cost line when nothing can be crafted")
+form.OptionalReagents:Hide()
+form:Init({ recipeID = 987654321 }) -- not in SilkRoad's data
+check(not panel:IsShown(), "hidden for recipes SilkRoad doesn't know")
+form:Init(nil)
+check(not panel:IsShown(), "hidden when no recipe is shown")
+form:Init({ recipeID = 2165 })
+SR:SetSetting("professionPrices", false)
+check(not panel:IsShown(), "turned off in Settings")
+SR:SetSetting("professionPrices", true)
+check(panel:IsShown(), "and on again")
+for _, id in ipairs({ 2319, 2318, 2313 }) do market.auction[id] = nil end
+SR.DB.global.vendorPrices[2320] = nil
 
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")

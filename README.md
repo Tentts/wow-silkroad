@@ -145,6 +145,10 @@ worked out from current prices instead of a fixed guide.
 - **Which recipes use an item**: tooltips list the recipes that need it as a reagent, with
   their profession. Choose in Settings: your **favorites** only, **learned** recipes and
   favorites (the default), **all** recipes, or off. Favorites are starred and listed first.
+- **In the game's professions window**, under the reagents of the recipe you open: what the
+  materials cost at the cheapest price, the raw cost of crafting every step, what the result
+  sells for on the auction house (after the cut) and to a vendor, and both profits. Can be
+  turned off in Settings.
 - **Merchant prices are recorded** every time you open a vendor, but you never have to visit
   vendors: common reagent prices come from the game data.
 - **Price Database** page: look up any item by ID, name or shift-clicked link to see every

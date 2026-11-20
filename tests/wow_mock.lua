@@ -1003,6 +1003,24 @@ C_AuctionHouse.PlaceBid = function(auctionID, bidAmount)
 	end)
 end
 
+-- Simulates Blizzard_Professions loading the first time a profession is opened:
+-- ProfessionsFrame.CraftingPage.SchematicForm with Reagents / OptionalReagents
+-- containers and Init(recipeInfo), which lays out the reagents.
+function M.LoadProfessionsUI()
+	local frame = NewWidget("Frame", "ProfessionsFrame", UIParent)
+	frame.CraftingPage = NewWidget("Frame", nil, frame)
+	local form = NewWidget("Frame", nil, frame.CraftingPage)
+	frame.CraftingPage.SchematicForm = form
+	form.Reagents = NewWidget("Frame", nil, form)
+	form.OptionalReagents = NewWidget("Frame", nil, form)
+	form.OptionalReagents:Hide()
+	form.Init = function(self, recipeInfo)
+		self.recipeInfo = recipeInfo
+	end
+	M.loadedAddons.Blizzard_Professions = true
+	M.FireEvent("ADDON_LOADED", "Blizzard_Professions")
+end
+
 -- Simulates Blizzard_AuctionHouseUI loading the first time an auctioneer is visited.
 function M.LoadAuctionHouseUI()
 	local frame = NewWidget("Frame", "AuctionHouseFrame", UIParent)

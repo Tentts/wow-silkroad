@@ -56,6 +56,7 @@ UI\SourcePopup.lua
 UI\ItemSuggestions.lua
 UI\RecipeMenu.lua
 UI\Tooltip.lua
+UI\ProfessionPrices.lua
 
 # Pages (menus), shown in the sidebar in their registered order
 Modules\Overview.lua

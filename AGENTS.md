@@ -39,6 +39,10 @@ favorites, learned, all). Favorites are the game's own profession favorites
 (`C_TradeSkillUI.IsRecipeFavorite`, learned recipes only), kept in step both ways, plus
 SilkRoad's own for unlearned recipes, in `SilkRoadDB.favoriteRecipes`.
 
+Blizzard's professions window (`UI/ProfessionPrices.lua`): a panel under the reagents of
+the recipe shown, with materials, raw cost, auction and vendor prices and profits. It
+post-hooks the schematic form's `Init` through `SR.Game.HookRecipeView`.
+
 ## Layout
 
 ```

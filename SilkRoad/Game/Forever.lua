@@ -19,6 +19,8 @@
 	SR.Game.GetRecipeName / GetItemName / GetProfessionName(id)  names in the client's language, or nil
 	SR.Game.SetWaypoint(uiMapID, x, y, title)  x, y in 0..1; returns true on success
 	SR.Game.Auction*                       searching and buying one item at the auction house
+	SR.Game.HookRecipeView(onShow)         onShow(form, recipeID) whenever the professions window shows a recipe
+	SR.Game.GetRecipeViewAnchor(form)      the lowest reagent list in that view, to place things under
 ]]
 local _, SR = ...
 if SR.flavor ~= "forever" then
@@ -197,6 +199,46 @@ function Game.RefreshTooltip(tooltip)
 	if tooltip:IsShown() and tooltip.RebuildFromTooltipInfo and tooltip:GetPrimaryTooltipInfo() then
 		tooltip:RebuildFromTooltipInfo()
 	end
+end
+
+-- Blizzard's professions window (load-on-demand Blizzard_Professions).
+-- Every time it shows a recipe, its schematic form runs Init(recipeInfo)
+-- and lays out the reagents; a post-hook sees the finished layout. onShow
+-- gets recipeID nil when the form is cleared.
+local PROFESSIONS_ADDON = "Blizzard_Professions"
+
+function Game.HookRecipeView(onShow)
+	local function Hook()
+		local page = ProfessionsFrame and ProfessionsFrame.CraftingPage
+		local form = page and page.SchematicForm
+		if not form or form.silkRoadHooked then
+			return
+		end
+		form.silkRoadHooked = true
+		hooksecurefunc(form, "Init", function(f, recipeInfo)
+			onShow(f, recipeInfo and recipeInfo.recipeID or nil)
+		end)
+	end
+	if C_AddOns.IsAddOnLoaded(PROFESSIONS_ADDON) then
+		Hook()
+	else
+		local function OnAddonLoaded(_, name)
+			if name == PROFESSIONS_ADDON then
+				SR:UnregisterEvent("ADDON_LOADED", OnAddonLoaded)
+				Hook()
+			end
+		end
+		SR:RegisterEvent("ADDON_LOADED", OnAddonLoaded)
+	end
+end
+
+-- The reagent list things go under: the optional reagents when the recipe
+-- has any, else the basic reagents.
+function Game.GetRecipeViewAnchor(form)
+	if form.OptionalReagents and form.OptionalReagents:IsShown() then
+		return form.OptionalReagents
+	end
+	return form.Reagents
 end
 
 function Game.OpenMap(uiMapID)

@@ -414,3 +414,13 @@ L.TOOLTIP_RECIPES_TOOLTIP = "Muestra las recetas que usan el objeto como compone
 
 -- Item suggestions
 L.ITEM_SUGGEST_HINT = "Escribe parte del nombre de un objeto y elígelo de la lista (también con las flechas y Intro), o escribe un ID de objeto, o haz mayús-clic en un objeto para ponerlo en la casilla."
+
+-- Prices in the professions window
+L["Prices in the professions window"] = "Precios en la ventana de profesiones"
+L["Materials (cheapest)"] = "Materiales (lo más barato)"
+L["Raw cost (every step)"] = "Coste en bruto (cada paso)"
+L["Auction house, after cut"] = "Casa de subastas, tras la comisión"
+L["Auction profit"] = "Beneficio en subasta"
+L["Vendor pays"] = "El vendedor paga"
+L["Vendor profit"] = "Beneficio con vendedor"
+L.PROFESSION_PRICES_TOOLTIP = "Muestra, bajo los componentes de la receta abierta en la ventana de profesiones del juego, lo que cuestan sus materiales al precio más barato, el coste en bruto de fabricar cada paso, y por cuánto se vende el resultado en la casa de subastas y a un vendedor, con ambos beneficios."
