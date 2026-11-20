@@ -1,20 +1,18 @@
-# SilkRoad 0.7.2
+# SilkRoad 0.7.3
 
 ## New
 
-- **Stack prices in tooltips**: choose in Settings > General how item tooltips show
-  SilkRoad's vendor and auction prices for stacks in your bags: one item, the whole stack,
-  or both (one line each), or turn them off. Hold **Shift** over a stack to swap between one
-  item and the whole stack.
-- **Recipes in tooltips**: item tooltips now list the recipes that use the item as a
-  reagent, with their profession. Choose in Settings whether to list your favorites only,
-  learned recipes and favorites (the default), every recipe, or none.
-- **Favorite recipes**: right-click a recipe and choose **Add to favorites**. Favorites are
-  starred on the Recipes page and listed first in tooltips. For learned recipes they're the
-  same favorites as the star in the game's professions window, so starring a recipe in
-  either place shows it in both.
+- **Prices in the professions window**: open a recipe in the game's professions window and
+  SilkRoad shows, under its reagents, what the materials cost at the cheapest price, the raw
+  cost of crafting every step, what the result sells for on the auction house (after the
+  cut) and to a vendor, and both profits. Can be turned off in Settings > General.
+- **Item suggestions while typing**: in the Buy Lists item box and the Price Database
+  lookup box, type part of a name (for example `light`) and pick the item from the list
+  (Light Leather, Light Hide...), with the mouse or the arrow keys and Enter.
+- Typing an item's full name in the Price Database now finds it even if the game hasn't
+  loaded that item yet.
 
-## Changed
+## Fixed
 
-- The "Prices in item tooltips" checkbox became a selector with the modes above. If you had
-  turned tooltip prices off, they stay off.
+- Escape now closes the SilkRoad window from the Settings page too. The key binding button
+  there also no longer blocks other keys, such as movement, while the page is open.
