@@ -189,7 +189,6 @@ L["SilkRoad vendor"] = "SilkRoad vendedor"
 L["Source"] = "Fuente"
 L["Taught by %s"] = "Enseñada por %s"
 L["The addon compartment menu by the minimap always lists SilkRoad, even with the button hidden."] = "El menú de accesorios junto al minimapa siempre muestra SilkRoad, aunque ocultes el botón."
-L["The auction house returned no listings."] = "La casa de subastas no devolvió ninguna subasta."
 L["The game refused that key."] = "El juego no aceptó esa tecla."
 L["This character hasn't learned a profession yet."] = "Este personaje aún no ha aprendido ninguna profesión."
 L["Total"] = "Total"
@@ -428,3 +427,4 @@ L.PROFESSION_PRICES_TOOLTIP = "Muestra, bajo los componentes de la receta abiert
 -- Scan data age on login
 L["Auction prices for %s are from %s. Open the auction house to scan again."] = "Los precios de subasta de %s son de %s. Abre la casa de subastas para escanear de nuevo."
 L["No auction scans for %s yet; SilkRoad has scans for %s."] = "Aún no hay escaneos de subasta para %s; SilkRoad tiene escaneos de %s."
+L["Auction prices scanned on %s now belong to %s, the auction house shared by your realm group."] = "Los precios de subasta escaneados en %s pasan a %s, la casa de subastas que comparte tu grupo de reinos."

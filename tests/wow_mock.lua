@@ -810,7 +810,19 @@ define("PlaySound", function(soundKitID)
 	table.insert(M.sounds, soundKitID)
 end)
 
-define("GetRealmName", function() return "Test Realm" end)
+-- Realms. Since Forever's regional realms (M.regionalRealms = true), the game
+-- reports a blank realm name and auction houses are per ruleset and faction.
+M.regionalRealms = false
+M.gameRules = {} -- [Enum.GameRule value] = true
+define("GetRealmName", function() return M.regionalRealms and "" or "Test Realm" end)
+define("GetNormalizedRealmName", function() return M.regionalRealms and "" or "TestRealm" end)
+define("RegionalUniqueNamesEnabled", function() return M.regionalRealms end)
+define("C_GameRules", {
+	IsGameRuleActive = function(rule)
+		assert(type(rule) == "number", "IsGameRuleActive: game rule expected")
+		return M.gameRules[rule] == true
+	end,
+})
 define("GetCursorPosition", function() return 1100, 800 end)
 define("IsModifiedClick", function() return M.modifiedClick end)
 define("HandleModifiedItemClick", function(link)
@@ -1308,7 +1320,8 @@ end
 -- Item tooltips: post-call hooks, and lines added to GameTooltip ("left|right").
 M.tooltipPostCalls = {}
 M.tooltipLines = {}
-define("Enum", { TooltipDataType = { Item = 0, Spell = 1, Unit = 2 } })
+define("Enum", { TooltipDataType = { Item = 0, Spell = 1, Unit = 2 },
+	GameRule = { HardcoreRuleset = 10, PvPRuleset = 213, RPRuleset = 214 } })
 define("TooltipDataProcessor", {
 	AddTooltipPostCall = function(tooltipType, func)
 		assert(type(func) == "function", "AddTooltipPostCall: function expected")

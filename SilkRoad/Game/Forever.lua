@@ -19,6 +19,8 @@
 	SR.Game.GetRecipeName / GetItemName / GetProfessionName(id)  names in the client's language, or nil
 	SR.Game.SetWaypoint(uiMapID, x, y, title)  x, y in 0..1; returns true on success
 	SR.Game.Auction*                       searching and buying one item at the auction house
+	SR.Game.GetAuctionHouseKey()           which auction house the character uses ("PvP Horde"), or nil
+	SR.Game.GetRulesetName()               "PvP", "PvE", "RP", "RPPvP" or "HC"
 	SR.Game.HookRecipeView(onShow)         onShow(form, recipeID) whenever the professions window shows a recipe
 	SR.Game.GetRecipeViewAnchor(form)      the lowest reagent list in that view, to place things under
 ]]
@@ -239,6 +241,51 @@ function Game.GetRecipeViewAnchor(form)
 		return form.OptionalReagents
 	end
 	return form.Reagents
+end
+
+-- Since Forever's regional realms (RegionalUniqueNamesEnabled), one
+-- auction house is shared by every character of a ruleset and faction, and
+-- GetRealmName() is blank. Prices are filed the way Auctionator files them.
+function Game.GetRulesetName()
+	local rules = Enum and Enum.GameRule
+	local function Active(rule)
+		return rules and rules[rule] and C_GameRules.IsGameRuleActive(rules[rule]) or false
+	end
+	local pvp, rp = Active("PvPRuleset"), Active("RPRuleset")
+	if pvp and rp then
+		return "RPPvP"
+	elseif pvp then
+		return "PvP"
+	elseif rp then
+		return "RP"
+	elseif Active("HardcoreRuleset") then
+		return "HC"
+	end
+	return "PvE"
+end
+
+local function Blank(text)
+	return text == nil or text:match("^%s*$") ~= nil
+end
+
+-- The name prices are filed under: "<ruleset> <faction>" with regional
+-- realms, else the realm name. nil while the game can't say yet.
+function Game.GetAuctionHouseKey()
+	if RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled() then
+		local faction = UnitFactionGroup("player")
+		if Blank(faction) then
+			return nil
+		end
+		return Game.GetRulesetName() .. " " .. faction
+	end
+	local realm = GetRealmName()
+	if Blank(realm) then
+		realm = GetNormalizedRealmName()
+	end
+	if Blank(realm) then
+		return nil
+	end
+	return realm
 end
 
 function Game.OpenMap(uiMapID)

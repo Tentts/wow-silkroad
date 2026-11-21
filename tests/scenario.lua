@@ -1213,6 +1213,20 @@ check(SR.AuctionBuyer.state == "idle", "closing the auction house resets the buy
 M.OpenAuctionHouse()
 M.RunTimers()
 
+step("listings that arrive after the first update")
+SR.DB.global.scanner.lastRequest = nil
+if Auctionator then Auctionator.SavedState = nil end
+local savedReplicate = M.replicate
+M.replicate = {}
+SR.Scanner:BeginWaiting(false)
+M.FireEvent("REPLICATE_ITEM_LIST_UPDATE")
+check(SR.Scanner.state == "waiting", "an update with no listings yet keeps waiting instead of failing")
+M.replicate = { { 2589, 10, 400 } }
+M.FireEvent("REPLICATE_ITEM_LIST_UPDATE")
+M.RunTimers()
+check(SR.Scanner.state == "idle" and SR.DB:GetMarket().auction[2589].price == 40, "and reads them once they arrive")
+M.replicate = savedReplicate
+
 step("Blizzard's tabs take over again")
 LibAHTab:SetSelected("SilkRoad")
 check(ahPanel:IsVisible(), "SilkRoad tab open")
@@ -1546,6 +1560,35 @@ markets["Other Realm"] = nil
 printedBefore = #M.output
 SR.Scanner:ReportDataAge()
 check(#M.output == printedBefore, "no scans anywhere: nothing to say (a first login)")
+for key, value in pairs(savedMarkets) do markets[key] = value end
+
+
+-- Forever's regional realms: a blank realm name, auction houses per ruleset and faction.
+local savedFaction, savedLastKey = M.faction, SR.DB.global.lastMarketKey
+for key in pairs(savedMarkets) do markets[key] = nil end
+M.faction = "Horde"
+M.regionalRealms = true
+M.gameRules[Enum.GameRule.PvPRuleset] = true
+check(SR.DB:GetMarketKey() == "PvP Horde", "regional realms: prices filed by ruleset and faction, like Auctionator")
+M.gameRules[Enum.GameRule.RPRuleset] = true
+check(SR.DB:GetMarketKey() == "RPPvP Horde", "RP-PvP ruleset")
+M.gameRules[Enum.GameRule.RPRuleset] = nil
+markets["CAMWOW EU4 Realm 6 PvP"] = { auction = { [15347] = { price = 2920, quantity = 11, seen = time() - 86400 } }, lastScan = time() - 86400 }
+markets["CAMWOW EU4 Realm 2 PvE"] = { auction = { [1] = { price = 1, quantity = 1, seen = time() } }, lastScan = time() }
+local adopted = SR.DB:GetMarket()
+check(adopted.auction[15347] and adopted.auction[15347].price == 2920 and markets["PvP Horde"] == adopted,
+	"prices scanned under the old realm name carry over to the new auction house")
+check(markets["CAMWOW EU4 Realm 6 PvP"] == nil and markets["CAMWOW EU4 Realm 2 PvE"] ~= nil, "only from a realm with the same ruleset")
+check(OutputContains("Auction prices scanned on CAMWOW EU4 Realm 6 PvP now belong to PvP Horde"), "and SilkRoad says so")
+check(SR.Prices:GetAuctionPrice(15347) == 2920, "so the old prices are used again")
+M.faction = nil
+check(SR.DB:GetMarketKey() == "PvP Horde", "while the game can't say yet, the last known auction house stands in")
+M.faction = savedFaction
+M.regionalRealms = false
+M.gameRules[Enum.GameRule.PvPRuleset] = nil
+check(SR.DB:GetMarketKey() == "Test Realm", "without regional realms, the realm name as before")
+markets["PvP Horde"], markets["CAMWOW EU4 Realm 2 PvE"] = nil, nil
+SR.DB.global.lastMarketKey = savedLastKey
 for key, value in pairs(savedMarkets) do markets[key] = value end
 
 ---------------------------------------------------------------------------

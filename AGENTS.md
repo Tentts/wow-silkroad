@@ -194,6 +194,11 @@ Details are in `docs/FOREVER_API_NOTES.md`.
   other items use `PlaceBid` at the buyout. `SendSearchQuery` is throttled
   (`IsThrottledMessageSystemReady`, `AUCTION_HOUSE_THROTTLED_SYSTEM_READY`).
 - Trainer recipes have no learn level in the client data; it's estimated and shown with `~`.
+- Regional realms (`RegionalUniqueNamesEnabled()`, since the November 2026 patch): `GetRealmName()`
+  is blank and an auction house is shared per ruleset and faction. Prices are filed under
+  `SR.Game.GetAuctionHouseKey()` ("PvP Horde", as Auctionator does); older realm-named data
+  is carried over once (`DB:AdoptRealmMarket`). The first `REPLICATE_ITEM_LIST_UPDATE` can
+  come with no listings yet, so the scanner keeps waiting for the next one.
 
 ## State and next steps
 

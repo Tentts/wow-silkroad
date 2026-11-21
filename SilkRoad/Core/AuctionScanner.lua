@@ -182,8 +182,7 @@ local function OnReplicateListUpdate()
 	end
 	local total = C_AuctionHouse.GetNumReplicateItems()
 	if total == 0 then
-		Scanner:Fail(L["The auction house returned no listings."])
-		return
+		return -- listings not in yet: the event fires again as they arrive (or the wait times out)
 	end
 
 	scanID = scanID + 1
@@ -294,8 +293,8 @@ local LOGIN_REPORT_DELAY = 8    -- after the login chat messages
 function Scanner:ReportDataAge()
 	local key = SR.DB:GetMarketKey()
 	local markets = SR.DB.global.markets
-	local market = markets[key]
-	if market and market.lastScan then
+	local market = SR.DB:GetMarket()
+	if market.lastScan then
 		if time() - market.lastScan > STALE_AFTER then
 			SR:Print(L["Auction prices for %s are from %s. Open the auction house to scan again."]:format(
 				key, Util.TimeAgo(market.lastScan)))

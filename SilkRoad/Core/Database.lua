@@ -12,6 +12,7 @@
 	                 Auction prices are kept per market (realm) because every
 	                 realm has its own auction house economy. quantity is 0
 	                 for items that were missing from the latest full scan.
+	  lastMarketKey  the last auction house key the game reported (stands in while it can't)
 	  scanner        { lastRequest = time() | nil }
 	                 When the last full scan was requested (by SilkRoad or
 	                 another addon). Account-wide, to respect the server's
@@ -139,15 +140,47 @@ end
 -- Markets
 ---------------------------------------------------------------------------
 
+-- Which auction house's prices to use: see SR.Game.GetAuctionHouseKey.
+-- The last known key stands in while the game can't say (early on login).
 function DB:GetMarketKey()
-	return GetRealmName() or "Unknown"
+	local key = SR.Game.GetAuctionHouseKey()
+	if key then
+		self.global.lastMarketKey = key
+		return key
+	end
+	return self.global.lastMarketKey or "Unknown"
+end
+
+-- Prices scanned before Forever's regional realms were filed under the
+-- realm's name ("CAMWOW EU4 Realm 6 PvP"). The first time a regional
+-- auction house ("PvP Horde") has no prices, the most recent realm with the
+-- same ruleset passes its prices on, so they aren't lost.
+function DB:AdoptRealmMarket(key)
+	local ruleset = key:match("^(%S+) ")
+	if not ruleset then
+		return nil
+	end
+	local bestKey, best
+	for otherKey, market in pairs(self.global.markets) do
+		local lastWord = otherKey:match("(%S+)$")
+		if otherKey ~= key and otherKey:find(" ", 1, true) and otherKey:find("%d") -- realm names, not "PvE Alliance"
+			and lastWord and lastWord:lower() == ruleset:lower() and market.lastScan
+			and (not best or market.lastScan > best.lastScan) then
+			bestKey, best = otherKey, market
+		end
+	end
+	if best then
+		self.global.markets[bestKey] = nil
+		SR:Print(SR.L["Auction prices scanned on %s now belong to %s, the auction house shared by your realm group."]:format(bestKey, key))
+	end
+	return best
 end
 
 function DB:GetMarket()
 	local key = self:GetMarketKey()
 	local market = self.global.markets[key]
 	if not market then
-		market = { auction = {} }
+		market = self:AdoptRealmMarket(key) or { auction = {} }
 		self.global.markets[key] = market
 	end
 	return market
