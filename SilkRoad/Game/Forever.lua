@@ -6,8 +6,10 @@
 
 	SR.Game.events                         event names, by purpose
 	SR.Game.GetPlayerProfessions()         { { skillLine, name, icon, rank, maxRank }, ... }
-	SR.Game.ReadOpenProfession()           { [recipeID] = learned }, { [recipeID] = true } (favorites)
-	                                       for the open window, or nil, reason
+	SR.Game.ReadOpenProfession()           { [recipeID] = learned }, { [recipeID] = true } (favorites),
+	                                       { [recipeID] = { difficulty, skillUps } } for the open
+	                                       window, or nil, reason. difficulty: 0 orange,
+	                                       1 yellow, 2 green, 3 grey (at the current skill)
 	SR.Game.IsRecipeFavorite / SetRecipeFavorite(recipeID[, favorite])  the professions window's favorites
 	SR.Game.GetRecipeProfession(recipeID)  { id, name } for recipes missing from the game data
 	SR.Game.IsRecipeKnown(recipeID)        true / false from the spellbook, nil if unknown
@@ -66,19 +68,23 @@ function Game.ReadOpenProfession()
 	if C_TradeSkillUI.IsTradeSkillLinked() or C_TradeSkillUI.IsTradeSkillGuild() then
 		return nil, "another player's profession is shown"
 	end
-	local learned, favorites, count = {}, {}, 0
+	local learned, favorites, colors, count = {}, {}, {}, 0
 	for _, recipeID in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
 		local recipe = C_TradeSkillUI.GetRecipeInfo(recipeID)
 		if recipe then
 			learned[recipeID] = recipe.learned and true or false
 			favorites[recipeID] = recipe.favorite and true or nil
+			-- The colour the window shows the recipe in (Enum.TradeskillRelativeDifficulty).
+			if recipe.relativeDifficulty then
+				colors[recipeID] = { difficulty = recipe.relativeDifficulty, skillUps = recipe.numSkillUps }
+			end
 			count = count + 1
 		end
 	end
 	if count == 0 then
 		return nil, "the profession window has no recipes yet"
 	end
-	return learned, favorites
+	return learned, favorites, colors
 end
 
 -- The professions window's own favorites. Blizzard only lets learned

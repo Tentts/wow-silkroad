@@ -33,13 +33,15 @@ local function DifficultyColor(recipe, rank)
 		return nil
 	elseif recipe.learn and rank < recipe.learn then
 		return COLORS.red
-	elseif not recipe.yellow or not recipe.gray then
+	end
+	local yellow, gray = SR.Recipes:GetSkillLevels(recipe)
+	if not yellow then
 		return nil
-	elseif rank < recipe.yellow then
+	elseif rank < yellow then
 		return COLORS.orange
-	elseif rank < (recipe.yellow + recipe.gray) / 2 then
+	elseif rank < (yellow + gray) / 2 then
 		return COLORS.yellow
-	elseif rank < recipe.gray then
+	elseif rank < gray then
 		return COLORS.green
 	end
 	return COLORS.gray

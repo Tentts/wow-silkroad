@@ -55,8 +55,10 @@ local function RankingCost(candidate)
 	return math.max(candidate.craftCost, candidate.materialCost * (1 - MAX_RESALE_SHARE), 0)
 end
 
+-- Chance of a skill-up at `skill`, from the recipe's thresholds corrected by
+-- the colours seen in the professions window (Recipes:GetSkillLevels).
 function Planner.SkillUpChance(recipe, skill)
-	local yellow, gray = recipe.yellow, recipe.gray
+	local yellow, gray = SR.Recipes:GetSkillLevels(recipe)
 	if not yellow or not gray or skill >= gray then
 		return 0
 	elseif skill < yellow or gray <= yellow then
@@ -165,7 +167,8 @@ function Planner:Candidates(skillLine, options)
 	local list = {}
 	for _, entry in ipairs(usable) do
 		local recipe = entry.recipe
-		if recipe.learn and recipe.yellow and recipe.gray and recipe.gray > recipe.learn then
+		local _, gray = SR.Recipes:GetSkillLevels(recipe)
+		if recipe.learn and gray and gray > recipe.learn then
 			local materialCost, unpriced = 0, false
 			for _, reagent in ipairs(recipe.reagents) do
 				local unit = price(reagent.itemID)
@@ -193,11 +196,12 @@ local function BestAt(candidates, skill, acquired)
 	for _, candidate in ipairs(candidates) do
 		local recipe = candidate.recipe
 		if recipe.learn <= skill then
-			local chance = Planner.SkillUpChance(recipe, skill)
+			-- Expected points per craft: the skill-up chance times the points a skill-up gives.
+			local chance = Planner.SkillUpChance(recipe, skill) * select(3, SR.Recipes:GetSkillLevels(recipe))
 			if chance > 0 then
 				local score = RankingCost(candidate) / chance
 				if candidate.learnKind ~= "known" and not acquired[recipe.id] then
-					score = score + candidate.learnCost / math.max(1, recipe.gray - skill)
+					score = score + candidate.learnCost / math.max(1, select(2, SR.Recipes:GetSkillLevels(recipe)) - skill)
 				end
 				if candidate.unpriced then
 					score = score + UNPRICED_PENALTY
@@ -312,8 +316,9 @@ end
 function Planner:MaxSkill(skillLine)
 	local maxGray = 0
 	for _, recipe in ipairs(SR.Recipes:GetRecipes(skillLine)) do
-		if recipe.gray and recipe.gray > maxGray then
-			maxGray = recipe.gray
+		local _, gray = SR.Recipes:GetSkillLevels(recipe)
+		if gray and gray > maxGray then
+			maxGray = gray
 		end
 	end
 	return maxGray

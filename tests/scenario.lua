@@ -684,6 +684,62 @@ check(vendorPlan.steps[2].recipe.name == "Hillman's Leather Gloves", "the same w
 check(bestPlan.totalCost < vendorPlan.totalCost, "the plan still shows the real cost, auction sales included")
 plannerMarket.auction = savedAuction
 
+step("leveling planner: colours seen in the professions window")
+-- Leatherworking at 145, as in the game: Hillman's Shoulders green, Hillman's Leather
+-- Gloves orange, Medium Armor Kit grey (the game data says grey only at 105... and 145 > 105).
+local savedSecond = M.professions[2]
+M.professions[2] = { "Leatherworking", 136247, 145, 150, 0, 0, 165 }
+local shoulders, gloves, kit = SR.Recipes:GetRecipe(3768), SR.Recipes:GetRecipe(3764), SR.Recipes:GetRecipe(2165)
+local cloak = SR.Recipes:GetRecipe(3760) -- yellow 145, grey 165 in the game data
+M.tradeSkill = { professionID = 165, name = "Leatherworking", recipes = { [3768] = true, [3764] = false, [2165] = true, [3760] = false },
+	colors = { [3768] = { 2 }, [3764] = { 0, 1 }, [2165] = { 3 }, [3760] = { 0, 2 } } }
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+local y, g = SR.Recipes:GetSkillLevels(gloves)
+check(y == 146 and g == 170, "orange at 145: the Gloves turn yellow after 145, not at it")
+y, g = SR.Recipes:GetSkillLevels(shoulders)
+check(y == 130 and g == 155, "green at 145 agrees with the game data: nothing to correct")
+local cy, cg, ups = SR.Recipes:GetSkillLevels(cloak)
+check(cy == 146 and ups == 2, "orange, and two points per skill-up, as the window says")
+-- Later, at 150, the window shows the Shoulders grey: grey at 150 at the latest, not 155.
+M.professions[2] = { "Leatherworking", 136247, 150, 150, 0, 0, 165 }
+M.tradeSkill.colors = { [3768] = { 3 } }
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+y, g = SR.Recipes:GetSkillLevels(shoulders)
+check(g == 150 and y == 130, "grey seen at 150: the Shoulders' grey level moves down to 150")
+check(SR.Planner.SkillUpChance(shoulders, 150) == 0, "so the planner gives them no skill-ups at 150")
+-- A recipe still orange where the data says yellow: green halfway moves with it.
+SR.DB.global.recipeColors[2165] = nil
+M.professions[2] = { "Leatherworking", 136247, 100, 150, 0, 0, 165 }
+M.tradeSkill.colors = { [2165] = { 0 } }
+M.FireEvent("TRADE_SKILL_LIST_UPDATE")
+M.RunTimers()
+y, g = SR.Recipes:GetSkillLevels(kit)
+check(y == 101 and g == 105, "orange at 100 where the data said yellow from 90")
+SR.UI:OpenPage("recipes")
+PickProfession(165)
+M.RunTimers()
+check(RowFor(2165).levelText:find("ff8040", 1, true), "the Recipes page colours it orange, like the game")
+-- Two points per skill-up: half the crafts.
+local plannerMarket2 = SR.DB:GetMarket()
+local savedAuction2 = plannerMarket2.auction
+plannerMarket2.auction = {}
+for itemID, price in pairs({ [2319] = 109, [4233] = 488, [2321] = 97, [2318] = 21, [4232] = 330, [4234] = 300 }) do
+	plannerMarket2.auction[itemID] = { price = price, quantity = 100, seen = time() }
+end
+local one = SR.Planner:Plan(165, { from = 146, to = 150, availability = "trainer", resale = "none" })
+local cloakStep
+for _, step in ipairs(one.steps) do
+	if step.recipe == cloak then cloakStep = step end
+end
+check(cloakStep and cloakStep.crafts < cloakStep.to - cloakStep.from,
+	"a recipe giving two points per skill-up is chosen, needing fewer crafts than points")
+plannerMarket2.auction = savedAuction2
+SR.DB.global.recipeColors = {}
+M.tradeSkill = nil
+M.professions[2] = savedSecond
+
 step("leveling guide page")
 SR.UI:OpenPage("guide")
 local guidePage

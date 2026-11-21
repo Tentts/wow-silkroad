@@ -33,6 +33,9 @@
 	  buyLists       { nextID = n, lists = { [id] = { id, name, created = time(),
 	                   items = { { itemID, quantity }, ... } } } }
 	                 Buy lists (Core/BuyLists.lua), shared by all characters.
+	  recipeColors   [recipeID] = { yellowMin, yellowMax, greenMin, greenMax, grayMin, grayMax,
+	                 skillUps }: what the professions window's colours proved about a
+	                 recipe's skill-up thresholds (Recipes:GetSkillLevels)
 	  favoriteRecipes [recipeID] = true, favorite recipes: the game's own favorites of
 	                 learned recipes, mirrored, plus favorites of recipes not learned yet
 
@@ -90,6 +93,7 @@ DB.ACCOUNT_DEFAULTS = {
 	recipes = {},
 	buyLists = {},
 	favoriteRecipes = {},
+	recipeColors = {},
 }
 
 DB.CHARACTER_DEFAULTS = {

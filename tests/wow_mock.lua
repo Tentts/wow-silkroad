@@ -1192,7 +1192,10 @@ define("C_TradeSkillUI", {
 	GetRecipeInfo = function(recipeID)
 		local learned = M.tradeSkill and M.tradeSkill.recipes[recipeID]
 		if learned == nil then return nil end
-		return { recipeID = recipeID, learned = learned, favorite = M.nativeFavorites[recipeID] == true }
+		-- M.tradeSkill.colors[recipeID] = { difficulty (0 orange .. 3 grey), skillUps }
+		local color = M.tradeSkill.colors and M.tradeSkill.colors[recipeID]
+		return { recipeID = recipeID, learned = learned, favorite = M.nativeFavorites[recipeID] == true,
+			relativeDifficulty = color and color[1], numSkillUps = color and color[2] or 1 }
 	end,
 	GetProfessionInfoByRecipeID = function(recipeID)
 		local skillLine = M.recipeProfessions[recipeID]

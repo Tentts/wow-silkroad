@@ -180,11 +180,12 @@ end
 -- profession the window shows doesn't matter: each recipe ID belongs to one
 -- profession, and every profession seen this way counts as read.
 function Recipes:ReadProfessionWindow()
-	local learned, favoritesOrReason = SR.Game.ReadOpenProfession()
+	local learned, favoritesOrReason, colors = SR.Game.ReadOpenProfession()
 	if not learned then
 		SR:Debug("Profession window not read:", favoritesOrReason)
 		return
 	end
+	self:RecordColors(colors or {})
 	-- The window's favorites (stars set in Blizzard's professions window).
 	local favorites = SR.DB.global.favoriteRecipes
 	for recipeID in pairs(learned) do
@@ -398,6 +399,100 @@ function Recipes:GetRecipesUsing(itemID)
 		end
 	end
 	return users[itemID] or {}
+end
+
+---------------------------------------------------------------------------
+-- Skill-up colours seen in the game
+--
+-- The game data gives each recipe a yellow and a grey skill (green halfway
+-- between), but trainer recipes have no learn level and Forever retuned
+-- some. The professions window shows each recipe's colour at the current
+-- skill, which proves where its thresholds are:
+--   orange at s: yellow > s          yellow at s: yellow <= s < green
+--   green at s:  green <= s < grey   grey at s:   grey <= s
+-- Those bounds are kept per recipe (SilkRoadDB.recipeColors) and correct
+-- the game data's thresholds, so plans follow what the window shows.
+---------------------------------------------------------------------------
+
+local DIFFICULTY = { orange = 0, yellow = 1, green = 2, grey = 3 }
+
+local function Raise(bounds, key, value)
+	if not bounds[key] or value > bounds[key] then
+		bounds[key] = value
+	end
+end
+
+local function Lower(bounds, key, value)
+	if not bounds[key] or value < bounds[key] then
+		bounds[key] = value
+	end
+end
+
+-- colors = { [recipeID] = { difficulty, skillUps } } read at the current skill.
+function Recipes:RecordColors(colors)
+	local store = SR.DB.global.recipeColors
+	local ranks = {}
+	for _, profession in ipairs(self:GetProfessions()) do
+		ranks[profession.id] = profession.learned and profession.rank or nil
+	end
+	for recipeID, color in pairs(colors) do
+		local recipe = self:GetRecipe(recipeID)
+		local skill = recipe and ranks[recipe.skillLine]
+		if skill and skill > 0 then
+			local bounds = store[recipeID] or {}
+			local difficulty = color.difficulty
+			if difficulty == DIFFICULTY.orange then
+				Raise(bounds, "yellowMin", skill + 1)
+				if color.skillUps and color.skillUps > 1 then
+					bounds.skillUps = color.skillUps
+				end
+			elseif difficulty == DIFFICULTY.yellow then
+				Lower(bounds, "yellowMax", skill)
+				Raise(bounds, "greenMin", skill + 1)
+			elseif difficulty == DIFFICULTY.green then
+				Lower(bounds, "greenMax", skill)
+				Raise(bounds, "grayMin", skill + 1)
+			elseif difficulty == DIFFICULTY.grey then
+				Lower(bounds, "grayMax", skill)
+			end
+			store[recipeID] = bounds
+		end
+	end
+end
+
+local function Clamp(value, low, high)
+	if low and value < low then
+		value = low
+	end
+	if high and value > high then
+		value = high
+	end
+	return value
+end
+
+-- The skills where a recipe turns yellow and grey, from the game data
+-- corrected by the colours seen in the game, and the points one skill-up
+-- gives (1 unless the game said more). nil when the recipe has no levels.
+function Recipes:GetSkillLevels(recipe)
+	local yellow, gray = recipe.yellow, recipe.gray
+	if not yellow or not gray then
+		return nil
+	end
+	local bounds = SR.DB.global.recipeColors[recipe.id]
+	if not bounds then
+		return yellow, gray, 1
+	end
+	yellow = Clamp(yellow, bounds.yellowMin, bounds.yellowMax)
+	gray = Clamp(math.max(gray, yellow + 1), bounds.grayMin, bounds.grayMax)
+	-- Green starts halfway between yellow and grey: move grey to match.
+	local green = (yellow + gray) / 2
+	if bounds.greenMax and green > bounds.greenMax then
+		gray = 2 * bounds.greenMax - yellow
+	elseif bounds.greenMin and green < bounds.greenMin then
+		gray = 2 * bounds.greenMin - yellow
+	end
+	gray = Clamp(math.max(gray, yellow + 1), bounds.grayMin, bounds.grayMax)
+	return yellow, gray, bounds.skillUps or 1
 end
 
 ---------------------------------------------------------------------------

@@ -103,7 +103,9 @@ A **dynamic levelling planner**: the cheapest route from your current skill to a
 worked out from current prices instead of a fixed guide.
 
 - For every skill point it picks the craft with the **lowest cost per expected skill-up**,
-  using each recipe's skill-up chance (orange, yellow, green, grey).
+  using each recipe's skill-up chance (orange, yellow, green, grey). Each time you open a
+  profession window, SilkRoad notes the colour the game shows for every recipe (and recipes
+  giving more than one point per skill-up), so plans follow what you see in game.
 - Costs come from live prices. Intermediates such as bolts of cloth are **crafted when
   that's cheaper than buying them**, and you can count **resale** (to vendors, or wherever
   the result earns most). Even a craft that sells at a profit counts as costing something,

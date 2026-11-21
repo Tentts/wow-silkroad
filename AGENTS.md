@@ -116,7 +116,10 @@ UI, then Modules. New files must be added to `SilkRoad/SilkRoad.toc`.
 - **Prices:** always through `SR.Prices` (`GetAuctionPrice`, `GetVendorBuyPrice`,
   `GetVendorSellPrice`, `GetAcquireCost`). `Recipes:Evaluate(recipe)` gives cost, rawCost,
   steps, raw materials, sale prices and profits. `Recipes:Breakdown(recipe, crafts, exact)`
-  breaks a recipe down to raw materials.
+  breaks a recipe down to raw materials. Skill-up thresholds come from
+  `Recipes:GetSkillLevels(recipe)` (yellow, grey, points per skill-up): the game data
+  corrected by the colours the professions window showed (`relativeDifficulty`,
+  `SilkRoadDB.recipeColors`); never read `recipe.yellow` / `recipe.gray` directly.
 - **Items:** `Util.GetItemDisplay(itemID)` for name, icon and quality (it asks the client
   for uncached items). Only react to `GET_ITEM_INFO_RECEIVED` for items requested through
   `Util.RequestItem`, because the client sends thousands of these.
