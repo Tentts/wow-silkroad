@@ -7,6 +7,7 @@
 ]]
 local _, SR = ...
 local L = SR.L
+local Util = SR.Util
 local Widgets = SR.Widgets
 
 -- Asks how many crafts, then adds the reagents (raw: the raw materials)
@@ -15,9 +16,18 @@ local function AddToBuyList(recipe, listID, crafts, raw)
 	Widgets.Prompt(L["How many times will you craft %s?"]:format(recipe.name or L["Recipe"]), crafts or 1, function(text)
 		local count = math.max(1, math.floor(tonumber(text) or 1))
 		local list, added, skipped = SR.BuyLists:AddRecipe(listID, recipe, count, raw)
+		local names = {}
+		for _, itemID in ipairs(skipped) do
+			names[#names + 1] = Util.GetItemDisplay(itemID).name
+		end
+		if not list then
+			SR:Print(L["Nothing to buy for %s: vendors sell all its reagents (%s)."]:format(
+				recipe.name or L["Recipe"], table.concat(names, ", ")))
+			return
+		end
 		local message = L["Added %d reagents to the buy list %s."]:format(added, list.name)
-		if skipped > 0 then
-			message = message .. " " .. L["%d sold by vendors left out."]:format(skipped)
+		if #names > 0 then
+			message = message .. " " .. L["Left out, sold by vendors: %s."]:format(table.concat(names, ", "))
 		end
 		SR:Print(message)
 	end, true)

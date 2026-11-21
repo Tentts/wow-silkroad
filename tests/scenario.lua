@@ -517,6 +517,17 @@ local boltList = SR.BuyLists:FindByName("Bolt of Linen Cloth x10")
 check(boltList and #boltList.items == 1 and boltList.items[1].itemID == 2589 and boltList.items[1].quantity == 20,
 	"a new list named after the recipe, with reagents x crafts")
 check(OutputContains("Added 1 reagents to the buy list Bolt of Linen Cloth x10"), "confirmed in chat")
+-- Every reagent sold by vendors: nothing to buy, so no empty list.
+local listsBefore = #SR.BuyLists:GetLists()
+SR.DB.global.vendorPrices[2589] = { price = 10, seen = time() } -- as if a merchant sold Linen Cloth
+M.Click(rowFrame, "RightButton")
+M.PickContextMenu("Add to a buy list...")
+M.PickContextMenu("New buy list")
+M.AcceptPopup("3")
+M.RunTimers()
+check(#SR.BuyLists:GetLists() == listsBefore, "no empty list when vendors sell every reagent")
+check(OutputContains("Nothing to buy for Bolt of Linen Cloth: vendors sell all its reagents (Linen Cloth)."), "says why, naming them")
+SR.DB.global.vendorPrices[2589] = nil
 local threadRecipe
 for _, recipe in ipairs(SR.Recipes:GetRecipes(197)) do
 	for _, reagent in ipairs(recipe.reagents) do
@@ -524,7 +535,7 @@ for _, recipe in ipairs(SR.Recipes:GetRecipes(197)) do
 	end
 end
 local threadList, added, skipped = SR.BuyLists:AddRecipe(clothID, threadRecipe, 2)
-check(threadList.id == clothID and skipped >= 1 and added == #threadRecipe.reagents - skipped, "vendor-sold reagents (thread) are left out")
+check(threadList.id == clothID and #skipped >= 1 and added == #threadRecipe.reagents - #skipped, "vendor-sold reagents (thread) are left out")
 check(not SR.BuyLists:GetItem(threadList, 2320), "no thread in the list")
 SR.BuyLists:Delete(clothID)
 

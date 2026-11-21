@@ -180,7 +180,7 @@ end
 -- sells (those are cheaper and simpler to buy from the vendor). raw = true
 -- lists the raw materials instead, for crafting every intermediate step
 -- yourself (see Recipes:Breakdown).
--- Returns { { itemID, quantity }, ... }, skippedCount.
+-- Returns { { itemID, quantity }, ... }, { skipped itemID, ... }.
 function BuyLists:RecipeReagents(recipe, crafts, raw)
 	crafts = math.max(1, math.floor(tonumber(crafts) or 1))
 	local list = recipe.reagents or {}
@@ -188,10 +188,10 @@ function BuyLists:RecipeReagents(recipe, crafts, raw)
 		list = SR.Recipes:Breakdown(recipe, crafts)
 		crafts = 1 -- Breakdown's counts are for every craft already
 	end
-	local reagents, skipped = {}, 0
+	local reagents, skipped = {}, {}
 	for _, reagent in ipairs(list) do
 		if SR.Prices:GetVendorBuyPrice(reagent.itemID) then
-			skipped = skipped + 1
+			skipped[#skipped + 1] = reagent.itemID
 		else
 			reagents[#reagents + 1] = { itemID = reagent.itemID, quantity = reagent.count * crafts }
 		end
@@ -201,10 +201,14 @@ end
 
 -- Adds a recipe's reagents (raw = true: its raw materials) to a list;
 -- listID nil creates a new list named after the recipe. Returns the list,
--- how many reagents were added and how many were left out because a vendor
--- sells them.
+-- how many reagents were added and the itemIDs left out because a vendor
+-- sells them. When every reagent is sold by vendors nothing is added and
+-- no list is created (list nil).
 function BuyLists:AddRecipe(listID, recipe, crafts, raw)
 	local reagents, skipped = self:RecipeReagents(recipe, crafts, raw)
+	if #reagents == 0 then
+		return nil, 0, skipped
+	end
 	local list = self:GetList(listID)
 	if not list then
 		local name = L["%s x%d"]:format(recipe.name or L["Recipe"], math.max(1, math.floor(tonumber(crafts) or 1)))
