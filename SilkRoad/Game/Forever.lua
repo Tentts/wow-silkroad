@@ -24,6 +24,11 @@
 	SR.Game.GetAuctionHouseKey()           which auction house the character uses ("PvP Horde"), or nil
 	SR.Game.GetRulesetName()               "PvP", "PvE", "RP", "RPPvP" or "HC"
 	SR.Game.HookRecipeView(onShow)         onShow(form, recipeID) whenever the professions window shows a recipe
+	SR.Game.IsInventoryFullError(message)  whether a UI error message says the bags are full
+	SR.Game.GetLootItems()                 { { itemID, count }, ... } in the open loot window
+	SR.Game.GetBagItems()                  { { bag, slot, itemID, count, bound }, ... } in the bags
+	SR.Game.ForEachBagButton(fn)           fn(button, bag, slot) for every bag slot button on screen
+	SR.Game.OpenBags()                     opens the bags
 	SR.Game.GetRecipeViewAnchor(form)      the lowest reagent list in that view, to place things under
 ]]
 local _, SR = ...
@@ -41,6 +46,7 @@ Game.events = {
 	bagsChanged = { "BAG_UPDATE_DELAYED" },
 	trackedRecipesChanged = { "TRACKED_RECIPE_UPDATE" },
 	favoritesChanged = { "TRADE_SKILL_FAVORITES_CHANGED" }, -- (isFavorite, recipeID)
+	uiError = { "UI_ERROR_MESSAGE" }, -- (errorType, message)
 	modifiersChanged = { "MODIFIER_STATE_CHANGED" },
 }
 
@@ -295,6 +301,69 @@ function Game.GetAuctionHouseKey()
 		return nil
 	end
 	return realm
+end
+
+---------------------------------------------------------------------------
+-- Bags and loot (the full-bags helper)
+---------------------------------------------------------------------------
+
+local BAGS = { 0, 1, 2, 3, 4, 5 } -- backpack, four bags, reagent bag
+
+function Game.IsInventoryFullError(message)
+	return message ~= nil and message == ERR_INV_FULL
+end
+
+-- Items still in the open loot window (money and currencies left out).
+function Game.GetLootItems()
+	local items = {}
+	for slot = 1, GetNumLootItems() do
+		if GetLootSlotType(slot) == Enum.LootSlotType.Item then
+			local link = GetLootSlotLink(slot)
+			local itemID = link and tonumber(link:match("item:(%d+)"))
+			local _, _, count = GetLootSlotInfo(slot)
+			if itemID then
+				items[#items + 1] = { itemID = itemID, count = math.max(1, count or 1) }
+			end
+		end
+	end
+	return items
+end
+
+function Game.GetBagItems()
+	local items = {}
+	for _, bag in ipairs(BAGS) do
+		for slot = 1, C_Container.GetContainerNumSlots(bag) do
+			local info = C_Container.GetContainerItemInfo(bag, slot)
+			if info and info.itemID then
+				items[#items + 1] = {
+					bag = bag, slot = slot, itemID = info.itemID, count = info.stackCount or 1,
+					bound = info.isBound and true or false,
+				}
+			end
+		end
+	end
+	return items
+end
+
+-- Bag slot buttons on screen, from Blizzard's bags or a bag addon (Baganator's
+-- buttons answer GetBagID / GetID the same way). Walks every frame, so it's
+-- for one-off moments only.
+function Game.ForEachBagButton(fn)
+	local frame = EnumerateFrames()
+	while frame do
+		if frame.GetBagID and frame:IsVisible() then
+			local ok, bag = pcall(frame.GetBagID, frame)
+			local slot = ok and type(bag) == "number" and frame:GetID()
+			if slot and slot > 0 then
+				fn(frame, bag, slot)
+			end
+		end
+		frame = EnumerateFrames(frame)
+	end
+end
+
+function Game.OpenBags()
+	OpenAllBags()
 end
 
 function Game.OpenMap(uiMapID)

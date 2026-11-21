@@ -157,6 +157,10 @@ worked out from current prices instead of a fixed guide.
   materials cost at the cheapest price, the raw cost of crafting every step, what the result
   sells for on the auction house (after the cut) and to a vendor, and both profits. Can be
   turned off in Settings.
+- **Full bags while looting** (optional, off by default): when looting fails because your bags
+  are full, the cheapest stacks in your bags worth less than the loot glow red for a few
+  seconds, and chat lists them, so you know what to throw away. Works with Blizzard's bags and
+  with Baganator.
 - **Merchant prices are recorded** every time you open a vendor, but you never have to visit
   vendors: common reagent prices come from the game data.
 - **Price Database** page: look up any item by ID, name or shift-clicked link to see every

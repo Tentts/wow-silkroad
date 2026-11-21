@@ -441,3 +441,9 @@ L.WIPE_AUCTION_CONFIRM = "¿Borrar todos los precios de subasta que ha registrad
 L.WIPE_MERCHANT_DESC = "Los precios que SilkRoad ha registrado en los vendedores, y con ellos su lista de objetos que venden los vendedores. Se vuelven a registrar al visitar vendedores. Los precios de subasta se mantienen."
 L.WIPE_MERCHANT_CONFIRM = "¿Borrar todos los precios de vendedor que ha registrado SilkRoad, y su lista de objetos que venden los vendedores? No se puede deshacer."
 L.VENDOR_REAGENTS_NOTICE = "Los vendedores también venden estos componentes, normalmente más baratos que en la casa de subastas. Están en la lista igualmente; cómpralos a un vendedor si puedes."
+
+-- Full bags while looting
+L["Show what to throw away when bags are full"] = "Mostrar qué tirar cuando las bolsas están llenas"
+L["Bags full: %s (%s) is worth more than %s."] = "Bolsas llenas: %s (%s) vale más que %s."
+L["Bags full: nothing in them is worth less than %s (%s)."] = "Bolsas llenas: nada en ellas vale menos que %s (%s)."
+L.LOOT_SPACE_TOOLTIP = "Cuando no puedes despojar porque tus bolsas están llenas, los montones más baratos de tus bolsas que valen menos que el botín brillan en rojo unos segundos, y el chat los muestra. El valor es lo mejor entre lo que paga un vendedor y el precio de subasta tras la comisión, por el montón entero. Los objetos sin valor conocido nunca se sugieren."

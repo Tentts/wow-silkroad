@@ -39,6 +39,12 @@ favorites, learned, all). Favorites are the game's own profession favorites
 (`C_TradeSkillUI.IsRecipeFavorite`, learned recipes only), kept in step both ways, plus
 SilkRoad's own for unlearned recipes, in `SilkRoadDB.favoriteRecipes`.
 
+Full bags while looting (`Core/BagSpace.lua`, `UI/BagGlow.lua`, off by default): on the
+"Inventory is full" UI error with a loot window open, the cheapest bag stacks worth less
+than the best loot glow red. Slot buttons are found with `SR.Game.ForEachBagButton`
+(any frame answering `GetBagID`, so bag addons work too); glows are kept in a weak table,
+never stored on the buttons.
+
 Blizzard's professions window (`UI/ProfessionPrices.lua`): a panel under the reagents of
 the recipe shown, with materials, raw cost, auction and vendor prices and profits. It
 post-hooks the schematic form's `Init` through `SR.Game.HookRecipeView`.

@@ -149,6 +149,16 @@ function Page:BuildGeneral(parent)
 		end))
 	professionPrices:SetPoint("TOPLEFT", recipesLabel, "BOTTOMLEFT", -6, -14)
 
+	local lootSpace = self:Track(Widgets.CreateCheckbox(parent, L["Show what to throw away when bags are full"],
+		L.LOOT_SPACE_TOOLTIP,
+		function()
+			return SR:GetSetting("lootSpaceHelper")
+		end,
+		function(checked)
+			SR:SetSetting("lootSpaceHelper", checked)
+		end))
+	lootSpace:SetPoint("TOPLEFT", professionPrices, "BOTTOMLEFT", 0, -2)
+
 	local scale = self:Track(Widgets.CreateSlider(parent, L["Window scale"], 0.7, 1.5, 0.05,
 		function()
 			return SR:GetSetting("window.scale")
@@ -159,7 +169,7 @@ function Page:BuildGeneral(parent)
 		function(value)
 			return ("%d%%"):format(Util.Round(value * 100))
 		end))
-	scale:SetPoint("TOPLEFT", professionPrices, "BOTTOMLEFT", 6, -12)
+	scale:SetPoint("TOPLEFT", lootSpace, "BOTTOMLEFT", 6, -12)
 
 	local reset = Widgets.CreateButton(parent, L["Reset window position"], 180, function()
 		SR.UI:ResetLayout()

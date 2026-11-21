@@ -64,10 +64,16 @@ local Widget = {}
 M.Widget = Widget
 
 local WidgetMeta = {}
+-- Mixin methods addons look for on arbitrary frames (bag item buttons have GetBagID).
+local PROBED_MIXIN_METHODS = { GetBagID = true }
+
 WidgetMeta.__index = function(self, key)
 	local method = Widget[key]
 	if method then
 		return method
+	end
+	if PROBED_MIXIN_METHODS[key] then
+		return nil -- addons check for these on any frame; frames without the mixin have none
 	end
 	if type(key) == "string" and key:match("^[A-Z]") then
 		if M.widgetMethods == nil or M.widgetMethods[key] then
@@ -145,6 +151,31 @@ function Widget:Hide() SetShownInternal(self, false) end
 function Widget:SetShown(shown) SetShownInternal(self, shown) end
 function Widget:IsShown() return self.__shown end
 function Widget:IsVisible() return IsVisible(self) end
+-- Animation groups: enough to build a looping alpha pulse and play / stop it.
+function Widget:CreateAnimationGroup()
+	local group = { playing = false, animations = {} }
+	function group:SetLooping(mode)
+		assert(mode == "NONE" or mode == "REPEAT" or mode == "BOUNCE", "SetLooping: invalid mode")
+	end
+	function group:CreateAnimation(animationType)
+		assert(animationType == "Alpha" or animationType == "Scale" or animationType == "Translation", "CreateAnimation: type expected")
+		local animation = {}
+		function animation:SetFromAlpha(value) assert(type(value) == "number") end
+		function animation:SetToAlpha(value) assert(type(value) == "number") end
+		function animation:SetDuration(value) assert(type(value) == "number") end
+		table.insert(self.animations, animation)
+		return animation
+	end
+	function group:Play() self.playing = true end
+	function group:Stop() self.playing = false end
+	function group:IsPlaying() return self.playing end
+	return group
+end
+function Widget:SetID(id)
+	assert(type(id) == "number", "SetID: number expected")
+	self.__id = id
+end
+function Widget:GetID() return self.__id or 0 end
 function Widget:GetParent() return self.__parent end
 function Widget:GetName() return self.__name end
 function Widget:GetObjectType() return self.__type end
@@ -1328,7 +1359,8 @@ end
 M.tooltipPostCalls = {}
 M.tooltipLines = {}
 define("Enum", { TooltipDataType = { Item = 0, Spell = 1, Unit = 2 },
-	GameRule = { HardcoreRuleset = 10, PvPRuleset = 213, RPRuleset = 214 } })
+	GameRule = { HardcoreRuleset = 10, PvPRuleset = 213, RPRuleset = 214 },
+	LootSlotType = { None = 0, Item = 1, Money = 2, Currency = 3 } })
 define("TooltipDataProcessor", {
 	AddTooltipPostCall = function(tooltipType, func)
 		assert(type(func) == "function", "AddTooltipPostCall: function expected")
@@ -1350,15 +1382,66 @@ GameTooltip.RebuildFromTooltipInfo = function(self)
 	M.tooltipLines = {}
 	M.tooltipPostCalls[Enum.TooltipDataType.Item](self, M.tooltipData)
 end
--- Bag contents for tooltips: M.containerItems[bag][slot] = { itemID, stackCount }.
+-- Bag contents: M.containerItems[bag][slot] = { itemID, stackCount, isBound };
+-- every bag has M.bagSlots slots.
 M.containerItems = {}
+M.bagSlots = 16
 define("C_Container", {
 	GetContainerItemInfo = function(bag, slot)
 		assert(type(bag) == "number" and type(slot) == "number", "GetContainerItemInfo: bag, slot expected")
 		local item = M.containerItems[bag] and M.containerItems[bag][slot]
-		return item and { itemID = item[1], stackCount = item[2] }
+		return item and { itemID = item[1], stackCount = item[2], isBound = item[3] or false }
+	end,
+	GetContainerNumSlots = function(bag)
+		assert(type(bag) == "number", "GetContainerNumSlots: bag expected")
+		return M.bagSlots
 	end,
 })
+
+-- The loot window: M.loot = { { itemID, count } | { money = copper }, ... }.
+M.loot = {}
+define("GetNumLootItems", function() return #M.loot end)
+define("GetLootSlotType", function(slot)
+	local entry = M.loot[slot]
+	return entry and (entry.money and Enum.LootSlotType.Money or Enum.LootSlotType.Item) or Enum.LootSlotType.None
+end)
+define("GetLootSlotLink", function(slot)
+	local entry = M.loot[slot]
+	return entry and not entry.money and ("|cffffffff|Hitem:%d::::::::|h[Item]|h|r"):format(entry[1]) or nil
+end)
+define("GetLootSlotInfo", function(slot)
+	local entry = M.loot[slot]
+	return 134400, "Item", entry and (entry[2] or 1) or 0
+end)
+define("ERR_INV_FULL", "Inventory is full.")
+
+-- Bag slot buttons on screen: a bag UI's item buttons answer GetBagID and GetID.
+-- M.CreateBagButton(bag, slot) adds one; OpenAllBags shows the ones from M.closedBagButtons.
+M.bagsOpened = 0
+M.closedBagButtons = {}
+function M.CreateBagButton(bag, slot, hidden)
+	local button = CreateFrame("Button", nil, UIParent)
+	button.GetBagID = function() return bag end
+	button:SetID(slot)
+	if hidden then
+		button:Hide()
+		table.insert(M.closedBagButtons, button)
+	end
+	return button
+end
+define("OpenAllBags", function()
+	M.bagsOpened = M.bagsOpened + 1
+	for _, button in ipairs(M.closedBagButtons) do button:Show() end
+end)
+define("EnumerateFrames", function(current)
+	local index = 0
+	if current then
+		for i, frame in ipairs(M.frames) do
+			if frame == current then index = i break end
+		end
+	end
+	return M.frames[index + 1]
+end)
 define("ITEM_SOULBOUND", "Soulbound")
 define("ITEM_BIND_ON_PICKUP", "Binds when picked up")
 define("ITEM_BIND_QUEST", "Quest Item")

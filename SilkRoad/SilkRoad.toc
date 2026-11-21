@@ -43,6 +43,7 @@ Core\AuctionScanner.lua
 Core\AuctionBuyer.lua
 Core\BuyLists.lua
 Core\ItemSearch.lua
+Core\BagSpace.lua
 
 # UI framework
 UI\Widgets.lua
@@ -57,6 +58,7 @@ UI\ItemSuggestions.lua
 UI\RecipeMenu.lua
 UI\Tooltip.lua
 UI\ProfessionPrices.lua
+UI\BagGlow.lua
 
 # Pages (menus), shown in the sidebar in their registered order
 Modules\Overview.lua

@@ -71,6 +71,7 @@ DB.ACCOUNT_DEFAULTS = {
 		tooltipMode = "single", -- prices in item tooltips: "off" | "single" | "stack" | "both"
 		tooltipRecipes = "learned", -- recipes using the item in its tooltip: "off" | "favorites" | "learned" | "all"
 		professionPrices = true, -- costs, prices and profits under the reagents in the professions window
+		lootSpaceHelper = false, -- full bags while looting: glow the bag items worth less than the loot
 		settingsTab = "general", -- last tab shown on the Settings page
 		guide = {
 			profession = nil,         -- skillLineID last shown on the Leveling Guide page
@@ -281,7 +282,7 @@ end
 
 -- Every setting back to its default. Done in place, so code holding the
 -- settings table keeps working; listeners are told about each setting.
-local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "tooltipRecipes", "professionPrices", "debug" }
+local SETTING_PATHS = { "minimap.hide", "minimap.angle", "window.scale", "auctionCutPercent", "priceSource", "autoScan", "tooltipMode", "tooltipRecipes", "professionPrices", "lootSpaceHelper", "debug" }
 
 function DB:ResetSettings()
 	Clear(self.settings)

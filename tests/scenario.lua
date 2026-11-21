@@ -1029,7 +1029,8 @@ local settingsPage
 for _, page in ipairs(SR.UI:GetPages()) do
 	if page.id == "settings" then settingsPage = page end
 end
-local minimapCheck, tooltipModeDropdown, tooltipRecipesDropdown, professionPricesCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+local minimapCheck, tooltipModeDropdown, tooltipRecipesDropdown, professionPricesCheck, lootSpaceCheck, scaleSlider, cutSlider, sourceDropdown = unpack(settingsPage.controls)
+check(lootSpaceCheck:GetChecked() == false, "the full-bags helper is off by default")
 check(professionPricesCheck:GetChecked() == true, "prices in the professions window are on by default")
 check(SR:GetSetting("tooltipRecipes") == "learned", "tooltips list learned recipes and favorites by default")
 M.PickDropdown(tooltipRecipesDropdown, 4)
@@ -1725,6 +1726,51 @@ check(SR.DB:GetMarketKey() == "Test Realm", "without regional realms, the realm 
 markets["PvP Horde"], markets["CAMWOW EU4 Realm 2 PvE"] = nil, nil
 SR.DB.global.lastMarketKey = savedLastKey
 for key, value in pairs(savedMarkets) do markets[key] = value end
+
+---------------------------------------------------------------------------
+step("full bags while looting")
+local bagMarket = SR.DB:GetMarket()
+local savedBagAuction = bagMarket.auction
+bagMarket.auction = {
+	[4306] = { price = 400, quantity = 10, seen = time() },  -- Silk Cloth: 400c, 380c after the cut
+	[2589] = { price = 20, quantity = 10, seen = time() },   -- Linen Cloth
+	[2996] = { price = 300, quantity = 10, seen = time() },  -- Bolt of Linen Cloth
+}
+M.containerItems = {
+	[0] = { [1] = { 2589, 5 }, [2] = { 6948, 1 }, [3] = { 2996, 20 } }, -- Linen x5, Hearthstone, Bolts x20
+	[1] = { [4] = { 4306, 1, true } },                                   -- one Silk Cloth, bound
+}
+local linenButton = M.CreateBagButton(0, 1)
+local boundSilkButton = M.CreateBagButton(1, 4, true) -- in a closed bag
+M.loot = { { money = 120 }, { 4306, 3 } } -- 3 Silk Cloth: 1140c at the auction house
+local function InventoryFull() M.FireEvent("UI_ERROR_MESSAGE", 3, ERR_INV_FULL) end
+InventoryFull()
+check(not SR.BagGlow:IsAnyShown(), "off by default: nothing happens")
+SR:SetSetting("lootSpaceHelper", true)
+InventoryFull()
+check(OutputContains("Bags full: Silk Cloth (") and OutputContains("is worth more than Linen Cloth x5"), "chat names the cheaper stacks")
+local glowing = SR.BagGlow:GetShownButtons()
+check(glowing[linenButton], "the cheapest stack glows red")
+check(not OutputContains("Hearthstone ("), "items without a known value are never suggested")
+check(M.bagsOpened == 0, "bags already open: not opened again")
+check(not OutputContains("Bolt of Linen Cloth x20"), "stacks worth more than the loot (20 Bolts) aren't suggested")
+M.Advance(9)
+check(not SR.BagGlow:IsAnyShown(), "the glow fades after a few seconds")
+-- Only the bound Silk Cloth (vendor price only) is cheaper, and its bag is closed.
+M.containerItems[0][1] = nil
+linenButton:Hide()
+M.Advance(5)
+InventoryFull()
+check(M.bagsOpened == 1, "bags closed: SilkRoad opens them")
+M.Advance(0.3)
+check(SR.BagGlow:GetShownButtons()[boundSilkButton], "and the slot glows once its button is on screen")
+M.Advance(9)
+M.loot = { { money = 120 } }
+InventoryFull()
+check(not SR.BagGlow:IsAnyShown(), "only money to loot: nothing to compare")
+M.loot, M.containerItems, M.closedBagButtons = {}, {}, {}
+bagMarket.auction = savedBagAuction
+SR:SetSetting("lootSpaceHelper", false)
 
 ---------------------------------------------------------------------------
 step("merchant prices are recorded")
