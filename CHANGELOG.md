@@ -1,18 +1,14 @@
-# SilkRoad 0.7.3
-
-## New
-
-- **Prices in the professions window**: open a recipe in the game's professions window and
-  SilkRoad shows, under its reagents, what the materials cost at the cheapest price, the raw
-  cost of crafting every step, what the result sells for on the auction house (after the
-  cut) and to a vendor, and both profits. Can be turned off in Settings > General.
-- **Item suggestions while typing**: in the Buy Lists item box and the Price Database
-  lookup box, type part of a name (for example `light`) and pick the item from the list
-  (Light Leather, Light Hide...), with the mouse or the arrow keys and Enter.
-- Typing an item's full name in the Price Database now finds it even if the game hasn't
-  loaded that item yet.
+# SilkRoad 0.7.4
 
 ## Fixed
 
-- Escape now closes the SilkRoad window from the Settings page too. The key binding button
-  there also no longer blocks other keys, such as movement, while the page is open.
+- **Auction scans work again** after Forever's regional realms change. The scan no longer
+  gives up when the auction house is slow to send its listings.
+- **Auction prices are kept** for your auction house, which is now shared by every character
+  of the same ruleset and faction (for example *PvP Horde*). Prices you scanned before the
+  change are carried over, so they aren't lost.
+
+## New
+
+- After logging in, SilkRoad tells you when your auction prices are more than 3 hours old,
+  so you know when to open the auction house for a new scan.
