@@ -319,19 +319,36 @@ function Page:BuildData(parent)
 	marketText:SetWidth(SECTION_WIDTH)
 	marketText:SetSpacing(2)
 	self.MarketSummary = Note(parent, "", marketText)
-	local wipeMarket = Widgets.CreateButton(parent, L["Wipe market data"], 180, function()
-		Widgets.Confirm(L.WIPE_MARKET_CONFIRM, function()
-			SR.DB:WipeMarketData()
+	local function Wipe(confirmText, wipe, doneText)
+		Widgets.Confirm(confirmText, function()
+			wipe()
 			SR.Sources:ResetCache()
-			SR:Print(L["Market data was wiped."])
+			SR:Print(doneText)
 			self:Refresh()
 		end)
+	end
+	local wipeAuction = Widgets.CreateButton(parent, L["Wipe auction prices"], 176, function()
+		Wipe(L.WIPE_AUCTION_CONFIRM, function() SR.DB:WipeAuctionData() end, L["Auction prices were wiped."])
 	end)
-	wipeMarket:SetPoint("TOPLEFT", self.MarketSummary, "BOTTOMLEFT", 0, -10)
+	wipeAuction:SetPoint("TOPLEFT", self.MarketSummary, "BOTTOMLEFT", 0, -10)
+	Widgets.AttachTooltip(wipeAuction, L["Wipe auction prices"], L.WIPE_AUCTION_DESC)
+	self.WipeAuctionButton = wipeAuction
+
+	local wipeMerchant = Widgets.CreateButton(parent, L["Wipe merchant prices"], 176, function()
+		Wipe(L.WIPE_MERCHANT_CONFIRM, function() SR.DB:WipeMerchantData() end, L["Merchant prices were wiped."])
+	end)
+	wipeMerchant:SetPoint("LEFT", wipeAuction, "RIGHT", 8, 0)
+	Widgets.AttachTooltip(wipeMerchant, L["Wipe merchant prices"], L.WIPE_MERCHANT_DESC)
+	self.WipeMerchantButton = wipeMerchant
+
+	local wipeMarket = Widgets.CreateButton(parent, L["Wipe all market data"], 176, function()
+		Wipe(L.WIPE_MARKET_CONFIRM, function() SR.DB:WipeMarketData() end, L["Market data was wiped."])
+	end)
+	wipeMarket:SetPoint("LEFT", wipeMerchant, "RIGHT", 8, 0)
 	self.WipeMarketButton = wipeMarket
 
 	-- Settings
-	local settings = Section(parent, L["Settings"], wipeMarket, -24)
+	local settings = Section(parent, L["Settings"], wipeAuction, -24)
 	local settingsText = Widgets.CreateLabel(parent, L.RESET_SETTINGS_DESC, "GameFontHighlight")
 	settingsText:SetPoint("TOPLEFT", settings, "BOTTOMLEFT", 0, -8)
 	settingsText:SetWidth(SECTION_WIDTH)
@@ -349,7 +366,7 @@ end
 
 function Page:UpdateDataSummary()
 	local summary = SR.DB:GetDataSummary()
-	self.MarketSummary:SetText(L["%s auction prices on %d realm(s), %s merchant prices."]:format(
+	self.MarketSummary:SetText(L["%s auction prices on %d auction house(s), %s merchant prices (items sold by vendors)."]:format(
 		Util.FormatNumber(summary.auctionPrices), summary.realms, Util.FormatNumber(summary.vendorPrices)))
 end
 

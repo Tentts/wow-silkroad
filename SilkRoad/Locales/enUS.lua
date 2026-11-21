@@ -60,7 +60,11 @@ L.AUTO_SCAN_TOOLTIP = "When the auction house opens, scan it if the last full sc
 
 L.KEY_BINDING_TOOLTIP = "Click, then press the key (with Shift, Ctrl or Alt if you like) that should open and close SilkRoad. Escape cancels; right-click clears it."
 L.KEY_BINDING_NOTE = "The same binding is listed under Options > Keybindings > AddOns > SilkRoad."
-L.WIPE_MARKET_DESC = "Auction prices from every scan, on every realm, and the merchant prices SilkRoad recorded. The server's 15-minute scan limit still applies afterwards."
+L.WIPE_MARKET_DESC = "Auction prices from every scan, on every auction house, and the merchant prices SilkRoad recorded at vendors, which are also its list of items sold by vendors. What vendors pay for items comes from the game itself and isn't stored. The server's 15-minute scan limit still applies after a wipe."
+L.WIPE_AUCTION_DESC = "Auction prices from every scan, on every auction house. Merchant prices stay."
+L.WIPE_AUCTION_CONFIRM = "Wipe all auction prices SilkRoad has recorded? This can't be undone."
+L.WIPE_MERCHANT_DESC = "The prices SilkRoad recorded at merchants, and with them its list of items sold by vendors. They're recorded again as you visit vendors. Auction prices stay."
+L.WIPE_MERCHANT_CONFIRM = "Wipe all merchant prices SilkRoad has recorded, and its list of items sold by vendors? This can't be undone."
 L.WIPE_MARKET_CONFIRM = "Wipe all auction and merchant prices SilkRoad has recorded? This can't be undone."
 L.RESET_SETTINGS_DESC = "Puts every SilkRoad setting back to its default, including the window size and position. Your data and key binding stay."
 L.RESET_SETTINGS_CONFIRM = "Reset every SilkRoad setting to its default?"

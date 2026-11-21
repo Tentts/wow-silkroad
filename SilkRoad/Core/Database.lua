@@ -253,13 +253,26 @@ function DB:GetDataSummary()
 	}
 end
 
--- Market data: auction prices on every realm and recorded merchant prices.
--- The scanner's last-request time stays: the server's 15-minute limit
--- doesn't reset with SilkRoad's data.
-function DB:WipeMarketData()
+-- Auction prices from every scan, on every auction house. The scanner's
+-- last-request time stays: the server's 15-minute limit doesn't reset with
+-- SilkRoad's data.
+function DB:WipeAuctionData()
 	Clear(self.global.markets)
+	SR:Fire("PRICES_UPDATED")
+end
+
+-- Merchant prices recorded at vendors, which are also SilkRoad's list of
+-- items sold by vendors. (What vendors pay for items comes from the game's
+-- own item data and isn't stored.)
+function DB:WipeMerchantData()
 	Clear(self.global.vendorPrices)
 	SR:Fire("PRICES_UPDATED")
+end
+
+-- Both of the above.
+function DB:WipeMarketData()
+	self:WipeAuctionData()
+	self:WipeMerchantData()
 end
 
 -- Every setting back to its default. Done in place, so code holding the

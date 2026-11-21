@@ -164,8 +164,8 @@ worked out from current prices instead of a fixed guide.
 - Open the window with **`/silkroad`**, a **key binding**, the **minimap button** or the
   **addon compartment** menu.
 - Movable, resizable and scalable window that closes with **Escape**.
-- **Settings** in three tabs (General, Prices, Data), including a market data wipe and a
-  settings reset.
+- **Settings** in three tabs (General, Prices, Data), including wiping auction prices,
+  merchant prices or both, and a settings reset.
 - An **About** page with the version, links to SilkRoad on GitHub and CurseForge, and where
   to report problems or suggest ideas (click a link, then Ctrl+C to copy it).
 

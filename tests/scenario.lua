@@ -1310,14 +1310,28 @@ step("wiping data")
 SR.UI:OpenPage("settings")
 M.Click(tabButtons[3])
 check(settingsPage.PersonalSummary == nil and settingsPage.WipePersonalButton == nil, "no personal data wipe")
-check(settingsPage.MarketSummary:GetText():find("auction prices on 1 realm(s)", 1, true), "market data summarised")
+check(settingsPage.MarketSummary:GetText():find("auction prices on 1 auction house(s)", 1, true), "market data summarised")
 local lastRequest = SR.DB.global.scanner.lastRequest
+-- One at a time: auction prices, then merchant prices.
+SR.DB.global.vendorPrices[2320] = { price = 10, seen = time() }
+M.Click(settingsPage.WipeAuctionButton)
+check(M.lastPopup and M.lastPopup.text:find("Wipe all auction prices", 1, true), "asks first")
+M.AcceptPopup()
+M.RunTimers()
+check(SR.DB:GetDataSummary().auctionPrices == 0 and SR.DB.global.vendorPrices[2320], "Wipe auction prices keeps merchant prices")
+SR.DB:GetMarket().auction[2589] = { price = 50, quantity = 1, seen = time() }
+M.Click(settingsPage.WipeMerchantButton)
+M.AcceptPopup()
+M.RunTimers()
+check(next(SR.DB.global.vendorPrices) == nil and SR.DB:GetDataSummary().auctionPrices == 1, "Wipe merchant prices keeps auction prices")
+check(OutputContains("Merchant prices were wiped."), "confirmed in chat")
+SR.DB.global.vendorPrices[2320] = { price = 10, seen = time() }
 M.Click(settingsPage.WipeMarketButton)
 M.AcceptPopup()
 M.RunTimers()
 local wiped = SR.DB:GetDataSummary()
 check(wiped.auctionPrices == 0 and wiped.realms == 0 and next(SR.DB.global.vendorPrices) == nil, "auction and merchant prices wiped")
-check(settingsPage.MarketSummary:GetText():find("^0 auction prices on 0 realm"), "summary updated")
+check(settingsPage.MarketSummary:GetText():find("^0 auction prices on 0 auction house"), "summary updated")
 check(SR.DB.global.scanner.lastRequest == lastRequest, "the scan cooldown survives the wipe")
 check(SR.Prices:GetAuctionPrice(2589) == nil, "prices gone from the price layer")
 
