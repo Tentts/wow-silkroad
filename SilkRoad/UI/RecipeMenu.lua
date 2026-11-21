@@ -15,21 +15,17 @@ local Widgets = SR.Widgets
 local function AddToBuyList(recipe, listID, crafts, raw)
 	Widgets.Prompt(L["How many times will you craft %s?"]:format(recipe.name or L["Recipe"]), crafts or 1, function(text)
 		local count = math.max(1, math.floor(tonumber(text) or 1))
-		local list, added, skipped = SR.BuyLists:AddRecipe(listID, recipe, count, raw)
-		local names = {}
-		for _, itemID in ipairs(skipped) do
-			names[#names + 1] = Util.GetItemDisplay(itemID).name
+		local list, added, vendorSold = SR.BuyLists:AddRecipe(listID, recipe, count, raw)
+		SR:Print(L["Added %d reagents to the buy list %s."]:format(added, list.name))
+		if #vendorSold > 0 then
+			-- Worth knowing before buying them at the auction house.
+			local lines = {}
+			for _, itemID in ipairs(vendorSold) do
+				local price = SR.Prices:GetVendorBuyPrice(itemID)
+				lines[#lines + 1] = Util.GetItemDisplay(itemID).name .. "  " .. Util.FormatMoney(price)
+			end
+			Widgets.Notice(L.VENDOR_REAGENTS_NOTICE .. "\n\n" .. table.concat(lines, "\n"))
 		end
-		if not list then
-			SR:Print(L["Nothing to buy for %s: vendors sell all its reagents (%s)."]:format(
-				recipe.name or L["Recipe"], table.concat(names, ", ")))
-			return
-		end
-		local message = L["Added %d reagents to the buy list %s."]:format(added, list.name)
-		if #names > 0 then
-			message = message .. " " .. L["Left out, sold by vendors: %s."]:format(table.concat(names, ", "))
-		end
-		SR:Print(message)
 	end, true)
 end
 

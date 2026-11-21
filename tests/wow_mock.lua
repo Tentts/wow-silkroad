@@ -1207,14 +1207,16 @@ define("C_TradeSkillUI", {
 	end,
 })
 
--- The open merchant: M.merchant = { { itemID, price, stackCount, hasExtendedCost }, ... }
+-- The open merchant: M.merchant = { { itemID, price, stackCount, hasExtendedCost, numAvailable }, ... }
+-- (numAvailable -1, the default, for unlimited stock)
 M.merchant = {}
 define("GetMerchantNumItems", function() return #M.merchant end)
 define("GetMerchantItemID", function(index) return M.merchant[index] and M.merchant[index][1] end)
 define("C_MerchantFrame", {
 	GetItemInfo = function(index)
 		local entry = M.merchant[index]
-		return entry and { price = entry[2], stackCount = entry[3] or 1, hasExtendedCost = entry[4] or false } or nil
+		return entry and { price = entry[2], stackCount = entry[3] or 1, hasExtendedCost = entry[4] or false,
+			numAvailable = entry[5] or -1 } or nil
 	end,
 })
 
@@ -1317,7 +1319,9 @@ function M.AcceptPopup(text)
 	if text then
 		box.text = text
 	end
-	popup.dialog.OnAccept(dialog, popup.data)
+	if popup.dialog.OnAccept then -- notices only have an OK button
+		popup.dialog.OnAccept(dialog, popup.data)
+	end
 end
 
 -- Item tooltips: post-call hooks, and lines added to GameTooltip ("left|right").

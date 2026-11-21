@@ -440,5 +440,4 @@ L.WIPE_AUCTION_DESC = "Los precios de subasta de todos los escaneos, en todas la
 L.WIPE_AUCTION_CONFIRM = "¿Borrar todos los precios de subasta que ha registrado SilkRoad? No se puede deshacer."
 L.WIPE_MERCHANT_DESC = "Los precios que SilkRoad ha registrado en los vendedores, y con ellos su lista de objetos que venden los vendedores. Se vuelven a registrar al visitar vendedores. Los precios de subasta se mantienen."
 L.WIPE_MERCHANT_CONFIRM = "¿Borrar todos los precios de vendedor que ha registrado SilkRoad, y su lista de objetos que venden los vendedores? No se puede deshacer."
-L["Nothing to buy for %s: vendors sell all its reagents (%s)."] = "Nada que comprar para %s: los vendedores venden todos sus componentes (%s)."
-L["Left out, sold by vendors: %s."] = "Fuera, los venden los vendedores: %s."
+L.VENDOR_REAGENTS_NOTICE = "Los vendedores también venden estos componentes, normalmente más baratos que en la casa de subastas. Están en la lista igualmente; cómpralos a un vendedor si puedes."

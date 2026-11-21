@@ -517,16 +517,20 @@ local boltList = SR.BuyLists:FindByName("Bolt of Linen Cloth x10")
 check(boltList and #boltList.items == 1 and boltList.items[1].itemID == 2589 and boltList.items[1].quantity == 20,
 	"a new list named after the recipe, with reagents x crafts")
 check(OutputContains("Added 1 reagents to the buy list Bolt of Linen Cloth x10"), "confirmed in chat")
--- Every reagent sold by vendors: nothing to buy, so no empty list.
-local listsBefore = #SR.BuyLists:GetLists()
+check(M.lastPopup == nil, "no vendor notice when no reagent is sold by vendors")
+-- Every reagent sold by vendors: still added, with a notice listing them.
 SR.DB.global.vendorPrices[2589] = { price = 10, seen = time() } -- as if a merchant sold Linen Cloth
 M.Click(rowFrame, "RightButton")
 M.PickContextMenu("Add to a buy list...")
 M.PickContextMenu("New buy list")
 M.AcceptPopup("3")
 M.RunTimers()
-check(#SR.BuyLists:GetLists() == listsBefore, "no empty list when vendors sell every reagent")
-check(OutputContains("Nothing to buy for Bolt of Linen Cloth: vendors sell all its reagents (Linen Cloth)."), "says why, naming them")
+local vendorList = SR.BuyLists:FindByName("Bolt of Linen Cloth x3")
+check(vendorList and SR.BuyLists:GetItem(vendorList, 2589).quantity == 6, "vendor-sold reagents are added too, so the list isn't empty")
+check(M.lastPopup and M.lastPopup.text:find("Vendors also sell these reagents", 1, true)
+	and M.lastPopup.text:find("Linen Cloth  " .. SR.Util.FormatMoney(10), 1, true), "a notice lists them with their vendor price")
+M.AcceptPopup()
+SR.BuyLists:Delete(vendorList.id)
 SR.DB.global.vendorPrices[2589] = nil
 local threadRecipe
 for _, recipe in ipairs(SR.Recipes:GetRecipes(197)) do
@@ -534,9 +538,9 @@ for _, recipe in ipairs(SR.Recipes:GetRecipes(197)) do
 		if reagent.itemID == 2320 and #recipe.reagents > 1 then threadRecipe = threadRecipe or recipe end
 	end
 end
-local threadList, added, skipped = SR.BuyLists:AddRecipe(clothID, threadRecipe, 2)
-check(threadList.id == clothID and #skipped >= 1 and added == #threadRecipe.reagents - #skipped, "vendor-sold reagents (thread) are left out")
-check(not SR.BuyLists:GetItem(threadList, 2320), "no thread in the list")
+local threadList, added, vendorSold = SR.BuyLists:AddRecipe(clothID, threadRecipe, 2)
+check(threadList.id == clothID and added == #threadRecipe.reagents, "every reagent is added, vendor-sold ones too")
+check(SR.BuyLists:GetItem(threadList, 2320) and #vendorSold >= 1 and vendorSold[1] == 2320, "thread included, and reported as sold by vendors")
 SR.BuyLists:Delete(clothID)
 
 step("raw materials: crafting every step")
@@ -597,8 +601,10 @@ M.PickContextMenu("New buy list")
 M.AcceptPopup("2")
 M.RunTimers()
 local rawList = SR.BuyLists:FindByName("Medium Armor Kit x2 (raw)")
-check(rawList and #rawList.items == 1 and rawList.items[1].itemID == 2318 and rawList.items[1].quantity == 32,
-	"a list of raw materials (thread left out: vendors sell it)")
+check(rawList and #rawList.items == 2 and SR.BuyLists:GetItem(rawList, 2318).quantity == 32
+	and SR.BuyLists:GetItem(rawList, 2320).quantity == 2, "a list of raw materials, thread included")
+check(M.lastPopup and M.lastPopup.text:find("Coarse Thread", 1, true), "with the vendor notice for the thread")
+M.AcceptPopup()
 local boltFrame
 for _, frame in ipairs(recipesPage.Table.ScrollBox.__active) do
 	if frame.row and frame.row.hasSteps == false then boltFrame = frame end
@@ -1717,6 +1723,7 @@ M.merchant = {
 	{ 2678, 40, 1 },        -- Mild Spices, 40c each
 	{ 6260, 500, 5 },       -- Blue Dye, sold in fives for 5s
 	{ 9999, 100, 1, true }, -- bought with tokens: skipped
+	{ 4234, 600, 1, false, 2 }, -- Heavy Leather, only 2 in stock: a limited offer, skipped
 }
 M.FireEvent("MERCHANT_SHOW")
 M.FireEvent("MERCHANT_UPDATE")
@@ -1725,6 +1732,7 @@ local vendorPrices = SR.DB.global.vendorPrices
 check(vendorPrices[2678].price == 40 and vendorPrices[2678].seen == time(), "merchant price recorded")
 check(vendorPrices[6260].price == 100, "stacks recorded per item")
 check(vendorPrices[9999] == nil, "token purchases skipped")
+check(vendorPrices[4234] == nil, "limited-stock offers aren't recorded as vendor items")
 check(SR.Prices:GetVendorBuyPrice(2678) == 40 and select(2, SR.Prices:GetVendorBuyPrice(2678)) == "recorded", "recorded prices win")
 
 M.RunTimers()

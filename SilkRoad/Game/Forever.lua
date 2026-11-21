@@ -143,14 +143,17 @@ function Game.ReadRecipeSchematic(recipeID)
 	}
 end
 
--- What the open merchant sells for gold (items bought with tokens or
--- currencies are skipped), as a price per single item.
+-- What the open merchant sells for gold, as a price per single item.
+-- Skipped: items bought with tokens or currencies, and limited-stock offers
+-- (numAvailable is -1 for unlimited): a merchant selling two Heavy Leather
+-- now and then doesn't make it a vendor item.
 function Game.ReadMerchant()
 	local list = {}
 	for index = 1, GetMerchantNumItems() do
 		local itemID = GetMerchantItemID(index)
 		local info = C_MerchantFrame.GetItemInfo(index)
-		if itemID and info and info.price and info.price > 0 and not info.hasExtendedCost then
+		local limited = info and info.numAvailable and info.numAvailable >= 0
+		if itemID and info and info.price and info.price > 0 and not info.hasExtendedCost and not limited then
 			list[#list + 1] = { itemID = itemID, price = info.price / math.max(1, info.stackCount or 1) }
 		end
 	end

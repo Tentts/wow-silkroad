@@ -79,6 +79,7 @@ L.GUIDE_EMPTY_BODY = "There is nothing to plan for this profession and target."
 L.GATHER_NO_NODE_DATA = "Enable GatherMate2 and GatherMate2_Data for node counts per zone and waypoints to nodes."
 L.TRAINER_STARTING_ZONE_NOTE = "Starting-zone trainers only teach up to 75: find a trainer in a capital or a larger town."
 
+L.VENDOR_REAGENTS_NOTICE = "Vendors also sell these reagents, usually cheaper than the auction house. They're on the list too; buy them from a vendor if you can."
 L.BUYLISTS_DESC = "Lists of items to buy at the auction house: make and edit them here, then buy them from the Buy Lists tab of the auction house."
 L.BUYLISTS_EMPTY_BODY = "Click New to make a list, or right-click a recipe and choose \"Add to a buy list\" to fill one with its reagents."
 L.BUYLIST_ITEMS_EMPTY_BODY = "Add items with the box above (an item ID or name, or shift-click an item), or right-click a recipe to add its reagents."

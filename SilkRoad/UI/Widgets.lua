@@ -342,3 +342,19 @@ function Widgets.Prompt(text, default, onAccept, numeric)
 	end
 	StaticPopup_Show(PROMPT_DIALOG, text, nil, { default = default and tostring(default) or "", onAccept = onAccept, numeric = numeric })
 end
+
+-- A message with an OK button.
+local NOTICE_DIALOG = "SILKROAD_NOTICE"
+
+function Widgets.Notice(text)
+	if not StaticPopupDialogs[NOTICE_DIALOG] then
+		StaticPopupDialogs[NOTICE_DIALOG] = {
+			text = "%s",
+			button1 = OKAY,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+		}
+	end
+	StaticPopup_Show(NOTICE_DIALOG, text)
+end

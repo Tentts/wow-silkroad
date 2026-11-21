@@ -73,7 +73,8 @@ Turn any recipe into a **buy list** and buy it item by item from the auction hou
   - **Add to favorites**: starred in the list and in item tooltips (see below). For learned
     recipes these are the same favorites as the star in the game's professions window.
   - **Add to a buy list...**: its reagents, times the crafts you ask for (a guide step
-    suggests its own count). Reagents vendors sell are left out.
+    suggests its own count). All reagents go in; if vendors also sell some, a notice lists
+    them with their vendor price so you can buy those from a vendor instead.
   - **Add raw materials to a buy list...**: the raw materials for crafting every step
     yourself, shown when something in the recipe can be crafted.
   - **Where to get it**: every source of the recipe.
