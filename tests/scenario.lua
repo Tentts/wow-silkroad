@@ -422,6 +422,24 @@ M.Click(buyPage.Items.ScrollBox.__active[1], "RightButton")
 M.PickContextMenu(2)
 M.RunTimers()
 check(#buyPage.Items.rows == 0, "Remove takes an item out")
+for _, itemID in ipairs({ 2589, 2996, 4306 }) do
+	SR.BuyLists:AddItem(buyPage:SelectedList().id, itemID, 5)
+end
+M.RunTimers()
+local middleFrame
+for _, frame in ipairs(buyPage.Items.ScrollBox.__active) do
+	if frame.row and frame.row.itemID == 2996 then middleFrame = frame end
+end
+M.Click(middleFrame, "RightButton")
+M.PickContextMenu("Remove")
+M.RunTimers()
+local spare = buyPage:SelectedList()
+check(#spare.items == 2 and not SR.BuyLists:GetItem(spare, 2996) and SR.BuyLists:GetItem(spare, 2589) and SR.BuyLists:GetItem(spare, 4306),
+	"Remove takes out the item right-clicked, not another one")
+SR.BuyLists:SetQuantity(spare.id, 2589, 0)
+check(#spare.items == 1 and SR.BuyLists:GetItem(spare, 4306), "an amount of 0 removes that item too")
+SR.BuyLists:RemoveItem(spare.id, 4306)
+M.RunTimers()
 M.Click(buyPage.ListButtons[4]) -- Delete
 M.AcceptPopup()
 M.RunTimers()

@@ -150,7 +150,12 @@ end
 -- Sets the amount wanted; 0 removes the item.
 function BuyLists:SetQuantity(id, itemID, quantity)
 	local list = self:GetList(id)
-	local item, index = list and self:GetItem(list, itemID)
+	if not list then
+		return
+	end
+	-- Two values: "list and self:GetItem(...)" would keep only the first and
+	-- leave index nil, and table.remove(items, nil) removes the last item.
+	local item, index = self:GetItem(list, itemID)
 	if not item then
 		return
 	end
