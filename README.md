@@ -126,6 +126,9 @@ worked out from current prices instead of a fixed guide.
 
 - **Automatic scans.** A few seconds after you open the auction house, SilkRoad requests a
   full scan and saves each item's lowest buyout and the quantity listed, per realm.
+- **Kept between sessions**: scan data is saved with your other addon data when you log out
+  or `/reload`, per realm. After logging in, SilkRoad tells you when your realm's prices are
+  more than 3 hours old.
 - **Respects the server's limit** of one full scan every 15 minutes, automatic or manual.
   The limit is tracked across characters and reloads.
 - **No stutter.** Listings are processed in small batches across frames.

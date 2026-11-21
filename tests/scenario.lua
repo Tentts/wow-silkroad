@@ -1524,6 +1524,31 @@ for _, id in ipairs({ 2319, 2318, 2313 }) do market.auction[id] = nil end
 SR.DB.global.vendorPrices[2320] = nil
 
 ---------------------------------------------------------------------------
+step("how old the scan data is, on login")
+local realm = SR.DB:GetMarketKey()
+local markets = SR.DB.global.markets
+local savedMarkets = {}
+for key, value in pairs(markets) do savedMarkets[key] = value end
+for key in pairs(savedMarkets) do markets[key] = nil end
+markets[realm] = { auction = {}, lastScan = time() - 3600 }
+local printedBefore = #M.output
+SR.Scanner:ReportDataAge()
+check(#M.output == printedBefore, "scans less than 3 hours old: nothing to say")
+markets[realm].lastScan = time() - 5 * 3600
+SR.Scanner:ReportDataAge()
+check(OutputContains("Auction prices for " .. realm .. " are from 5 h ago"), "older than 3 hours: a warning with the age")
+markets[realm] = nil
+markets["Other Realm"] = { auction = {}, lastScan = time() - 60 }
+SR.Scanner:ReportDataAge()
+check(OutputContains("No auction scans for " .. realm .. " yet; SilkRoad has scans for Other Realm."),
+	"no scans for this realm: says which realms have them")
+markets["Other Realm"] = nil
+printedBefore = #M.output
+SR.Scanner:ReportDataAge()
+check(#M.output == printedBefore, "no scans anywhere: nothing to say (a first login)")
+for key, value in pairs(savedMarkets) do markets[key] = value end
+
+---------------------------------------------------------------------------
 step("merchant prices are recorded")
 M.merchant = {
 	{ 2678, 40, 1 },        -- Mild Spices, 40c each

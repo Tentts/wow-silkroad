@@ -280,9 +280,46 @@ local function OnAuctionHouseClosed()
 	end
 end
 
+---------------------------------------------------------------------------
+-- How old the saved scan data is, said once after logging in
+---------------------------------------------------------------------------
+
+local STALE_AFTER = 3 * 60 * 60 -- seconds
+local LOGIN_REPORT_DELAY = 8    -- after the login chat messages
+
+-- Scan data is kept per realm (SilkRoadDB.markets, saved by the game on
+-- logout or /reload). Says when this realm's data is more than 3 hours
+-- old, or, when this realm has none, which realms do have scans: the
+-- realm name the game reports is what files the data.
+function Scanner:ReportDataAge()
+	local key = SR.DB:GetMarketKey()
+	local markets = SR.DB.global.markets
+	local market = markets[key]
+	if market and market.lastScan then
+		if time() - market.lastScan > STALE_AFTER then
+			SR:Print(L["Auction prices for %s are from %s. Open the auction house to scan again."]:format(
+				key, Util.TimeAgo(market.lastScan)))
+		end
+		return
+	end
+	local others = {}
+	for otherKey, other in pairs(markets) do
+		if otherKey ~= key and other.lastScan then
+			others[#others + 1] = otherKey
+		end
+	end
+	if #others > 0 then
+		table.sort(others)
+		SR:Print(L["No auction scans for %s yet; SilkRoad has scans for %s."]:format(key, table.concat(others, ", ")))
+	end
+end
+
 function Scanner:OnEnable()
 	SR:RegisterEvent("AUCTION_HOUSE_SHOW", OnAuctionHouseShow)
 	SR:RegisterEvent("AUCTION_HOUSE_CLOSED", OnAuctionHouseClosed)
+	C_Timer.After(LOGIN_REPORT_DELAY, function()
+		self:ReportDataAge()
+	end)
 end
 
 SR:RegisterSlashCommand("scan", L["scan the auction house (it must be open)"], function()

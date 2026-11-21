@@ -424,3 +424,7 @@ L["Auction profit"] = "Beneficio en subasta"
 L["Vendor pays"] = "El vendedor paga"
 L["Vendor profit"] = "Beneficio con vendedor"
 L.PROFESSION_PRICES_TOOLTIP = "Muestra, bajo los componentes de la receta abierta en la ventana de profesiones del juego, lo que cuestan sus materiales al precio más barato, el coste en bruto de fabricar cada paso, y por cuánto se vende el resultado en la casa de subastas y a un vendedor, con ambos beneficios."
+
+-- Scan data age on login
+L["Auction prices for %s are from %s. Open the auction house to scan again."] = "Los precios de subasta de %s son de %s. Abre la casa de subastas para escanear de nuevo."
+L["No auction scans for %s yet; SilkRoad has scans for %s."] = "Aún no hay escaneos de subasta para %s; SilkRoad tiene escaneos de %s."
