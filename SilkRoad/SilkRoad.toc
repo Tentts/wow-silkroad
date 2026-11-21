@@ -2,7 +2,7 @@
 ## Title: |cffe6c35cSilkRoad|r
 ## Notes: Crafting and trading helper: recipe costs, auction house and vendor prices.
 ## Author: Tentts
-## Version: 0.7.4
+## Version: 0.7.5
 ## Category: Professions
 ## X-Curse-Project-ID: 1806315
 ## IconTexture: Interface\Icons\INV_Fabric_Silk_02
