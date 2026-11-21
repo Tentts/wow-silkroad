@@ -150,6 +150,15 @@ function Prices:GetVendorBuyPrice(itemID)
 	return nil
 end
 
+-- Whether a merchant was seen selling the item (by SilkRoad or Auctionator),
+-- for telling the player "vendors sell this". QuestieDB's vendor lists only
+-- give prices (GetVendorBuyPrice's "data"): they can list a merchant's
+-- limited-stock offers, which don't make an item a vendor item.
+function Prices:IsSoldByVendor(itemID)
+	local price, source = self:GetVendorBuyPrice(itemID)
+	return price ~= nil and source ~= "data"
+end
+
 -- Cheapest known way to get one unit: returns price, "vendor" | "auction".
 function Prices:GetAcquireCost(itemID)
 	local vendor = self:GetVendorBuyPrice(itemID)

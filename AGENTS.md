@@ -114,7 +114,9 @@ UI, then Modules. New files must be added to `SilkRoad/SilkRoad.toc`.
   `SR.ItemSearch:Find(text, limit)` over the game data's items and buy list items).
 - **Menus:** `SR.Game.ShowMenu(owner, title, options, onPick)` for flat context menus.
 - **Prices:** always through `SR.Prices` (`GetAuctionPrice`, `GetVendorBuyPrice`,
-  `GetVendorSellPrice`, `GetAcquireCost`). `Recipes:Evaluate(recipe)` gives cost, rawCost,
+  `GetVendorSellPrice`, `GetAcquireCost`). QuestieDB vendor lists are trusted for vendor
+  *prices* only; "sold by vendors" (`Prices:IsSoldByVendor`) needs a merchant actually seen
+  selling the item, unlimited stock (SilkRoad's records or Auctionator's). `Recipes:Evaluate(recipe)` gives cost, rawCost,
   steps, raw materials, sale prices and profits. `Recipes:Breakdown(recipe, crafts, exact)`
   breaks a recipe down to raw materials. Skill-up thresholds come from
   `Recipes:GetSkillLevels(recipe)` (yellow, grey, points per skill-up): the game data

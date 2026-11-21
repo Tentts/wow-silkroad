@@ -532,6 +532,15 @@ check(M.lastPopup and M.lastPopup.text:find("Vendors also sell these reagents", 
 M.AcceptPopup()
 SR.BuyLists:Delete(vendorList.id)
 SR.DB.global.vendorPrices[2589] = nil
+-- QuestieDB's vendor lists give prices only: they don't make a reagent "sold by vendors".
+local questieSaysVendor = SR.Sources.IsSoldByVendor
+SR.Sources.IsSoldByVendor = function() return true end -- as QuestieDB says of Fine Thread
+check(select(2, SR.Prices:GetVendorBuyPrice(2321)) == "data" and not SR.Prices:IsSoldByVendor(2321),
+	"an item only QuestieDB lists at a vendor isn't reported as sold by vendors")
+SR.DB.global.vendorPrices[2321] = { price = 90, seen = time() }
+check(SR.Prices:IsSoldByVendor(2321), "one seen at a merchant is")
+SR.DB.global.vendorPrices[2321] = nil
+SR.Sources.IsSoldByVendor = questieSaysVendor
 local threadRecipe
 for _, recipe in ipairs(SR.Recipes:GetRecipes(197)) do
 	for _, reagent in ipairs(recipe.reagents) do

@@ -179,7 +179,7 @@ end
 -- Reagents a recipe needs for `crafts` crafts, all of them. raw = true
 -- lists the raw materials instead, for crafting every intermediate step
 -- yourself (see Recipes:Breakdown).
--- Returns { { itemID, quantity }, ... }, { itemID a vendor also sells, ... }.
+-- Returns { { itemID, quantity }, ... }, { itemID a merchant was seen selling, ... }.
 function BuyLists:RecipeReagents(recipe, crafts, raw)
 	crafts = math.max(1, math.floor(tonumber(crafts) or 1))
 	local list = recipe.reagents or {}
@@ -190,7 +190,7 @@ function BuyLists:RecipeReagents(recipe, crafts, raw)
 	local reagents, vendorSold = {}, {}
 	for _, reagent in ipairs(list) do
 		reagents[#reagents + 1] = { itemID = reagent.itemID, quantity = reagent.count * crafts }
-		if SR.Prices:GetVendorBuyPrice(reagent.itemID) then
+		if SR.Prices:IsSoldByVendor(reagent.itemID) then -- seen at a merchant, not only in QuestieDB
 			vendorSold[#vendorSold + 1] = reagent.itemID
 		end
 	end
