@@ -106,7 +106,8 @@ worked out from current prices instead of a fixed guide.
   using each recipe's skill-up chance (orange, yellow, green, grey).
 - Costs come from live prices. Intermediates such as bolts of cloth are **crafted when
   that's cheaper than buying them**, and you can count **resale** (to vendors, or wherever
-  the result earns most).
+  the result earns most). Even a craft that sells at a profit counts as costing something,
+  so recipes that need fewer crafts (orange ones) win over dozens of low-chance ones.
 - Choose which recipes may be used: **known only**, + trainer, + vendor, + auction house,
   + drops. Recipes to learn are marked; click to see where to get them.
 - **Progress tracking**: the current step is highlighted and the plan **re-calculates** when

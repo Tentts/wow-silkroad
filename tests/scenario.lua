@@ -664,6 +664,26 @@ end
 check(linen and linen.have == 10 and linen.buy == math.max(0, linen.need - 10), "shopping list subtracts what's in the bags")
 check(linen.unitCost == 50 and linen.source == "auction" and linen.total == linen.buy * 50, "priced at the cheapest source")
 
+step("leveling planner: crafts that pay for themselves aren't free")
+-- Leatherworking at 140 (prices from a real scan): Hillman's Shoulders (yellow at 130,
+-- grey at 155) sell on the auction house for more than their materials; Hillman's
+-- Leather Gloves (learnable at 145, grey at 170) cost more per craft but stay orange.
+local plannerMarket = SR.DB:GetMarket()
+local savedAuction = plannerMarket.auction
+plannerMarket.auction = {}
+for itemID, price in pairs({ [2319] = 109, [4233] = 488, [2321] = 97, [4251] = 1068, [4247] = 1058, [2318] = 21, [4232] = 330 }) do
+	plannerMarket.auction[itemID] = { price = price, quantity = 100, seen = time() }
+end
+local bestPlan = SR.Planner:Plan(165, { from = 140, to = 160, availability = "trainer", resale = "best" })
+check(bestPlan.steps[1].recipe.name == "Hillman's Shoulders" and bestPlan.steps[1].to == 145,
+	"Shoulders only until the Gloves can be learned")
+check(bestPlan.steps[2].recipe.name == "Hillman's Leather Gloves" and bestPlan.steps[2].crafts < 30,
+	"then the orange Gloves, not dozens of low-chance Shoulders sold at a profit")
+local vendorPlan = SR.Planner:Plan(165, { from = 140, to = 160, availability = "trainer", resale = "vendor" })
+check(vendorPlan.steps[2].recipe.name == "Hillman's Leather Gloves", "the same with vendor resale")
+check(bestPlan.totalCost < vendorPlan.totalCost, "the plan still shows the real cost, auction sales included")
+plannerMarket.auction = savedAuction
+
 step("leveling guide page")
 SR.UI:OpenPage("guide")
 local guidePage

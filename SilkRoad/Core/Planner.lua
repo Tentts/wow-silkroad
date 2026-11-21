@@ -9,7 +9,11 @@
 	  * Cost of a craft: materials at the cheapest price per reagent (buying
 	    it, or crafting it yourself when that's cheaper, e.g. bolts), minus
 	    what the result sells for if resale is counted (vendor only, or the
-	    better of vendor and auction after the cut).
+	    better of vendor and auction after the cut). For choosing recipes,
+	    selling the result wins back at most MAX_RESALE_SHARE of the
+	    materials: a craft that sells for more than it costs isn't free when
+	    levelling (materials up front, time, selling dozens of items), so
+	    the number of crafts a recipe needs always counts.
 	  * A recipe this character doesn't know adds its learning cost (recipe
 	    item from a vendor or the auction house; trainer fees aren't in the
 	    game data), spread over the points it can still give.
@@ -41,6 +45,15 @@ Planner.RESALE = { "none", "vendor", "best" }
 
 -- Score for recipes with an unpriced reagent: only used when nothing else can give the point.
 local UNPRICED_PENALTY = 1e12
+
+-- Share of the materials that selling the result can win back when recipes
+-- are compared (the plan still shows the real cost).
+local MAX_RESALE_SHARE = 0.75
+
+-- What one craft costs when comparing recipes.
+local function RankingCost(candidate)
+	return math.max(candidate.craftCost, candidate.materialCost * (1 - MAX_RESALE_SHARE), 0)
+end
 
 function Planner.SkillUpChance(recipe, skill)
 	local yellow, gray = recipe.yellow, recipe.gray
@@ -182,7 +195,7 @@ local function BestAt(candidates, skill, acquired)
 		if recipe.learn <= skill then
 			local chance = Planner.SkillUpChance(recipe, skill)
 			if chance > 0 then
-				local score = math.max(candidate.craftCost, 0) / chance
+				local score = RankingCost(candidate) / chance
 				if candidate.learnKind ~= "known" and not acquired[recipe.id] then
 					score = score + candidate.learnCost / math.max(1, recipe.gray - skill)
 				end
