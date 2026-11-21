@@ -428,3 +428,6 @@ L.PROFESSION_PRICES_TOOLTIP = "Muestra, bajo los componentes de la receta abiert
 L["Auction prices for %s are from %s. Open the auction house to scan again."] = "Los precios de subasta de %s son de %s. Abre la casa de subastas para escanear de nuevo."
 L["No auction scans for %s yet; SilkRoad has scans for %s."] = "Aún no hay escaneos de subasta para %s; SilkRoad tiene escaneos de %s."
 L["Auction prices scanned on %s now belong to %s, the auction house shared by your realm group."] = "Los precios de subasta escaneados en %s pasan a %s, la casa de subastas que comparte tu grupo de reinos."
+
+-- Training milestones
+L["The trainer teaches it once your skill reaches %d; needed to go past it."] = "El instructor lo enseña cuando tu habilidad llega a %d; necesario para pasar de ahí."

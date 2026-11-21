@@ -686,7 +686,8 @@ local expertRow
 for _, row in ipairs(guidePage.Steps.rows) do
 	if row.name == "Train Expert Tailoring" then expertRow = row end
 end
-check(expertRow.from < 125 and expertRow.note == "Learnable at skill 125; needed to go past 150.", "placed where the rank can be learned")
+check(expertRow.from < 150 and expertRow.from > 149 and expertRow.note == "The trainer teaches it once your skill reaches 150; needed to go past it.",
+	"placed at 150, where Forever's trainers teach Expert")
 local stepRows = guidePage.Steps.rows
 local planRows = 0
 for _, row in ipairs(stepRows) do

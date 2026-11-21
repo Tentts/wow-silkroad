@@ -113,8 +113,8 @@ worked out from current prices instead of a fixed guide.
   your skill goes up, prices change or you learn a recipe.
 - A **shopping list** with what you need, what's already in your bags and bank, and the
   cheapest source for the rest.
-- **Training reminders**: rows marking when to train Journeyman (at 50), Expert (125) and
-  Artisan (200), for ranks you haven't trained yet.
+- **Training reminders**: rows marking when to train Journeyman (at 75), Expert (150) and
+  Artisan (225), Forever's trainer requirements, for ranks you haven't trained yet.
 - **Gathering professions** (Mining, Herbalism, Skinning, Fishing) get a simple route: what to
   gather at each skill and where. Mining and Herbalism list the best node for each bracket and
   the zones it's found in, ranked by node count when GatherMate2's node database is enabled;

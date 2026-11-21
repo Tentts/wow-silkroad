@@ -347,7 +347,9 @@ function Page:MilestoneRows(profession, from, to)
 		if not trained and rank.cap > from and rank.cap < to then
 			local at = math.max(rank.learnAt, from)
 			local name = L["Train %s %s"]:format(RANK_NAMES[rank.name] or rank.name, profession.name)
-			local note = L["Learnable at skill %d; needed to go past %d."]:format(rank.learnAt, rank.cap)
+			local note = rank.learnAt < rank.cap
+				and L["Learnable at skill %d; needed to go past %d."]:format(rank.learnAt, rank.cap)
+				or L["The trainer teaches it once your skill reaches %d; needed to go past it."]:format(rank.cap)
 			if rank.cap == 75 then
 				note = note .. " " .. L.TRAINER_STARTING_ZONE_NOTE
 			end

@@ -67,12 +67,14 @@ SR.GatheringData = {
 	},
 
 	-- Profession ranks (every profession): train the next rank once the
-	-- skill reaches learnAt, to go past the current cap. In Forever the
-	-- starting-zone trainers only teach up to 75.
+	-- skill reaches learnAt, to go past the current cap. Unlike Classic
+	-- (25 points early), Forever's trainers only teach a rank once the skill
+	-- has reached the current cap (checked in game: Expert Leatherworking at
+	-- 150). The starting-zone trainers only teach up to 75.
 	ranks = {
-		{ name = "Journeyman", learnAt = 50, cap = 75 },
-		{ name = "Expert", learnAt = 125, cap = 150 },
-		{ name = "Artisan", learnAt = 200, cap = 225 },
+		{ name = "Journeyman", learnAt = 75, cap = 75 },
+		{ name = "Expert", learnAt = 150, cap = 150 },
+		{ name = "Artisan", learnAt = 225, cap = 225 },
 	},
 
 	zones = {
