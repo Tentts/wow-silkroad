@@ -182,20 +182,74 @@ Forever uses the **retail professions UI** (`ProfessionsFrame`, `C_TradeSkillUI`
   recipe record documented in `SilkRoad/Core/Database.lua`.
 - Most of these need the profession window open (opening it takes a hardware event).
 
-### Merchants (next: vendor price recorder)
+### Merchants (used by `Core/Merchants.lua`)
 
 - Events `MERCHANT_SHOW`, `MERCHANT_UPDATE`, `MERCHANT_CLOSED`
 - `GetMerchantNumItems()`, `GetMerchantItemID(index)`, `GetMerchantItemLink(index)`
 - `C_MerchantFrame.GetItemInfo(index)` returns a table with `price`, `stackCount`,
   `numAvailable`, `isPurchasable`, `hasExtendedCost` (the global
   `GetMerchantItemInfo` is gone). Price per item = `price / stackCount`; skip
-  `hasExtendedCost` items (bought with currency or tokens).
+  `hasExtendedCost` items (bought with currency or tokens) and limited-stock offers
+  (`numAvailable` is -1 for unlimited stock, a count otherwise).
+- QuestieDB's vendor lists include limited-stock offers, so SilkRoad uses them for vendor
+  prices only, never to say an item is "sold by vendors".
 
 ### Auctionator (optional price source, already wired up)
 
 `Auctionator.API.v1.GetAuctionPriceByItemID(callerID, itemID)` and
 `GetAuctionAgeByItemID(callerID, itemID)` (whole days since last seen, `nil` after
 21 days). SilkRoad calls them through `pcall`.
+
+### Regional realms (November 2026 patch)
+
+- `RegionalUniqueNamesEnabled()` returns true; `GetRealmName()` and
+  `GetNormalizedRealmName()` are blank.
+- One auction house is shared by every character of a ruleset and faction. The ruleset
+  comes from `C_GameRules.IsGameRuleActive(Enum.GameRule.PvPRuleset / RPRuleset /
+  HardcoreRuleset)`; SilkRoad files prices under "<ruleset> <faction>" ("PvP Horde"), as
+  Auctionator does (`Auctionator.Variables.GetRegionalRulesetName`).
+- After a full scan request, the first `REPLICATE_ITEM_LIST_UPDATE` can arrive with
+  `GetNumReplicateItems() == 0`; the listings come with a later one.
+
+### Recipe colours, skill-ups and favorites
+
+- `C_TradeSkillUI.GetRecipeInfo(recipeID)` (recipes listed in the open window) has
+  `relativeDifficulty` (`Enum.TradeskillRelativeDifficulty`: 0 Optimal = orange, 1 Medium
+  = yellow, 2 Easy = green, 3 Trivial = grey) at the current skill, `numSkillUps`, and
+  `favorite`. The skill levels where the colour changes aren't exposed.
+- Favorites: `C_TradeSkillUI.IsRecipeFavorite(recipeID)`, `SetRecipeFavorite(recipeID,
+  bool)`, event `TRADE_SKILL_FAVORITES_CHANGED (isFavorite, recipeID)`. Blizzard's UI only
+  offers the star for learned recipes.
+- Trainers teach Journeyman, Expert and Artisan only once the skill reaches the current
+  cap (75, 150, 225), not 25 points earlier as in Classic.
+
+### The professions window layout
+
+- Forever loads its own files (`Blizzard_Professions/Camelot`,
+  `Blizzard_ProfessionsTemplates/Camelot`): the recipe view
+  (`ProfessionsFrame.CraftingPage.SchematicForm`) is 360 px wide, reagents in two columns
+  of 160 px slots.
+- `SchematicForm:Init(recipeInfo)` runs on every recipe shown and lays out `Reagents`,
+  `OptionalReagents` and `FinishingReagents` inside it; a `hooksecurefunc` post-hook sees
+  the finished layout.
+
+### Tooltips, bags and loot
+
+- `GameTooltip:GetPrimaryTooltipInfo()` gives `getterName` / `getterArgs`; for bag items
+  `getterName == "GetBagItem"`, args `(bag, slot)`, and
+  `C_Container.GetContainerItemInfo(bag, slot).stackCount` is the stack.
+  `RebuildFromTooltipInfo()` reruns the post-calls (used when Shift changes).
+- "Inventory is full" arrives as `UI_ERROR_MESSAGE (errorType, message)` with
+  `message == ERR_INV_FULL`. The loot window: `GetNumLootItems`, `GetLootSlotType`
+  (`Enum.LootSlotType`), `GetLootSlotLink`, `GetLootSlotInfo` (count is the third value).
+- Bag slot buttons, Blizzard's and Baganator's, answer `GetBagID()` and `GetID()`.
+
+### Things that don't work for addons
+
+- `RegisterGameMenuEscHandler` is Blizzard-only: calling it from an addon raises errors on
+  every Escape press. Use `UISpecialFrames`.
+- A frame with an `OnKeyDown` script gets keyboard input turned on and swallows every key;
+  `SetPropagateKeyboardInput` workarounds blocked movement keys in testing.
 
 ## Forever-specific details worth knowing
 
